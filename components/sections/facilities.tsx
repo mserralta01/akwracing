@@ -2,100 +2,108 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { Card, CardContent } from "@/components/ui/card";
-import { Settings, Map, Shield } from "lucide-react";
 
-const facilities = [
-  {
-    title: "Professional Karts",
-    description: "Top-of-the-line Sodi Karts equipped with Rotax engines",
-    icon: Settings,
-  },
-  {
-    title: "World-Class Track",
-    description: "Professional-grade racing circuit at Piquet Race Park",
-    icon: Map,
-  },
-  {
-    title: "Safety Equipment",
-    description: "Latest safety gear and protective equipment provided",
-    icon: Shield,
-  },
-];
+type FacilityCardProps = {
+  title: string;
+  description: string;
+  features: string[];
+  imageSrc: string;
+  imageAlt: string;
+};
 
-export function FacilitiesSection() {
+const FacilityCard = ({ title, description, features, imageSrc, imageAlt }: FacilityCardProps) => (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    whileInView={{ opacity: 1, y: 0 }}
+    viewport={{ once: true }}
+    className="bg-white rounded-lg shadow-xl overflow-hidden"
+  >
+    <div className="relative h-64 w-full">
+      <Image
+        src={imageSrc}
+        alt={imageAlt}
+        fill
+        className="object-cover"
+        sizes="(max-width: 768px) 100vw, 50vw"
+      />
+    </div>
+    <div className="p-6">
+      <h3 className="text-2xl font-bold text-gray-900 mb-3">{title}</h3>
+      <p className="text-gray-600 mb-4">{description}</p>
+      <ul className="space-y-2">
+        {features.map((feature, index) => (
+          <li key={index} className="flex items-center text-gray-700">
+            <svg
+              className="w-5 h-5 text-primary mr-2"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                fillRule="evenodd"
+                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                clipRule="evenodd"
+              />
+            </svg>
+            {feature}
+          </li>
+        ))}
+      </ul>
+    </div>
+  </motion.div>
+);
+
+export const FacilitiesSection = () => {
+  const facilities = [
+    {
+      title: "Race Track - Piquet Entertainment",
+      description: "Our primary racing facility located in Loxahatchee, Florida, providing a professional racing environment for training and competitions.",
+      features: [
+        "Professional-grade race track",
+        "State-of-the-art racing equipment",
+        "Expert instruction facilities",
+        "Safety equipment and protocols",
+      ],
+      imageSrc: "/images/racetrack.jpg", // You'll need to add these images
+      imageAlt: "Piquet Entertainment Race Track",
+    },
+    {
+      title: "AKW Racing Headquarters",
+      description: "Our Wellington, FL headquarters serves as our main operations center, featuring comprehensive training and maintenance facilities.",
+      features: [
+        "2 Full motion racing simulators",
+        "Professional maintenance garage",
+        "Equipment storage and warehouse",
+        "Agility and reflex training equipment",
+        "Dedicated workout room",
+        "Parts department",
+      ],
+      imageSrc: "/images/headquarters.jpg", // You'll need to add these images
+      imageAlt: "AKW Racing Headquarters",
+    },
+  ];
+
   return (
-    <section className="py-20 bg-background">
+    <section id="facilities" className="py-20 bg-gray-50">
       <div className="container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
           viewport={{ once: true }}
           className="text-center mb-12"
         >
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Our Facilities
-          </h2>
-          <p className="text-gray-500 max-w-2xl mx-auto">
-            Experience racing excellence with our state-of-the-art facilities and equipment.
+          <h2 className="text-4xl font-bold text-gray-900 mb-4">Our Facilities</h2>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            Experience racing excellence at our two premier facilities, equipped with
+            everything you need for professional racing development.
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-          {facilities.map((facility, index) => {
-            const Icon = facility.icon;
-            return (
-              <motion.div
-                key={facility.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: index * 0.2 }}
-                viewport={{ once: true }}
-              >
-                <Card className="text-center h-full">
-                  <CardContent className="pt-6">
-                    <Icon className="h-12 w-12 text-racing-red mx-auto mb-4" />
-                    <h3 className="text-xl font-bold mb-2">{facility.title}</h3>
-                    <p className="text-gray-500">{facility.description}</p>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            );
-          })}
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8 }}
-            viewport={{ once: true }}
-            className="relative h-[400px] rounded-lg overflow-hidden"
-          >
-            <Image
-              src="https://placehold.co/800x600/1a1a1a/ffffff?text=Racing+Track"
-              alt="Racing Track"
-              fill
-              className="object-cover"
-            />
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8 }}
-            viewport={{ once: true }}
-            className="relative h-[400px] rounded-lg overflow-hidden"
-          >
-            <Image
-              src="https://placehold.co/800x600/1a1a1a/ffffff?text=Racing+Equipment"
-              alt="Racing Equipment"
-              fill
-              className="object-cover"
-            />
-          </motion.div>
+        <div className="grid md:grid-cols-2 gap-8">
+          {facilities.map((facility, index) => (
+            <FacilityCard key={index} {...facility} />
+          ))}
         </div>
       </div>
     </section>
   );
-}
+};

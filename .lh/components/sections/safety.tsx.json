@@ -1,0 +1,18 @@
+{
+    "sourceFile": "components/sections/safety.tsx",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1732369668423,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1732369668423,
+            "name": "Commit-0",
+            "content": "\"use client\";\n\nimport { motion } from \"framer-motion\";\nimport { Shield, CheckCircle, AlertCircle } from \"lucide-react\";\nimport { Card, CardContent } from \"@/components/ui/card\";\n\nconst safetyFeatures = [\n  {\n    title: \"Professional Equipment\",\n    description: \"State-of-the-art safety gear including helmets, suits, and neck braces\",\n    icon: Shield,\n  },\n  {\n    title: \"Safety Protocols\",\n    description: \"Comprehensive safety briefings and strict track regulations\",\n    icon: CheckCircle,\n  },\n  {\n    title: \"Emergency Response\",\n    description: \"Trained medical staff and emergency procedures in place\",\n    icon: AlertCircle,\n  },\n];\n\nexport function SafetySection() {\n  return (\n    <section className=\"py-16 bg-secondary/50\">\n      <div className=\"container mx-auto px-4\">\n        <motion.div\n          initial={{ opacity: 0, y: 20 }}\n          whileInView={{ opacity: 1, y: 0 }}\n          transition={{ duration: 0.5 }}\n          viewport={{ once: true }}\n          className=\"text-center mb-12\"\n        >\n          <h2 className=\"text-3xl font-bold mb-4\">Safety First</h2>\n          <p className=\"text-muted-foreground max-w-2xl mx-auto\">\n            Your safety is our top priority. We maintain the highest safety standards\n            in karting education and track operations.\n          </p>\n        </motion.div>\n\n        <div className=\"grid grid-cols-1 md:grid-cols-3 gap-8\">\n          {safetyFeatures.map((feature, index) => (\n            <motion.div\n              key={feature.title}\n              initial={{ opacity: 0, y: 20 }}\n              whileInView={{ opacity: 1, y: 0 }}\n              transition={{ duration: 0.5, delay: index * 0.2 }}\n              viewport={{ once: true }}\n            >\n              <Card className=\"h-full\">\n                <CardContent className=\"pt-6\">\n                  <div className=\"flex flex-col items-center text-center\">\n                    <feature.icon className=\"h-12 w-12 text-primary mb-4\" />\n                    <h3 className=\"text-xl font-semibold mb-2\">{feature.title}</h3>\n                    <p className=\"text-muted-foreground\">{feature.description}</p>\n                  </div>\n                </CardContent>\n              </Card>\n            </motion.div>\n          ))}\n        </div>\n      </div>\n    </section>\n  );\n}"
+        }
+    ]
+}

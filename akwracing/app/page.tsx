@@ -1,23 +1,19 @@
+"use client";
+
 import { HeroSection } from "@/components/sections/hero";
-import { BenefitsSection } from "@/components/sections/benefits";
-import { AboutSection } from "@/components/sections/about";
 import { ProgramsSection } from "@/components/sections/programs";
 import { FacilitiesSection } from "@/components/sections/facilities";
-import { InstructorsSection } from "@/components/sections/instructors";
 import { SafetySection } from "@/components/sections/safety";
 import { ContactSection } from "@/components/sections/contact";
 
-export default function Home() {
+export default function HomePage() {
   return (
     <>
       <HeroSection />
-      <BenefitsSection />
-      <AboutSection />
       <ProgramsSection />
       <FacilitiesSection />
-      <InstructorsSection />
       <SafetySection />
       <ContactSection />
     </>
   );
-}
+} 

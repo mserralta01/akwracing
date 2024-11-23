@@ -3,11 +3,23 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 3,
             "patches": [
                 {
                     "date": 1732370647181,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1732373024817,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -7,18 +7,26 @@\n \n export function HeroSection() {\n   return (\n     <section className=\"relative min-h-screen flex items-center justify-center overflow-hidden\">\n-      {/* Background Image with Parallax */}\n-      <div\n-        className=\"absolute inset-0 bg-cover bg-center bg-no-repeat\"\n-        style={{\n-          backgroundImage: \"url('https://placehold.co/2000x1000/1a1a1a/ffffff?text=Racing+Track')\",\n-          filter: \"brightness(0.3)\",\n-        }}\n-      />\n+      {/* Video Background with Overlay */}\n+      <div className=\"absolute inset-0\">\n+        <div className=\"absolute inset-0 bg-black/60 z-10\" /> {/* Overlay */}\n+        <video \n+          autoPlay \n+          muted \n+          loop \n+          playsInline\n+          className=\"absolute inset-0 w-full h-full object-cover\"\n+        >\n+          <source \n+            src=\"https://www.sodikart.com/content/files/home/sodikart-home-v2.mp4\" \n+            type=\"video/mp4\" \n+          />\n+        </video>\n+      </div>\n \n-      <div className=\"container relative z-10 mx-auto px-4 text-center\">\n+      <div className=\"container relative z-20 mx-auto px-4 text-center\">\n         <motion.div\n           initial={{ opacity: 0, y: 20 }}\n           animate={{ opacity: 1, y: 0 }}\n           transition={{ duration: 0.8 }}\n"
+                },
+                {
+                    "date": 1732373283736,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -6,12 +6,12 @@\n import { Trophy, ChevronRight } from \"lucide-react\";\n \n export function HeroSection() {\n   return (\n-    <section className=\"relative min-h-screen flex items-center justify-center overflow-hidden\">\n+    <section className=\"relative h-[calc(100vh-64px)] flex items-center justify-center overflow-hidden mt-16\">\n       {/* Video Background with Overlay */}\n       <div className=\"absolute inset-0\">\n-        <div className=\"absolute inset-0 bg-black/60 z-10\" /> {/* Overlay */}\n+        <div className=\"absolute inset-0 bg-black/60 z-10\" />\n         <video \n           autoPlay \n           muted \n           loop \n"
+                },
+                {
+                    "date": 1732377241894,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -2,9 +2,9 @@\n \n import { motion } from \"framer-motion\";\n import TypewriterComponent from \"typewriter-effect\";\n import { Button } from \"@/components/ui/button\";\n-import { Trophy, ChevronRight } from \"lucide-react\";\n+import { Trophy, ArrowRight } from \"lucide-react\";\n \n export function HeroSection() {\n   return (\n     <section className=\"relative h-[calc(100vh-64px)] flex items-center justify-center overflow-hidden mt-16\">\n@@ -62,9 +62,9 @@\n               size=\"lg\"\n               variant=\"outline\"\n               className=\"text-white border-white hover:bg-white hover:text-racing-black\"\n             >\n-              Learn More <ChevronRight className=\"ml-2 h-4 w-4\" />\n+              Learn More <ArrowRight className=\"ml-2 h-4 w-4\" />\n             </Button>\n           </div>\n         </motion.div>\n       </div>\n"
                 }
             ],
             "date": 1732370647181,

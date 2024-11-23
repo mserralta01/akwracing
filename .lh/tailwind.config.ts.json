@@ -1,0 +1,26 @@
+{
+    "sourceFile": "tailwind.config.ts",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 2,
+            "patches": [
+                {
+                    "date": 1732385699573,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1732385949214,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -2,13 +2,14 @@\n \n const config = {\n   darkMode: [\"class\"],\n   content: [\n-    \"./pages/**/*.{ts,tsx}\",\n-    \"./components/**/*.{ts,tsx}\",\n-    \"./app/**/*.{ts,tsx}\",\n-    \"./src/**/*.{ts,tsx}\",\n+    './app/**/*.{js,ts,jsx,tsx,mdx}',\n+    './pages/**/*.{js,ts,jsx,tsx,mdx}',\n+    './components/**/*.{js,ts,jsx,tsx,mdx}',\n+    './src/**/*.{js,ts,jsx,tsx,mdx}',\n   ],\n+  prefix: \"\",\n   theme: {\n     container: {\n       center: true,\n       padding: \"2rem\",\n"
+                },
+                {
+                    "date": 1732385960834,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -0,0 +1,34 @@\n+import type { Config } from \"tailwindcss\";\n+\n+const config = {\n+  darkMode: [\"class\"],\n+  content: [\n+    './pages/**/*.{ts,tsx}',\n+    './components/**/*.{ts,tsx}',\n+    './app/**/*.{ts,tsx}',\n+    './src/**/*.{ts,tsx}',\n+  ],\n+  theme: {\n+    container: {\n+      center: true,\n+      padding: \"2rem\",\n+      screens: {\n+        \"2xl\": \"1400px\",\n+      },\n+    },\n+    extend: {\n+      colors: {\n+        border: \"hsl(var(--border))\",\n+        background: \"hsl(var(--background))\",\n+        foreground: \"hsl(var(--foreground))\",\n+        primary: {\n+          DEFAULT: \"hsl(var(--primary))\",\n+          foreground: \"hsl(var(--primary-foreground))\",\n+        },\n+      },\n+    },\n+  },\n+  plugins: [require(\"tailwindcss-animate\")],\n+} satisfies Config;\n+\n+export default config;\n\\ No newline at end of file\n"
+                }
+            ],
+            "date": 1732385699573,
+            "name": "Commit-0",
+            "content": "import type { Config } from \"tailwindcss\";\n\nconst config = {\n  darkMode: [\"class\"],\n  content: [\n    \"./pages/**/*.{ts,tsx}\",\n    \"./components/**/*.{ts,tsx}\",\n    \"./app/**/*.{ts,tsx}\",\n    \"./src/**/*.{ts,tsx}\",\n  ],\n  theme: {\n    container: {\n      center: true,\n      padding: \"2rem\",\n      screens: {\n        \"2xl\": \"1400px\",\n      },\n    },\n    extend: {\n      colors: {\n        border: \"hsl(var(--border))\",\n        input: \"hsl(var(--input))\",\n        ring: \"hsl(var(--ring))\",\n        background: \"hsl(var(--background))\",\n        foreground: \"hsl(var(--foreground))\",\n        'racing-red': '#FF0000',\n        'racing-black': '#1A1A1A',\n        primary: {\n          DEFAULT: \"hsl(var(--primary))\",\n          foreground: \"hsl(var(--primary-foreground))\",\n        },\n        secondary: {\n          DEFAULT: \"hsl(var(--secondary))\",\n          foreground: \"hsl(var(--secondary-foreground))\",\n        },\n        destructive: {\n          DEFAULT: \"hsl(var(--destructive))\",\n          foreground: \"hsl(var(--destructive-foreground))\",\n        },\n        muted: {\n          DEFAULT: \"hsl(var(--muted))\",\n          foreground: \"hsl(var(--muted-foreground))\",\n        },\n        accent: {\n          DEFAULT: \"hsl(var(--accent))\",\n          foreground: \"hsl(var(--accent-foreground))\",\n        },\n        popover: {\n          DEFAULT: \"hsl(var(--popover))\",\n          foreground: \"hsl(var(--popover-foreground))\",\n        },\n        card: {\n          DEFAULT: \"hsl(var(--card))\",\n          foreground: \"hsl(var(--card-foreground))\",\n        },\n      },\n      borderRadius: {\n        lg: \"var(--radius)\",\n        md: \"calc(var(--radius) - 2px)\",\n        sm: \"calc(var(--radius) - 4px)\",\n      },\n      keyframes: {\n        \"accordion-down\": {\n          from: { height: \"0\" },\n          to: { height: \"var(--radix-accordion-content-height)\" },\n        },\n        \"accordion-up\": {\n          from: { height: \"var(--radix-accordion-content-height)\" },\n          to: { height: \"0\" },\n        },\n      },\n      animation: {\n        \"accordion-down\": \"accordion-down 0.2s ease-out\",\n        \"accordion-up\": \"accordion-up 0.2s ease-out\",\n      },\n    },\n  },\n  plugins: [require(\"tailwindcss-animate\")],\n} satisfies Config;\n\nexport default config;"
+        }
+    ]
+}

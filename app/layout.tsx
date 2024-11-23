@@ -29,7 +29,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <Navigation />
-          <main>{children}</main>
+          <main className="pt-16">{children}</main>
           <Footer />
           <Toaster />
         </ThemeProvider>

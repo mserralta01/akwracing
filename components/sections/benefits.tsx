@@ -11,7 +11,7 @@ import {
   Clock,
   Handshake,
   Car,
-  ChevronRight
+  ArrowRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -130,7 +130,7 @@ export function BenefitsSection() {
             size="lg" 
             className="bg-racing-red hover:bg-red-700"
           >
-            Start Your Child's Racing Journey <ChevronRight className="ml-2 h-5 w-5" />
+            Start Your Child's Racing Journey <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
         </motion.div>
       </div>

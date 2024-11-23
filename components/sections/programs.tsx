@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Flag, Trophy, Zap, ChevronRight } from "lucide-react";
+import { Flag, Trophy, Zap, ArrowRight } from "lucide-react";
 
 const programs = [
   {
@@ -72,7 +72,7 @@ export function ProgramsSection() {
                     <ul className="space-y-3 mb-6">
                       {program.features.map((feature) => (
                         <li key={feature} className="flex items-center">
-                          <ChevronRight className="h-4 w-4 text-racing-red mr-2" />
+                          <ArrowRight className="h-4 w-4 text-racing-red mr-2" />
                           <span>{feature}</span>
                         </li>
                       ))}

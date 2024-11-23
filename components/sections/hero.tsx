@@ -3,21 +3,29 @@
 import { motion } from "framer-motion";
 import TypewriterComponent from "typewriter-effect";
 import { Button } from "@/components/ui/button";
-import { Trophy, ChevronRight } from "lucide-react";
+import { Trophy, ArrowRight } from "lucide-react";
 
 export function HeroSection() {
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Background Image with Parallax */}
-      <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage: "url('https://placehold.co/2000x1000/1a1a1a/ffffff?text=Racing+Track')",
-          filter: "brightness(0.3)",
-        }}
-      />
+    <section className="relative h-[calc(100vh-64px)] flex items-center justify-center overflow-hidden mt-16">
+      {/* Video Background with Overlay */}
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-black/60 z-10" />
+        <video 
+          autoPlay 
+          muted 
+          loop 
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+        >
+          <source 
+            src="https://www.sodikart.com/content/files/home/sodikart-home-v2.mp4" 
+            type="video/mp4" 
+          />
+        </video>
+      </div>
 
-      <div className="container relative z-10 mx-auto px-4 text-center">
+      <div className="container relative z-20 mx-auto px-4 text-center">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -55,7 +63,7 @@ export function HeroSection() {
               variant="outline"
               className="text-white border-white hover:bg-white hover:text-racing-black"
             >
-              Learn More <ChevronRight className="ml-2 h-4 w-4" />
+              Learn More <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </div>
         </motion.div>

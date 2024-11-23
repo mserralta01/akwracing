@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { ChevronRight } from "lucide-react";
+import { ArrowRight } from 'lucide-react';
 
 export function AboutSection() {
   return (
@@ -27,15 +27,15 @@ export function AboutSection() {
             </p>
             <div className="space-y-4 text-gray-300">
               <div className="flex items-center">
-                <ChevronRight className="h-5 w-5 text-racing-red mr-2" />
+                <ArrowRight className="h-5 w-5 text-racing-red mr-2" />
                 <span>Professional race instructors</span>
               </div>
               <div className="flex items-center">
-                <ChevronRight className="h-5 w-5 text-racing-red mr-2" />
+                <ArrowRight className="h-5 w-5 text-racing-red mr-2" />
                 <span>State-of-the-art racing equipment</span>
               </div>
               <div className="flex items-center">
-                <ChevronRight className="h-5 w-5 text-racing-red mr-2" />
+                <ArrowRight className="h-5 w-5 text-racing-red mr-2" />
                 <span>Comprehensive training programs</span>
               </div>
             </div>

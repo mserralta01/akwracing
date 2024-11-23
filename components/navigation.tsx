@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import {
   NavigationMenu,
@@ -13,7 +14,7 @@ import {
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import { Button } from "@/components/ui/button";
-import { Trophy } from "lucide-react";
+import { Menu } from "lucide-react";
 
 const components: { title: string; href: string; description: string }[] = [
   {
@@ -35,58 +36,90 @@ const components: { title: string; href: string; description: string }[] = [
 
 export function Navigation() {
   return (
-    <div className="fixed top-0 w-full z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <div className="fixed top-0 w-full z-50 bg-white border-b shadow-sm">
       <div className="container flex h-16 items-center justify-between">
-        <Link href="/" className="flex items-center space-x-2">
-          <Trophy className="h-6 w-6 text-racing-red" />
-          <span className="font-bold text-xl">AKW Racing</span>
+        <Link href="/" className="flex items-center">
+          <Image
+            src="/AKWacademylogo.png"
+            alt="AKW Racing Academy Logo"
+            width={160}
+            height={160}
+            className="object-contain -my-12"
+            priority
+          />
         </Link>
 
-        <NavigationMenu>
-          <NavigationMenuList>
-            <NavigationMenuItem>
-              <NavigationMenuTrigger>Programs</NavigationMenuTrigger>
-              <NavigationMenuContent>
-                <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
-                  {components.map((component) => (
-                    <ListItem
-                      key={component.title}
-                      title={component.title}
-                      href={component.href}
-                    >
-                      {component.description}
-                    </ListItem>
-                  ))}
-                </ul>
-              </NavigationMenuContent>
-            </NavigationMenuItem>
-            <NavigationMenuItem>
-              <Link href="/facilities" legacyBehavior passHref>
-                <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                  Facilities
-                </NavigationMenuLink>
-              </Link>
-            </NavigationMenuItem>
-            <NavigationMenuItem>
-              <Link href="/instructors" legacyBehavior passHref>
-                <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                  Instructors
-                </NavigationMenuLink>
-              </Link>
-            </NavigationMenuItem>
-            <NavigationMenuItem>
-              <Link href="/contact" legacyBehavior passHref>
-                <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                  Contact
-                </NavigationMenuLink>
-              </Link>
-            </NavigationMenuItem>
-          </NavigationMenuList>
-        </NavigationMenu>
+        {/* Desktop Navigation */}
+        <div className="hidden md:block">
+          <NavigationMenu>
+            <NavigationMenuList className="bg-white">
+              <NavigationMenuItem>
+                <NavigationMenuTrigger className="bg-white text-gray-900 font-medium hover:text-racing-red data-[state=open]:bg-white">
+                  Programs
+                </NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] bg-white">
+                    {components.map((component) => (
+                      <ListItem
+                        key={component.title}
+                        title={component.title}
+                        href={component.href}
+                      >
+                        {component.description}
+                      </ListItem>
+                    ))}
+                  </ul>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <Link href="/facilities" legacyBehavior passHref>
+                  <NavigationMenuLink className={cn(
+                    "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus:outline-none focus:bg-white disabled:opacity-50 disabled:pointer-events-none bg-white hover:bg-white hover:text-racing-red h-10 py-2 px-4 group text-gray-900",
+                    "data-[active]:bg-white data-[state=open]:bg-white"
+                  )}>
+                    Facilities
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <Link href="/instructors" legacyBehavior passHref>
+                  <NavigationMenuLink className={cn(
+                    "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus:outline-none focus:bg-white disabled:opacity-50 disabled:pointer-events-none bg-white hover:bg-white hover:text-racing-red h-10 py-2 px-4 group text-gray-900",
+                    "data-[active]:bg-white data-[state=open]:bg-white"
+                  )}>
+                    Instructors
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <Link href="/contact" legacyBehavior passHref>
+                  <NavigationMenuLink className={cn(
+                    "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus:outline-none focus:bg-white disabled:opacity-50 disabled:pointer-events-none bg-white hover:bg-white hover:text-racing-red h-10 py-2 px-4 group text-gray-900",
+                    "data-[active]:bg-white data-[state=open]:bg-white"
+                  )}>
+                    Contact
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+            </NavigationMenuList>
+          </NavigationMenu>
+        </div>
 
-        <Button className="bg-racing-red hover:bg-red-700">
-          Enroll Now
+        {/* Mobile Menu Button */}
+        <Button
+          variant="ghost"
+          className="md:hidden p-0"
+          onClick={() => {/* Add mobile menu handler */}}
+        >
+          <Menu className="h-6 w-6 text-gray-900" />
         </Button>
+
+        {/* Enroll Button */}
+        <div className="hidden md:block">
+          <Button className="bg-racing-red hover:bg-red-700 text-white font-medium">
+            Enroll Now
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -102,13 +135,13 @@ const ListItem = React.forwardRef<
         <a
           ref={ref}
           className={cn(
-            "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
+            "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-gray-50 hover:text-racing-red",
             className
           )}
           {...props}
         >
-          <div className="text-sm font-medium leading-none">{title}</div>
-          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+          <div className="text-sm font-medium leading-none text-gray-900">{title}</div>
+          <p className="line-clamp-2 text-sm leading-snug text-gray-500">
             {children}
           </p>
         </a>

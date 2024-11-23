@@ -1,0 +1,30 @@
+{
+    "sourceFile": "app/page.tsx",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 3,
+            "patches": [
+                {
+                    "date": 1732372326194,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1732377468754,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -0,0 +1,19 @@\n+\"use client\";\n+\n+import { HeroSection } from \"@/components/sections/hero\";\n+import { ProgramsSection } from \"@/components/sections/programs\";\n+import { FacilitiesSection } from \"@/components/sections/facilities\";\n+import { SafetySection } from \"@/components/sections/safety\";\n+import { ContactSection } from \"@/components/sections/contact\";\n+\n+export default function HomePage() {\n+  return (\n+    <>\n+      <HeroSection />\n+      <ProgramsSection />\n+      <FacilitiesSection />\n+      <SafetySection />\n+      <ContactSection />\n+    </>\n+  );\n+}\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1732377512367,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,7 +1,9 @@\n \"use client\";\n \n import { HeroSection } from \"@/components/sections/hero\";\n+import { AboutSection } from \"@/components/sections/about\";\n+import { BenefitsSection } from \"@/components/sections/benefits\";\n import { ProgramsSection } from \"@/components/sections/programs\";\n import { FacilitiesSection } from \"@/components/sections/facilities\";\n import { SafetySection } from \"@/components/sections/safety\";\n import { ContactSection } from \"@/components/sections/contact\";\n@@ -9,30 +11,13 @@\n export default function HomePage() {\n   return (\n     <>\n       <HeroSection />\n+      <AboutSection />\n+      <BenefitsSection />\n       <ProgramsSection />\n       <FacilitiesSection />\n       <SafetySection />\n       <ContactSection />\n     </>\n   );\n-}\n-\"use client\";\n-\n-import { HeroSection } from \"@/components/sections/hero\";\n-import { ProgramsSection } from \"@/components/sections/programs\";\n-import { FacilitiesSection } from \"@/components/sections/facilities\";\n-import { SafetySection } from \"@/components/sections/safety\";\n-import { ContactSection } from \"@/components/sections/contact\";\n-\n-export default function HomePage() {\n-  return (\n-    <>\n-      <HeroSection />\n-      <ProgramsSection />\n-      <FacilitiesSection />\n-      <SafetySection />\n-      <ContactSection />\n-    </>\n-  );\n }\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1732378338365,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -3,8 +3,9 @@\n import { HeroSection } from \"@/components/sections/hero\";\n import { AboutSection } from \"@/components/sections/about\";\n import { BenefitsSection } from \"@/components/sections/benefits\";\n import { ProgramsSection } from \"@/components/sections/programs\";\n+import { InstructorsSection } from \"@/components/sections/instructors\";\n import { FacilitiesSection } from \"@/components/sections/facilities\";\n import { SafetySection } from \"@/components/sections/safety\";\n import { ContactSection } from \"@/components/sections/contact\";\n \n@@ -14,8 +15,9 @@\n       <HeroSection />\n       <AboutSection />\n       <BenefitsSection />\n       <ProgramsSection />\n+      <InstructorsSection />\n       <FacilitiesSection />\n       <SafetySection />\n       <ContactSection />\n     </>\n"
+                }
+            ],
+            "date": 1732372326194,
+            "name": "Commit-0",
+            "content": "\"use client\";\n\nimport { HeroSection } from \"@/components/sections/hero\";\nimport { ProgramsSection } from \"@/components/sections/programs\";\nimport { FacilitiesSection } from \"@/components/sections/facilities\";\nimport { SafetySection } from \"@/components/sections/safety\";\nimport { ContactSection } from \"@/components/sections/contact\";\n\nexport default function HomePage() {\n  return (\n    <>\n      <HeroSection />\n      <ProgramsSection />\n      <FacilitiesSection />\n      <SafetySection />\n      <ContactSection />\n    </>\n  );\n}"
+        }
+    ]
+}

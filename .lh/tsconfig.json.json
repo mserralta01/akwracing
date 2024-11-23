@@ -3,11 +3,15 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 1,
             "patches": [
                 {
                     "date": 1732370505001,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1732378582824,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -21,9 +21,9 @@\n     \"paths\": {\n       \"@/*\": [\"./*\"]\n     },\n     \"baseUrl\": \".\",\n-    \"types\": [\"react-day-picker\"]\n+    \"types\": []\n   },\n   \"include\": [\n     \"next-env.d.ts\",\n     \"**/*.ts\",\n"
                 }
             ],
             "date": 1732370505000,

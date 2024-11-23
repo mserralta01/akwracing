@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/navigation-menu";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
+import { AuthButtons } from "./auth/auth-buttons";
 
 const components: { title: string; href: string; description: string }[] = [
   {
@@ -36,8 +37,8 @@ const components: { title: string; href: string; description: string }[] = [
 
 export function Navigation() {
   return (
-    <div className="fixed top-0 w-full z-50 bg-white border-b shadow-sm">
-      <div className="container flex h-16 items-center justify-between">
+    <nav className="border-b">
+      <div className="flex h-16 items-center px-4">
         <Link href="/" className="flex items-center">
           <Image
             src="/AKWacademylogo.png"
@@ -114,14 +115,12 @@ export function Navigation() {
           <Menu className="h-6 w-6 text-gray-900" />
         </Button>
 
-        {/* Enroll Button */}
-        <div className="hidden md:block">
-          <Button className="bg-racing-red hover:bg-red-700 text-white font-medium">
-            Enroll Now
-          </Button>
+        {/* Auth Buttons */}
+        <div className="ml-auto flex items-center space-x-4">
+          <AuthButtons />
         </div>
       </div>
-    </div>
+    </nav>
   );
 }
 

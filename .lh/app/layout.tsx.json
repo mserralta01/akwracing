@@ -3,11 +3,15 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 1,
             "patches": [
                 {
                     "date": 1732373157292,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1732388208910,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,8 +4,9 @@\n import { ThemeProvider } from \"@/components/theme-provider\";\n import { Navigation } from \"@/components/navigation\";\n import { Footer } from \"@/components/footer\";\n import { Toaster } from \"@/components/ui/toaster\";\n+import { AuthProvider } from \"@/contexts/auth-context\";\n \n const inter = Inter({ subsets: [\"latin\"] });\n \n export const metadata: Metadata = {\n@@ -27,12 +28,14 @@\n           defaultTheme=\"dark\"\n           enableSystem\n           disableTransitionOnChange\n         >\n-          <Navigation />\n-          <main className=\"pt-16\">{children}</main>\n-          <Footer />\n-          <Toaster />\n+          <AuthProvider>\n+            <Navigation />\n+            <main className=\"pt-16\">{children}</main>\n+            <Footer />\n+            <Toaster />\n+          </AuthProvider>\n         </ThemeProvider>\n       </body>\n     </html>\n   );\n"
                 }
             ],
             "date": 1732373157292,

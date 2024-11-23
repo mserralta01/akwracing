@@ -1,0 +1,18 @@
+{
+    "sourceFile": "components/sections/hero.tsx",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1732370647181,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1732370647181,
+            "name": "Commit-0",
+            "content": "\"use client\";\n\nimport { motion } from \"framer-motion\";\nimport TypewriterComponent from \"typewriter-effect\";\nimport { Button } from \"@/components/ui/button\";\nimport { Trophy, ChevronRight } from \"lucide-react\";\n\nexport function HeroSection() {\n  return (\n    <section className=\"relative min-h-screen flex items-center justify-center overflow-hidden\">\n      {/* Background Image with Parallax */}\n      <div\n        className=\"absolute inset-0 bg-cover bg-center bg-no-repeat\"\n        style={{\n          backgroundImage: \"url('https://placehold.co/2000x1000/1a1a1a/ffffff?text=Racing+Track')\",\n          filter: \"brightness(0.3)\",\n        }}\n      />\n\n      <div className=\"container relative z-10 mx-auto px-4 text-center\">\n        <motion.div\n          initial={{ opacity: 0, y: 20 }}\n          animate={{ opacity: 1, y: 0 }}\n          transition={{ duration: 0.8 }}\n          className=\"space-y-6\"\n        >\n          <h1 className=\"text-4xl md:text-6xl font-bold text-white mb-4\">\n            <TypewriterComponent\n              options={{\n                strings: [\n                  \"Welcome to AKW Racing Academy\",\n                  \"Where Champions Are Made\",\n                  \"Start Your Racing Journey\",\n                ],\n                autoStart: true,\n                loop: true,\n              }}\n            />\n          </h1>\n\n          <p className=\"text-xl md:text-2xl text-gray-300 max-w-2xl mx-auto\">\n            Premier karting academy in Wellington, FL, offering professional race training\n            for all skill levels.\n          </p>\n\n          <div className=\"flex justify-center gap-4 mt-8\">\n            <Button\n              size=\"lg\"\n              className=\"bg-racing-red hover:bg-red-700 text-white\"\n            >\n              Start Racing <Trophy className=\"ml-2 h-4 w-4\" />\n            </Button>\n            <Button\n              size=\"lg\"\n              variant=\"outline\"\n              className=\"text-white border-white hover:bg-white hover:text-racing-black\"\n            >\n              Learn More <ChevronRight className=\"ml-2 h-4 w-4\" />\n            </Button>\n          </div>\n        </motion.div>\n      </div>\n    </section>\n  );\n}"
+        }
+    ]
+}

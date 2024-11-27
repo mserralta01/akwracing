@@ -12,6 +12,7 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
+import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 import { AuthButtons } from "./auth/auth-buttons";
 
@@ -50,53 +51,51 @@ export function Navigation() {
           />
         </Link>
 
-        {/* Centered Navigation */}
-        <div className="flex-1 flex justify-center">
-          <div className="hidden md:flex space-x-8">
-            <NavigationMenu>
-              <NavigationMenuList className="flex space-x-8">
-                <NavigationMenuItem>
-                  <NavigationMenuTrigger className="text-white text-lg font-bold hover:text-racing-red">
-                    Programs
-                  </NavigationMenuTrigger>
-                  <NavigationMenuContent>
-                    <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] bg-white">
-                      {components.map((component) => (
-                        <ListItem
-                          key={component.title}
-                          title={component.title}
-                          href={component.href}
-                        >
-                          {component.description}
-                        </ListItem>
-                      ))}
-                    </ul>
-                  </NavigationMenuContent>
-                </NavigationMenuItem>
-                <NavigationMenuItem>
-                  <Link href="/facilities" legacyBehavior passHref>
-                    <NavigationMenuLink className="text-white text-lg font-bold hover:text-racing-red">
-                      Facilities
-                    </NavigationMenuLink>
-                  </Link>
-                </NavigationMenuItem>
-                <NavigationMenuItem>
-                  <Link href="/instructors" legacyBehavior passHref>
-                    <NavigationMenuLink className="text-white text-lg font-bold hover:text-racing-red">
-                      Instructors
-                    </NavigationMenuLink>
-                  </Link>
-                </NavigationMenuItem>
-                <NavigationMenuItem>
-                  <Link href="/contact" legacyBehavior passHref>
-                    <NavigationMenuLink className="text-white text-lg font-bold hover:text-racing-red">
-                      Contact
-                    </NavigationMenuLink>
-                  </Link>
-                </NavigationMenuItem>
-              </NavigationMenuList>
-            </NavigationMenu>
-          </div>
+        {/* Desktop Navigation */}
+        <div className="hidden md:flex space-x-8">
+          <NavigationMenu>
+            <NavigationMenuList className="flex space-x-8">
+              <NavigationMenuItem>
+                <NavigationMenuTrigger className="text-white text-lg font-bold hover:text-racing-red">
+                  Programs
+                </NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] bg-white">
+                    {components.map((component) => (
+                      <ListItem
+                        key={component.title}
+                        title={component.title}
+                        href={component.href}
+                      >
+                        {component.description}
+                      </ListItem>
+                    ))}
+                  </ul>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <Link href="/facilities" legacyBehavior passHref>
+                  <NavigationMenuLink className="text-white text-lg font-bold hover:text-racing-red">
+                    Facilities
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <Link href="/instructors" legacyBehavior passHref>
+                  <NavigationMenuLink className="text-white text-lg font-bold hover:text-racing-red">
+                    Instructors
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <Link href="/contact" legacyBehavior passHref>
+                  <NavigationMenuLink className="text-white text-lg font-bold hover:text-racing-red">
+                    Contact
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+            </NavigationMenuList>
+          </NavigationMenu>
         </div>
 
         {/* Mobile Navigation */}

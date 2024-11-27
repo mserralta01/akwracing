@@ -1,21 +1,25 @@
-"use client"
+"use client";
 
-import { NavigationHeader } from "@/components/navigation-header"
-import { HeroSection } from "@/components/sections/hero-section"
-import { ProgramsSection } from "@/components/sections/programs-section"
-import { FacilitiesSection } from "@/components/sections/facilities-section"
-import { InstructorsSection } from "@/components/sections/instructors-section"
-import { BookingSection } from "@/components/sections/booking-section"
+import { HeroSection } from "@/components/sections/hero";
+import { AboutSection } from "@/components/sections/about";
+import { BenefitsSection } from "@/components/sections/benefits";
+import { ProgramsSection } from "@/components/sections/programs";
+import { InstructorsSection } from "@/components/sections/instructors";
+import { FacilitiesSection } from "@/components/sections/facilities";
+import { SafetySection } from "@/components/sections/safety";
+import { ContactSection } from "@/components/sections/contact";
 
-export default function Home() {
+export default function HomePage() {
   return (
-    <main className="flex min-h-screen flex-col">
-      <NavigationHeader />
+    <>
       <HeroSection />
+      <AboutSection />
+      <BenefitsSection />
       <ProgramsSection />
-      <FacilitiesSection />
       <InstructorsSection />
-      <BookingSection />
-    </main>
-  )
+      <FacilitiesSection />
+      <SafetySection />
+      <ContactSection />
+    </>
+  );
 }

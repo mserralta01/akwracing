@@ -14,6 +14,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { Separator } from "@/components/ui/separator";
+import { useRouter } from "next/navigation";
+import { auth } from '@/lib/firebase';
 
 type SignInDialogProps = {
   open: boolean;
@@ -26,6 +28,7 @@ export function SignInDialog({ open, onOpenChange }: SignInDialogProps) {
   const [loading, setLoading] = useState(false);
   const { signIn, signInWithGoogle } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

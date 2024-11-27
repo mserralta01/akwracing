@@ -23,16 +23,7 @@ export function ProgramsSection() {
     const fetchFeaturedCourses = async () => {
       const q = query(collection(db, "courses"), where("featured", "==", true));
       const querySnapshot = await getDocs(q);
-      const courses = querySnapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          name: data.name || "Unknown Course",
-          price: data.price || "N/A",
-          description: data.description || "No description available",
-          // Add other fields with default values if necessary
-        } as Course;
-      });
+      const courses = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setFeaturedCourses(courses);
     };
 

@@ -2,13 +2,11 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CourseManagement } from "@/components/admin/course-management";
 
 export default function AdminDashboard() {
   return (
     <div className="container py-8">
       <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
-      <CourseManagement />
       
       <Tabs defaultValue="content">
         <TabsList>

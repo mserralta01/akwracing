@@ -1,9 +1,9 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CourseManagement } from "@/components/admin/course-management";
-import { AdminGuard } from "@/components/auth/admin-guard";
+import { Card, CardContent, CardHeader, CardTitle } from "components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "components/ui/tabs";
+import { CourseManagement } from "components/admin/course-management";
+import { AdminGuard } from "components/auth/admin-guard";
 
 export default function AdminDashboard() {
   return (
@@ -55,4 +55,4 @@ export default function AdminDashboard() {
       </div>
     </AdminGuard>
   );
-} 
+}

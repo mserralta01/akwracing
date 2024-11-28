@@ -1,22 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import { useAuth } from "@/contexts/auth-context";
+import { useAuth } from "contexts/auth-context";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
-import { Separator } from "@/components/ui/separator";
+} from "components/ui/dialog";
+import { Button } from "components/ui/button";
+import { Input } from "components/ui/input";
+import { Label } from "components/ui/label";
+import { useToast } from "components/ui/use-toast";
+import { Separator } from "components/ui/separator";
 import { useRouter } from "next/navigation";
-import { auth } from '@/lib/firebase';
-import { isAdminUser } from "@/lib/auth";
+import { auth } from "lib/firebase";
+import { isAdminUser } from "lib/auth";
 
 type SignInDialogProps = {
   open: boolean;
@@ -31,26 +31,45 @@ export function SignInDialog({ open, onOpenChange }: SignInDialogProps) {
   const { toast } = useToast();
   const router = useRouter();
 
+  const handleAdminNavigation = async (user: any) => {
+    try {
+      const adminStatus = await isAdminUser(user);
+      if (adminStatus) {
+        onOpenChange(false);
+        // Small delay to ensure auth state is properly initialized
+        setTimeout(() => {
+          router.push("/admin");
+          router.refresh(); // Force a refresh of the page
+        }, 500);
+      } else {
+        onOpenChange(false);
+        toast({
+          title: "Welcome back!",
+          description: "You have successfully signed in.",
+        });
+      }
+    } catch (error) {
+      console.error("Error checking admin status:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Could not verify admin status.",
+      });
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
       await signIn(email, password);
-      const user = await auth.currentUser;
+      const user = auth.currentUser;
       if (user) {
-        const isAdmin = await isAdminUser(user);
-        if (isAdmin) {
-          router.push("/admin");
-        } else {
-          onOpenChange(false);
-          toast({
-            title: "Welcome back!",
-            description: "You have successfully signed in.",
-          });
-        }
+        await handleAdminNavigation(user);
       }
     } catch (error) {
+      console.error("Sign in error:", error);
       toast({
         variant: "destructive",
         title: "Error",
@@ -66,16 +85,7 @@ export function SignInDialog({ open, onOpenChange }: SignInDialogProps) {
     try {
       const user = await signInWithGoogle();
       if (user) {
-        const isAdmin = await isAdminUser(user);
-        if (isAdmin) {
-          router.push("/admin");
-        } else {
-          onOpenChange(false);
-          toast({
-            title: "Welcome back!",
-            description: "You have successfully signed in with Google.",
-          });
-        }
+        await handleAdminNavigation(user);
       } else {
         toast({
           variant: "destructive",
@@ -176,4 +186,4 @@ export function SignInDialog({ open, onOpenChange }: SignInDialogProps) {
       </DialogContent>
     </Dialog>
   );
-} 
+}

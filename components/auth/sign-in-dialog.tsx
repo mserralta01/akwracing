@@ -16,6 +16,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Separator } from "@/components/ui/separator";
 import { useRouter } from "next/navigation";
 import { auth } from '@/lib/firebase';
+import { isAdminUser } from "@/lib/auth";
 
 type SignInDialogProps = {
   open: boolean;
@@ -36,11 +37,19 @@ export function SignInDialog({ open, onOpenChange }: SignInDialogProps) {
 
     try {
       await signIn(email, password);
-      onOpenChange(false);
-      toast({
-        title: "Welcome back!",
-        description: "You have successfully signed in.",
-      });
+      const user = await auth.currentUser;
+      if (user) {
+        const isAdmin = await isAdminUser(user);
+        if (isAdmin) {
+          router.push("/admin");
+        } else {
+          onOpenChange(false);
+          toast({
+            title: "Welcome back!",
+            description: "You have successfully signed in.",
+          });
+        }
+      }
     } catch (error) {
       toast({
         variant: "destructive",
@@ -55,13 +64,27 @@ export function SignInDialog({ open, onOpenChange }: SignInDialogProps) {
   const handleGoogleSignIn = async () => {
     setLoading(true);
     try {
-      await signInWithGoogle();
-      onOpenChange(false);
-      toast({
-        title: "Welcome back!",
-        description: "You have successfully signed in with Google.",
-      });
+      const user = await signInWithGoogle();
+      if (user) {
+        const isAdmin = await isAdminUser(user);
+        if (isAdmin) {
+          router.push("/admin");
+        } else {
+          onOpenChange(false);
+          toast({
+            title: "Welcome back!",
+            description: "You have successfully signed in with Google.",
+          });
+        }
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Could not retrieve user information.",
+        });
+      }
     } catch (error) {
+      console.error("Error during Google sign-in:", error);
       toast({
         variant: "destructive",
         title: "Error",

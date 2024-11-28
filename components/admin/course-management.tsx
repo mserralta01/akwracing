@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { db } from "@/lib/firebase";
 import { collection, addDoc } from "firebase/firestore";
 import ReactQuill from "react-quill";
@@ -16,6 +16,16 @@ export function CourseManagement() {
     image: "",
     featured: false,
   });
+
+  const quillRef = useRef<ReactQuill | null>(null);
+
+  useEffect(() => {
+    if (quillRef.current) {
+      // Access the editor instance directly
+      const editor = quillRef.current.getEditor();
+      // Perform any necessary operations with the editor
+    }
+  }, []);
 
   const handleCreateCourse = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -40,6 +50,7 @@ export function CourseManagement() {
         />
         {/* Add other fields for date, duration, etc. */}
         <ReactQuill
+          ref={quillRef}
           value={courseData.description}
           onChange={(value) => setCourseData({ ...courseData, description: value })}
         />

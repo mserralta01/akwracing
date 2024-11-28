@@ -15,18 +15,18 @@ type AuthContextType = {
   user: User | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
+  signInWithGoogle: () => Promise<User | null>;
   signOut: () => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType>({
-  user: null,
+  user: null as User | null,
   loading: true,
-  signIn: async () => {},
-  signInWithGoogle: async () => {},
-  signOut: async () => {},
-  signUp: async () => {},
+  signIn: async () => Promise.resolve(),
+  signInWithGoogle: async () => Promise.resolve(null),
+  signOut: async () => Promise.resolve(),
+  signUp: async () => Promise.resolve(),
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -51,11 +51,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = async (): Promise<User | null> => {
     try {
-      await signInWithPopup(auth, googleProvider);
+      const result = await signInWithPopup(auth, googleProvider);
+      return result.user;
     } catch (error) {
       console.error("Error signing in with Google:", error);
+      return null;
     }
   };
 

@@ -36,7 +36,7 @@ export function SignInDialog({ open, onOpenChange }: SignInDialogProps) {
       const adminStatus = await isAdminUser(user);
       if (adminStatus) {
         onOpenChange(false);
-        // Small delay to ensure auth state is properly initialized
+        // Redirect to /admin after login
         setTimeout(() => {
           router.push("/admin");
           router.refresh(); // Force a refresh of the page

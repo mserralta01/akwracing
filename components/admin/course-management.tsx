@@ -84,7 +84,7 @@ export default function CourseManagement() {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Courses</CardTitle>
-        <Button onClick={() => router.push("/admin/course-management/new")}>
+        <Button onClick={() => router.push("/admin/academy/course-management/new")}>
           <Plus className="h-4 w-4 mr-2" />
           Add Course
         </Button>
@@ -129,7 +129,7 @@ export default function CourseManagement() {
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
-                        onClick={() => router.push(`/admin/course-management/${course.id}/edit`)}
+                        onClick={() => router.push(`/admin/academy/course-management/${course.id}/edit`)}
                       >
                         <Pencil className="mr-2 h-4 w-4" />
                         Edit

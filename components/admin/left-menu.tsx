@@ -9,6 +9,7 @@ import {
   Users,
   Settings,
   LogOut,
+  School,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/firebase";
@@ -22,9 +23,21 @@ const menuItems = [
     icon: LayoutDashboard,
   },
   {
-    title: "Course Management",
-    href: "/admin/course-management",
-    icon: GraduationCap,
+    title: "Academy",
+    href: "/admin/academy",
+    icon: School,
+    submenu: [
+      {
+        title: "Course Management",
+        href: "/admin/academy/course-management",
+        icon: GraduationCap,
+      },
+      {
+        title: "Instructor Management",
+        href: "/admin/academy/instructor-management",
+        icon: Users,
+      },
+    ],
   },
   {
     title: "Students",
@@ -84,6 +97,30 @@ export function LeftMenu() {
                     {item.title}
                   </span>
                 </Link>
+                {item.submenu && (
+                  <ul className="ml-6 mt-2 space-y-2">
+                    {item.submenu.map((subItem) => {
+                      const SubIcon = subItem.icon;
+                      const isSubActive = pathname === subItem.href || pathname?.startsWith(`${subItem.href}/`);
+
+                      return (
+                        <li key={subItem.href}>
+                          <Link href={subItem.href}>
+                            <span
+                              className={cn(
+                                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:bg-accent",
+                                isSubActive ? "bg-accent text-accent-foreground" : "text-muted-foreground"
+                              )}
+                            >
+                              <SubIcon className="h-4 w-4" />
+                              {subItem.title}
+                            </span>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
               </li>
             );
           })}

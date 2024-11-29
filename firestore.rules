@@ -10,8 +10,14 @@ service cloud.firestore {
 
     // Courses collection - public read, admin write
     match /courses/{document=**} {
-      allow read: if true;  // Changed from requiring auth to allowing public read
+      allow read: if true;  // Anyone can view courses
       allow write: if isAdmin();  // Only admins can modify courses
+    }
+
+    // Instructors collection - public read, admin write
+    match /instructors/{document=**} {
+      allow read: if true;  // Anyone can view instructors
+      allow write: if isAdmin();  // Only admins can modify instructors
     }
 
     // Users collection - protected

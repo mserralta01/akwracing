@@ -28,12 +28,12 @@ const menuItems = [
     icon: School,
     submenu: [
       {
-        title: "Course Management",
+        title: "Courses",
         href: "/admin/academy/course-management",
         icon: GraduationCap,
       },
       {
-        title: "Instructor Management",
+        title: "Instructors",
         href: "/admin/academy/instructor-management",
         icon: Users,
       },

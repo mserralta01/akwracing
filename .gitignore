@@ -39,4 +39,29 @@ next-env.d.ts
 .history
 /.history
 
+# Firebase
+.firebase/
+firebase-debug.log
+.runtimeconfig.json
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Firebase config
+serviceAccountKey.json
+
+# Cache directories
+.firebase/
+.firebaserc
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+
 

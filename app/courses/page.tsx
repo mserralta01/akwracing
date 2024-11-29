@@ -25,14 +25,26 @@ import { format } from "date-fns";
 import { CalendarIcon, Filter } from "lucide-react";
 import Image from "next/image";
 
+// Add these type definitions at the top of the file
+type FilterLevel = "all" | CourseLevel;
+
+interface CourseFilters {
+  level: FilterLevel;
+  location: string;
+  startDate: Date | undefined;
+  minPrice: string;
+  maxPrice: string;
+  sortBy: string;
+}
+
 export default function CoursesPage() {
   const router = useRouter();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<CourseFilters>({
     level: "all",
     location: "",
-    startDate: undefined as Date | undefined,
+    startDate: undefined,
     minPrice: "",
     maxPrice: "",
     sortBy: "startDate",
@@ -43,7 +55,7 @@ export default function CoursesPage() {
       try {
         setLoading(true);
         const result = await courseService.getCourses({
-          level: filters.level === "all" ? undefined : filters.level,
+          level: filters.level === "all" ? undefined : filters.level as CourseLevel,
           location: filters.location || undefined,
           startDate: filters.startDate,
           minPrice: filters.minPrice ? parseFloat(filters.minPrice) : undefined,
@@ -94,8 +106,11 @@ export default function CoursesPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
               <Select
                 value={filters.level}
-                onValueChange={(value) =>
-                  setFilters((prev) => ({ ...prev, level: value }))
+                onValueChange={(value: FilterLevel) =>
+                  setFilters((prev: CourseFilters) => ({
+                    ...prev,
+                    level: value,
+                  }))
                 }
               >
                 <SelectTrigger>

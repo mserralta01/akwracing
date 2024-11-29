@@ -26,34 +26,35 @@ import { useToast } from "@/components/ui/use-toast";
 import { Course, CourseLevel } from '@/types/course';
 import { courseService } from '@/lib/services/course-service';
 
+type FilterLevel = "all" | CourseLevel;
+
+interface ManagementFilters {
+  level: FilterLevel;
+  location: string;
+  sortBy: string;
+}
+
 export default function CourseManagement() {
   const router = useRouter();
   const { toast } = useToast();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<ManagementFilters>({
     level: "all",
-    location: '',
-    sortBy: 'startDate'
+    location: "",
+    sortBy: "startDate",
   });
 
   const fetchCourses = async () => {
     try {
       setLoading(true);
-      const result = await courseService.getCourses(
-        {
-          level: filters.level === "all" ? undefined : filters.level,
-          location: filters.location || undefined,
-        },
-        filters.sortBy
-      );
+      const result = await courseService.getCourses({
+        level: filters.level === "all" ? undefined : filters.level as CourseLevel,
+        location: filters.location || undefined,
+      }, filters.sortBy);
       setCourses(result.courses);
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to fetch courses",
-        variant: "destructive",
-      });
+      console.error("Error fetching courses:", error);
     } finally {
       setLoading(false);
     }
@@ -109,7 +110,12 @@ export default function CourseManagement() {
           <div className="flex gap-4">
             <Select
               value={filters.level}
-              onValueChange={(value) => setFilters(prev => ({ ...prev, level: value }))}
+              onValueChange={(value: FilterLevel) =>
+                setFilters((prev: ManagementFilters) => ({
+                  ...prev,
+                  level: value,
+                }))
+              }
             >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Select Level" />

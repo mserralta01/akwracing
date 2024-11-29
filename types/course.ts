@@ -15,6 +15,7 @@ export interface Course {
   imageUrl: string;
   createdAt: string;
   updatedAt: string;
+  featured: boolean;
 }
 
 export type CourseFormData = {
@@ -29,6 +30,7 @@ export type CourseFormData = {
   availableSpots: number;
   price: number;
   imageUrl: string;
+  featured: boolean;
 }
 
 export interface Registration {

@@ -9,7 +9,7 @@ import {
   query,
   where,
   orderBy,
-  limit,
+  limit as firestoreLimit,
   startAfter,
   QueryConstraint,
   Timestamp,
@@ -17,10 +17,19 @@ import {
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, storage } from '../firebase';
-import { Course, CourseFormData } from '@/types/course';
+import { Course, CourseFormData, CourseLevel } from '@/types/course';
 
 const COURSES_COLLECTION = 'courses';
 const REGISTRATIONS_COLLECTION = 'registrations';
+
+interface CourseFilters {
+  level?: CourseLevel;
+  location?: string;
+  startDate?: Date;
+  minPrice?: number;
+  maxPrice?: number;
+  featured?: boolean;
+}
 
 export const courseService = {
   async createCourse(courseData: CourseFormData, imageFile: File): Promise<string> {
@@ -29,6 +38,12 @@ export const courseService = {
       const imageRef = ref(storage, `courses/${Date.now()}_${imageFile.name}`);
       const uploadResult = await uploadBytes(imageRef, imageFile);
       const imageUrl = await getDownloadURL(uploadResult.ref);
+
+      // Add logging
+      console.log('Creating course with data:', {
+        ...courseData,
+        featured: courseData.featured
+      });
 
       // Create course document
       const courseRef = await addDoc(collection(db, COURSES_COLLECTION), {
@@ -105,64 +120,55 @@ export const courseService = {
     }
   },
 
-  async getCourses(filters?: {
-    level?: string;
-    startDate?: Date;
-    endDate?: Date;
-    minPrice?: number;
-    maxPrice?: number;
-    location?: string;
-  }, sortBy: string = 'startDate', pageSize: number = 10, lastDoc?: any): Promise<{ courses: Course[]; lastDoc: any }> {
+  async getCourses(
+    filters?: CourseFilters,
+    sortBy: string = 'startDate',
+    limit?: number
+  ): Promise<{ courses: Course[] }> {
     try {
       const constraints: QueryConstraint[] = [];
 
-      if (filters) {
-        if (filters.level) {
-          constraints.push(where('level', '==', filters.level));
-        }
-        if (filters.location) {
-          constraints.push(where('location', '==', filters.location));
-        }
-        if (filters.startDate) {
-          constraints.push(where('startDate', '>=', filters.startDate));
-        }
-        if (filters.endDate) {
-          constraints.push(where('endDate', '<=', filters.endDate));
-        }
-        if (filters.minPrice !== undefined) {
-          constraints.push(where('price', '>=', filters.minPrice));
-        }
-        if (filters.maxPrice !== undefined) {
-          constraints.push(where('price', '<=', filters.maxPrice));
-        }
+      // Add featured filter first
+      if (filters?.featured !== undefined) {
+        console.log('Adding featured filter:', filters.featured);
+        constraints.push(where('featured', '==', filters.featured));
       }
 
-      constraints.push(orderBy(sortBy));
-      constraints.push(limit(pageSize));
-
-      if (lastDoc) {
-        constraints.push(startAfter(lastDoc));
+      // Remove the orderBy if we're filtering by featured
+      if (!filters?.featured) {
+        constraints.push(orderBy(sortBy));
       }
 
+      if (limit) {
+        constraints.push(firestoreLimit(limit));
+      }
+
+      console.log('Query constraints:', constraints);
       const q = query(collection(db, COURSES_COLLECTION), ...constraints);
       const querySnapshot = await getDocs(q);
-
-      const courses: Course[] = [];
-      querySnapshot.forEach((doc) => {
-        courses.push({
+      
+      let courses = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
           id: doc.id,
-          ...doc.data(),
-        } as Course);
+          ...data
+        } as Course;
       });
 
-      const lastVisible = querySnapshot.docs[querySnapshot.docs.length - 1];
+      // Sort manually if we're filtering by featured
+      if (filters?.featured) {
+        courses = courses.sort((a, b) => {
+          if (sortBy === 'startDate') {
+            return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+          }
+          return 0;
+        });
+      }
 
-      return {
-        courses,
-        lastDoc: lastVisible,
-      };
+      console.log('Returning courses:', courses);
+      return { courses };
     } catch (error) {
-      console.error('Error getting courses:', error);
+      console.error('Error fetching courses:', error);
       throw error;
     }
   },

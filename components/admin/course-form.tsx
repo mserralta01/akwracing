@@ -43,6 +43,7 @@ import { Editor } from "@/components/ui/editor";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { DateRange } from "react-day-picker";
 import { differenceInDays, differenceInWeeks, differenceInMonths } from "date-fns";
+import { Switch } from "@/components/ui/switch";
 
 const Tiptap = dynamic(() => import('@/components/tiptap'), {
   ssr: false,
@@ -64,6 +65,7 @@ const formSchema = z.object({
   level: z.enum(["Beginner", "Intermediate", "Advanced"]),
   availableSpots: z.number().min(1, "Must have at least 1 available spot"),
   price: z.number().min(0, "Price must be 0 or greater"),
+  featured: z.boolean().default(false),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -97,6 +99,7 @@ export function CourseForm({ initialData, isEditing = false }: CourseFormProps) 
       level: (initialData?.level as CourseLevel) || "Beginner",
       availableSpots: initialData?.availableSpots || 1,
       price: initialData?.price || 0,
+      featured: initialData?.featured ?? false,
     },
   });
 
@@ -130,6 +133,7 @@ export function CourseForm({ initialData, isEditing = false }: CourseFormProps) 
         startDate: values.startDate.toISOString(),
         endDate: values.endDate.toISOString(),
         imageUrl: initialData?.imageUrl || '',
+        featured: values.featured,
       };
 
       if (isEditing && initialData) {
@@ -343,6 +347,29 @@ export function CourseForm({ initialData, isEditing = false }: CourseFormProps) 
                     {isEditing ? "Upload a new image to change the current one" : "Upload a course image"}
                   </FormDescription>
                 </FormItem>
+
+                <FormField
+                  control={form.control}
+                  name="featured"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">
+                          Featured on Home Page
+                        </FormLabel>
+                        <FormDescription>
+                          Display this course in the Training Programs section of the home page
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
               </div>
             </div>
 

@@ -17,10 +17,18 @@ export interface Course {
   updatedAt: string;
 }
 
-export interface CourseFormData extends Omit<Course, 'id' | 'createdAt' | 'updatedAt'> {
+export type CourseFormData = {
+  title: string;
+  shortDescription: string;
+  longDescription: string;
   startDate: string;
   endDate: string;
-  imageUrl?: string; // Optional for creation, required for updates
+  duration: number;
+  location: string;
+  level: CourseLevel;
+  availableSpots: number;
+  price: number;
+  imageUrl: string;
 }
 
 export interface Registration {

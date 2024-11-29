@@ -4,11 +4,30 @@ import { collection, addDoc } from "firebase/firestore";
 import { Button } from "components/ui/button";
 import { Input } from "components/ui/input";
 import { Textarea } from "components/ui/textarea";
-import { Select } from "components/ui/select"; // Assuming you have a Select component
-import { FileUpload } from "components/ui/file-upload"; // Assuming you have a FileUpload component
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { FileUpload } from "@/components/ui/file-upload";
+
+type NewCourse = {
+  title: string;
+  briefDescription: string;
+  location: string;
+  description: string;
+  price: string;
+  duration: string;
+  level: "Beginner" | "Intermediate" | "Advanced";
+  ageRange: string;
+  photo: File | null;
+  spots: number;
+};
 
 export function AddCourse() {
-  const [newCourse, setNewCourse] = useState({
+  const [newCourse, setNewCourse] = useState<NewCourse>({
     title: "",
     briefDescription: "",
     location: "",
@@ -75,9 +94,17 @@ export function AddCourse() {
         />
         <Select
           value={newCourse.level}
-          onChange={(e) => setNewCourse({ ...newCourse, level: e.target.value })}
-          options={["Beginner", "Intermediate", "Advanced"]}
-        />
+          onValueChange={(value) => setNewCourse({ ...newCourse, level: value as NewCourse["level"] })}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select Level" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Beginner">Beginner</SelectItem>
+            <SelectItem value="Intermediate">Intermediate</SelectItem>
+            <SelectItem value="Advanced">Advanced</SelectItem>
+          </SelectContent>
+        </Select>
         <Input
           placeholder="Age Range"
           value={newCourse.ageRange}
@@ -85,7 +112,7 @@ export function AddCourse() {
           required
         />
         <FileUpload
-          onFileSelect={(file) => setNewCourse({ ...newCourse, photo: file })}
+          onFileSelect={(file: File | null) => setNewCourse({ ...newCourse, photo: file })}
         />
         <Input
           type="number"

@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
   NavigationMenu,
@@ -66,6 +67,9 @@ ListItem.displayName = "ListItem";
 export function Navigation() {
   const [isOpen, setIsOpen] = React.useState(false);
   const [courses, setCourses] = useState<Course[]>([]);
+  const pathname = usePathname();
+  
+  const isAdminSection = pathname?.startsWith('/admin');
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -107,82 +111,84 @@ export function Navigation() {
           />
         </Link>
 
-        <div className="flex-1 flex justify-center">
-          <div className="hidden md:flex space-x-8">
-            <NavigationMenu>
-              <NavigationMenuList>
-                <NavigationMenuItem>
-                  <NavigationMenuTrigger className="text-white text-lg font-bold hover:text-racing-red">
-                    Programs
-                  </NavigationMenuTrigger>
-                  <NavigationMenuContent>
-                    <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
-                      {components.map((component) => (
-                        <ListItem
-                          key={component.title}
-                          title={component.title}
-                          href={component.href}
-                        >
-                          {component.description}
-                        </ListItem>
-                      ))}
-                    </ul>
-                  </NavigationMenuContent>
-                </NavigationMenuItem>
+        {!isAdminSection && (
+          <div className="flex-1 flex justify-center">
+            <div className="hidden md:flex space-x-8">
+              <NavigationMenu>
+                <NavigationMenuList>
+                  <NavigationMenuItem>
+                    <NavigationMenuTrigger className="text-white text-lg font-bold hover:text-racing-red">
+                      Programs
+                    </NavigationMenuTrigger>
+                    <NavigationMenuContent>
+                      <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
+                        {components.map((component) => (
+                          <ListItem
+                            key={component.title}
+                            title={component.title}
+                            href={component.href}
+                          >
+                            {component.description}
+                          </ListItem>
+                        ))}
+                      </ul>
+                    </NavigationMenuContent>
+                  </NavigationMenuItem>
 
-                <NavigationMenuItem>
-                  <Link href="/courses" legacyBehavior passHref>
-                    <NavigationMenuLink className="text-white text-lg font-bold hover:text-racing-red">
-                      Courses
-                    </NavigationMenuLink>
-                  </Link>
-                </NavigationMenuItem>
+                  <NavigationMenuItem>
+                    <Link href="/courses" legacyBehavior passHref>
+                      <NavigationMenuLink className="text-white text-lg font-bold hover:text-racing-red">
+                        Courses
+                      </NavigationMenuLink>
+                    </Link>
+                  </NavigationMenuItem>
 
-                <NavigationMenuItem>
-                  <Link href="/facilities" legacyBehavior passHref>
-                    <NavigationMenuLink className="text-white text-lg font-bold hover:text-racing-red">
-                      Facilities
-                    </NavigationMenuLink>
-                  </Link>
-                </NavigationMenuItem>
+                  <NavigationMenuItem>
+                    <Link href="/facilities" legacyBehavior passHref>
+                      <NavigationMenuLink className="text-white text-lg font-bold hover:text-racing-red">
+                        Facilities
+                      </NavigationMenuLink>
+                    </Link>
+                  </NavigationMenuItem>
 
-                <NavigationMenuItem>
-                  <Link href="/instructors" legacyBehavior passHref>
-                    <NavigationMenuLink className="text-white text-lg font-bold hover:text-racing-red">
-                      Instructors
-                    </NavigationMenuLink>
-                  </Link>
-                </NavigationMenuItem>
-                <NavigationMenuItem>
-                  <Link href="/contact" legacyBehavior passHref>
-                    <NavigationMenuLink className="text-white text-lg font-bold hover:text-racing-red">
-                      Contact
-                    </NavigationMenuLink>
-                  </Link>
-                </NavigationMenuItem>
-              </NavigationMenuList>
-            </NavigationMenu>
+                  <NavigationMenuItem>
+                    <Link href="/instructors" legacyBehavior passHref>
+                      <NavigationMenuLink className="text-white text-lg font-bold hover:text-racing-red">
+                        Instructors
+                      </NavigationMenuLink>
+                    </Link>
+                  </NavigationMenuItem>
+
+                  <NavigationMenuItem>
+                    <Link href="/contact" legacyBehavior passHref>
+                      <NavigationMenuLink className="text-white text-lg font-bold hover:text-racing-red">
+                        Contact
+                      </NavigationMenuLink>
+                    </Link>
+                  </NavigationMenuItem>
+                </NavigationMenuList>
+              </NavigationMenu>
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Mobile Navigation */}
-        <div className="md:hidden flex items-center">
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="text-white focus:outline-none"
-          >
-            <Menu className="h-6 w-6" />
-          </button>
-        </div>
+        {!isAdminSection && (
+          <div className="md:hidden flex items-center">
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="text-white focus:outline-none"
+            >
+              <Menu className="h-6 w-6" />
+            </button>
+          </div>
+        )}
 
-        {/* Auth Buttons */}
         <div className="hidden md:flex ml-auto items-center space-x-4">
           <AuthButtons />
         </div>
       </div>
 
-      {/* Mobile Menu */}
-      {isOpen && (
+      {!isAdminSection && isOpen && (
         <div className="md:hidden bg-black text-white p-4 space-y-4">
           <Link href="/programs" className="block text-lg font-bold hover:text-racing-red">
             Programs

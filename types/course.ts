@@ -54,3 +54,8 @@ export interface ImageUploadProps {
   value?: string;
   onChange: (file: File | null) => void;
 }
+
+export type DateRange = {
+  from: Date | undefined;
+  to: Date | undefined;
+};

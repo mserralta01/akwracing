@@ -8,7 +8,7 @@ import * as z from "zod";
 import { format } from "date-fns";
 import { Course, CourseFormData, CourseLevel } from '@/types/course';
 import { courseService } from '@/lib/services/course-service';
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -39,6 +39,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import dynamic from 'next/dynamic';
 import { ImageUpload } from '@/components/image-upload';
+import { Editor } from "@/components/ui/editor";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { DateRange } from "react-day-picker";
+import { differenceInDays, differenceInWeeks, differenceInMonths } from "date-fns";
 
 const Tiptap = dynamic(() => import('@/components/tiptap'), {
   ssr: false,
@@ -75,6 +79,10 @@ export function CourseForm({ initialData, isEditing = false }: CourseFormProps) 
   const [loading, setLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [createdCourseId, setCreatedCourseId] = useState<string | null>(null);
+  const [dateRange, setDateRange] = useState<DateRange>({
+    from: undefined,
+    to: undefined,
+  });
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -91,6 +99,28 @@ export function CourseForm({ initialData, isEditing = false }: CourseFormProps) 
       price: initialData?.price || 0,
     },
   });
+
+  const calculateDuration = (from: Date, to: Date) => {
+    const days = differenceInDays(to, from) + 1; // +1 to include both start and end dates
+    if (days <= 15) {
+      return `${days} day${days === 1 ? '' : 's'}`;
+    } else if (days <= 30) {
+      const weeks = Math.ceil(days / 7);
+      return `${weeks} week${weeks === 1 ? '' : 's'}`;
+    } else {
+      const months = Math.ceil(differenceInMonths(to, from));
+      return `${months} month${months === 1 ? '' : 's'}`;
+    }
+  };
+
+  useEffect(() => {
+    if (dateRange?.from && dateRange?.to) {
+      const days = differenceInDays(dateRange.to, dateRange.from) + 1;
+      form.setValue("startDate", dateRange.from);
+      form.setValue("endDate", dateRange.to);
+      form.setValue("duration", days);
+    }
+  }, [dateRange, form]);
 
   const onSubmit = async (values: FormValues) => {
     try {
@@ -124,7 +154,7 @@ export function CourseForm({ initialData, isEditing = false }: CourseFormProps) 
           description: "Course created successfully",
         });
       }
-      router.push('/admin/courses');
+      router.push('/admin/course-management');
       router.refresh();
     } catch (error) {
       toast({
@@ -168,11 +198,14 @@ export function CourseForm({ initialData, isEditing = false }: CourseFormProps) 
                     <FormItem>
                       <FormLabel>Short Description</FormLabel>
                       <FormControl>
-                        <Textarea
-                          placeholder="Brief description of the course"
-                          {...field}
+                        <Editor
+                          content={field.value}
+                          onChange={field.onChange}
                         />
                       </FormControl>
+                      <FormDescription>
+                        A brief summary of the course (appears in course listings)
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -185,11 +218,14 @@ export function CourseForm({ initialData, isEditing = false }: CourseFormProps) 
                     <FormItem>
                       <FormLabel>Long Description</FormLabel>
                       <FormControl>
-                        <Tiptap
+                        <Editor
                           content={field.value}
                           onChange={field.onChange}
                         />
                       </FormControl>
+                      <FormDescription>
+                        Detailed course description (appears on course details page)
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -228,98 +264,18 @@ export function CourseForm({ initialData, isEditing = false }: CourseFormProps) 
                   name="startDate"
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
-                      <FormLabel>Start Date</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={"outline"}
-                              className={cn(
-                                "w-[240px] pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date: Date) =>
-                              date < new Date()
-                            }
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="endDate"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>End Date</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={"outline"}
-                              className={cn(
-                                "w-[240px] pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date: Date) =>
-                              date < form.getValues("startDate")
-                            }
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="duration"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Duration (days)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value))}
-                        />
-                      </FormControl>
+                      <FormLabel>Course Dates</FormLabel>
+                      <DateRangePicker
+                        dateRange={dateRange}
+                        onDateRangeChange={(range: DateRange | undefined) => {
+                          if (range) {
+                            setDateRange(range);
+                          }
+                        }}
+                      />
+                      <FormDescription>
+                        Select the course start and end dates. Duration will be calculated automatically.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -394,7 +350,7 @@ export function CourseForm({ initialData, isEditing = false }: CourseFormProps) 
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => router.push('/admin/courses')}
+                onClick={() => router.push('/admin/course-management')}
                 disabled={loading}
               >
                 Cancel

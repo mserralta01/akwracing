@@ -83,3 +83,75 @@
     @apply bg-gray-800 text-white;
   }
 }
+
+@layer components {
+  .rdp {
+    margin: 0;
+  }
+
+  .rdp-month {
+    background-color: hsl(var(--background));
+  }
+
+  .rdp-caption {
+    padding: 0;
+    margin-bottom: 1rem;
+  }
+
+  .rdp-cell {
+    width: 40px;
+    height: 40px;
+    text-align: center;
+    position: relative;
+  }
+
+  .rdp-head_cell {
+    width: 40px;
+    height: 40px;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: hsl(var(--muted-foreground));
+    font-size: 0.75rem;
+  }
+
+  .rdp-day {
+    width: 40px;
+    height: 40px;
+    border-radius: 4px;
+    transition: all 0.2s;
+  }
+
+  .rdp-day_selected {
+    background-color: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+  }
+
+  .rdp-day_selected:hover {
+    background-color: hsl(var(--primary));
+    opacity: 0.8;
+  }
+
+  .rdp-day_today {
+    background-color: hsl(var(--accent));
+    color: hsl(var(--accent-foreground));
+  }
+
+  .rdp-button:hover:not([disabled]):not(.rdp-day_selected) {
+    background-color: hsl(var(--accent));
+    color: hsl(var(--accent-foreground));
+  }
+
+  .rdp-nav_button {
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    background-color: transparent;
+    color: hsl(var(--foreground));
+    border: 1px solid hsl(var(--border));
+  }
+
+  .rdp-nav_button:hover {
+    background-color: hsl(var(--accent));
+    color: hsl(var(--accent-foreground));
+  }
+}

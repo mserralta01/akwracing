@@ -78,7 +78,13 @@ export default function InstructorManagement() {
                   {instructor.name}
                 </div>
                 <div>{instructor.role}</div>
-                <div>{instructor.experience}</div>
+                <div>
+                  {instructor.experiences.map((exp, index) => (
+                    <span key={index}>
+                      {exp.year}{index < instructor.experiences.length - 1 ? ", " : ""}
+                    </span>
+                  ))}
+                </div>
                 <div>
                   {instructor.featured ? (
                     <Badge>Featured</Badge>

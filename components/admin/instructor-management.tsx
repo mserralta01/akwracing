@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus } from "lucide-react";
+import { Plus, Pencil, Trash2, MoreHorizontal } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -11,6 +11,15 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useToast } from "@/components/ui/use-toast";
 import { instructorService } from "@/lib/services/instructor-service";
 import { Instructor } from "@/types/instructor";
 import Image from "next/image";
@@ -19,21 +28,45 @@ export default function InstructorManagement() {
   const [instructors, setInstructors] = useState<Instructor[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const { toast } = useToast();
+
+  const fetchInstructors = async () => {
+    try {
+      const result = await instructorService.getInstructors();
+      setInstructors(result.instructors);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch instructors",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchInstructors = async () => {
-      try {
-        const result = await instructorService.getInstructors();
-        setInstructors(result.instructors);
-      } catch (error) {
-        console.error("Error fetching instructors:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchInstructors();
   }, []);
+
+  const handleDelete = async (instructorId: string) => {
+    if (!window.confirm("Are you sure you want to delete this instructor?")) return;
+
+    try {
+      await instructorService.deleteInstructor(instructorId);
+      toast({
+        title: "Success",
+        description: "Instructor deleted successfully",
+      });
+      fetchInstructors();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete instructor",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <Card>
@@ -79,11 +112,12 @@ export default function InstructorManagement() {
                 </div>
                 <div>{instructor.role}</div>
                 <div>
-                  {instructor.experiences.map((exp, index) => (
+                  {instructor.experiences?.map((exp, index) => (
                     <span key={index}>
-                      {exp.year}{index < instructor.experiences.length - 1 ? ", " : ""}
+                      {exp.description}
+                      {index < (instructor.experiences?.length || 0) - 1 ? ", " : ""}
                     </span>
-                  ))}
+                  )) || "No experience listed"}
                 </div>
                 <div>
                   {instructor.featured ? (
@@ -92,32 +126,31 @@ export default function InstructorManagement() {
                     <Badge variant="outline">Not Featured</Badge>
                   )}
                 </div>
-                <div className="flex justify-end gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      router.push(`/admin/academy/instructor-management/${instructor.id}/edit`)
-                    }
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={async () => {
-                      if (window.confirm("Are you sure you want to delete this instructor?")) {
-                        try {
-                          await instructorService.deleteInstructor(instructor.id);
-                          setInstructors(instructors.filter((i) => i.id !== instructor.id));
-                        } catch (error) {
-                          console.error("Error deleting instructor:", error);
-                        }
-                      }
-                    }}
-                  >
-                    Delete
-                  </Button>
+                <div className="text-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="h-8 w-8 p-0">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => router.push(`/admin/academy/instructor-management/${instructor.id}/edit`)}
+                      >
+                        <Pencil className="mr-2 h-4 w-4" />
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="text-red-600"
+                        onClick={() => handleDelete(instructor.id)}
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             ))

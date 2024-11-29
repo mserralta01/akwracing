@@ -1,11 +1,12 @@
 "use client";
 
+import * as React from "react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Instructor, Language, SocialMedia, RacingIcon, ExperienceEntry, AchievementEntry, InstructorFormData } from "@/types/instructor";
+import { Instructor, RacingIcon, InstructorFormData } from "@/types/instructor";
 import { instructorService } from "@/lib/services/instructor-service";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,26 +19,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { FileUpload } from "@/components/ui/file-upload";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { X } from "lucide-react";
 import { RacingIconSelector } from "@/components/ui/racing-icon-selector";
-import { 
-  Trophy, Flag, Medal, Star, Crown, 
-  Scroll, Timer, Car, Wrench, Users, 
-  Target, TrendingUp, Award
-} from "lucide-react";
-import React from "react";
-
-const languageLevelEnum = z.enum(['Basic', 'Intermediate', 'Fluent', 'Native']);
+import { icons } from "@/lib/constants/icons";
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -56,7 +44,7 @@ const formSchema = z.object({
   })),
   languages: z.array(z.object({
     language: z.string(),
-    level: languageLevelEnum
+    level: z.enum(['Basic', 'Intermediate', 'Fluent', 'Native'])
   })),
   featured: z.boolean().default(false),
   socialMedia: z.object({
@@ -76,115 +64,103 @@ type InstructorFormProps = {
   isEditing?: boolean;
 };
 
-export const icons = {
-  Trophy: Trophy,
-  Flag: Flag,
-  Medal: Medal,
-  Star: Star,
-  Crown: Crown,
-  Certificate: Scroll,
-  Timer: Timer,
-  Car: Car,
-  Tools: Wrench,
-  Users: Users,
-  Target: Target,
-  Chart: TrendingUp,
-  Award: Award,
-};
+interface ExperienceEntry {
+  description: string;
+  icon: RacingIcon;
+  year: string;
+}
+
+interface AchievementEntry {
+  description: string;
+  icon: RacingIcon;
+  year: string;
+}
 
 export function InstructorForm({ initialData, isEditing = false }: InstructorFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [newExperience, setNewExperience] = useState({
+  const [newExperience, setNewExperience] = useState<ExperienceEntry>({
     description: "",
-    icon: "Trophy" as RacingIcon,
+    icon: "Trophy",
     year: new Date().getFullYear().toString()
   });
-  const [newAchievement, setNewAchievement] = useState({
+  const [newAchievement, setNewAchievement] = useState<AchievementEntry>({
     description: "",
-    icon: "Trophy" as RacingIcon,
+    icon: "Trophy",
     year: new Date().getFullYear().toString()
   });
 
-  const form = useForm<FormValues>({
+  const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: initialData?.name ?? "",
-      role: initialData?.role ?? "",
-      experiences: initialData?.experiences ?? [],
-      achievements: initialData?.achievements ?? [],
-      languages: initialData?.languages ?? [],
-      featured: initialData?.featured ?? false,
-      socialMedia: initialData?.socialMedia ?? {
+    defaultValues: initialData || {
+      name: "",
+      role: "",
+      experiences: [],
+      achievements: [],
+      languages: [],
+      featured: false,
+      socialMedia: {
         instagram: "",
         facebook: "",
         linkedin: "",
         twitter: "",
-        youtube: ""
+        youtube: "",
       },
-      imageUrl: initialData?.imageUrl
     },
   });
 
-  const handleImageChange = (file: File | null) => {
-    setImageFile(file);
-  };
-
   const addExperience = () => {
     if (newExperience.description.trim()) {
-      const currentExperiences = (form.getValues("experiences") || []) as ExperienceEntry[];
+      const currentExperiences = form.getValues("experiences") || [];
       form.setValue("experiences", [...currentExperiences, { ...newExperience }]);
       setNewExperience({
         description: "",
-        icon: "Trophy" as RacingIcon,
+        icon: "Trophy",
         year: new Date().getFullYear().toString()
       });
     }
   };
 
   const removeExperience = (index: number) => {
-    const currentExperiences = form.getValues("experiences") as ExperienceEntry[];
-    if (currentExperiences) {
-      form.setValue("experiences", currentExperiences.filter((_, i: number) => i !== index));
-    }
+    const currentExperiences = form.getValues("experiences") || [];
+    form.setValue("experiences", currentExperiences.filter((_, i) => i !== index));
   };
 
   const addAchievement = () => {
     if (newAchievement.description.trim()) {
-      const currentAchievements = (form.getValues("achievements") || []) as AchievementEntry[];
+      const currentAchievements = form.getValues("achievements") || [];
       form.setValue("achievements", [...currentAchievements, { ...newAchievement }]);
       setNewAchievement({
         description: "",
-        icon: "Trophy" as RacingIcon,
+        icon: "Trophy",
         year: new Date().getFullYear().toString()
       });
     }
   };
 
   const removeAchievement = (index: number) => {
-    const currentAchievements = form.getValues("achievements") as AchievementEntry[];
-    if (currentAchievements) {
-      form.setValue("achievements", currentAchievements.filter((_, i: number) => i !== index));
-    }
+    const currentAchievements = form.getValues("achievements") || [];
+    form.setValue("achievements", currentAchievements.filter((_, i) => i !== index));
+  };
+
+  const handleImageChange = (file: File | null) => {
+    setImageFile(file);
   };
 
   const onSubmit = async (values: FormValues) => {
     try {
       setLoading(true);
-      
       const formData: InstructorFormData = {
-        name: values.name,
-        role: values.role,
-        experiences: values.experiences as ExperienceEntry[],
-        achievements: values.achievements as AchievementEntry[],
-        languages: values.languages,
-        featured: values.featured,
+        ...values,
+        imageUrl: values.imageUrl || '', // Ensure imageUrl is always a string
+        experiences: values.experiences || [],
+        achievements: values.achievements || [],
+        languages: values.languages || [],
         socialMedia: values.socialMedia || {},
-        imageUrl: values.imageUrl || ''
       };
-      
+
       if (isEditing && initialData) {
         await instructorService.updateInstructor(initialData.id, formData, imageFile);
         toast({
@@ -198,14 +174,12 @@ export function InstructorForm({ initialData, isEditing = false }: InstructorFor
           description: "Instructor created successfully",
         });
       }
-      
       router.push("/admin/academy/instructor-management");
       router.refresh();
     } catch (error) {
-      console.error("Error submitting instructor form:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Something went wrong",
+        description: "Something went wrong",
         variant: "destructive",
       });
     } finally {
@@ -215,9 +189,6 @@ export function InstructorForm({ initialData, isEditing = false }: InstructorFor
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>{isEditing ? 'Edit Instructor' : 'Create Instructor'}</CardTitle>
-      </CardHeader>
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -278,10 +249,11 @@ export function InstructorForm({ initialData, isEditing = false }: InstructorFor
                   <div className="space-y-2">
                     {(form.watch("experiences") || []).map((experience, index) => (
                       <div key={index} className="flex items-center gap-2 bg-secondary/20 p-2 rounded-md">
-                        {icons[experience.icon as RacingIcon] && 
-                          React.createElement(icons[experience.icon as RacingIcon], { 
-                            className: "h-4 w-4 text-racing-red" 
-                          })}
+                        {icons[experience.icon as RacingIcon] && (
+                          <div className="h-4 w-4 text-racing-red">
+                            {React.createElement(icons[experience.icon as RacingIcon])}
+                          </div>
+                        )}
                         <span className="flex-1">{experience.description}</span>
                         <span className="text-sm text-muted-foreground">{experience.year}</span>
                         <Button
@@ -323,10 +295,11 @@ export function InstructorForm({ initialData, isEditing = false }: InstructorFor
                   <div className="space-y-2">
                     {(form.watch("achievements") || []).map((achievement, index) => (
                       <div key={index} className="flex items-center gap-2 bg-secondary/20 p-2 rounded-md">
-                        {icons[achievement.icon as RacingIcon] && 
-                          React.createElement(icons[achievement.icon as RacingIcon], { 
-                            className: "h-4 w-4 text-racing-red" 
-                          })}
+                        {icons[achievement.icon as RacingIcon] && (
+                          <div className="h-4 w-4 text-racing-red">
+                            {React.createElement(icons[achievement.icon as RacingIcon])}
+                          </div>
+                        )}
                         <span className="flex-1">{achievement.description}</span>
                         <span className="text-sm text-muted-foreground">{achievement.year}</span>
                         <Button

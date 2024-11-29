@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { Course, CourseLevel } from "@/types/course";
 import { courseService } from "@/lib/services/course-service";
@@ -22,7 +22,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { AdminGuard } from "@/components/auth/admin-guard";
+import { db } from "@/lib/firebase";
+import { collection, onSnapshot, query } from "firebase/firestore";
 
 export default function CourseManagement() {
   const router = useRouter();
@@ -31,23 +32,31 @@ export default function CourseManagement() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchCourses();
-  }, []);
+    const coursesQuery = query(collection(db, 'courses'));
+    
+    const unsubscribe = onSnapshot(
+      coursesQuery,
+      (snapshot) => {
+        const fetchedCourses = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Course[];
+        setCourses(fetchedCourses);
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Error fetching courses:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch courses",
+          variant: "destructive",
+        });
+        setLoading(false);
+      }
+    );
 
-  const fetchCourses = async () => {
-    try {
-      const { courses: fetchedCourses } = await courseService.getCourses({});
-      setCourses(fetchedCourses);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to fetch courses",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+    return () => unsubscribe();
+  }, [toast]);
 
   const handleDelete = async (courseId: string) => {
     if (!window.confirm("Are you sure you want to delete this course?")) return;
@@ -58,7 +67,6 @@ export default function CourseManagement() {
         title: "Success",
         description: "Course deleted successfully",
       });
-      fetchCourses();
     } catch (error) {
       toast({
         title: "Error",
@@ -82,7 +90,7 @@ export default function CourseManagement() {
   };
 
   return (
-    <AdminGuard>
+    <Suspense fallback={<div className="p-4 text-center">Loading...</div>}>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Courses</CardTitle>
@@ -100,9 +108,7 @@ export default function CourseManagement() {
               <div>Price</div>
               <div className="text-right">Actions</div>
             </div>
-            {loading ? (
-              <div className="p-4 text-center">Loading...</div>
-            ) : courses.length === 0 ? (
+            {courses.length === 0 ? (
               <div className="p-4 text-center text-muted-foreground">
                 No courses found
               </div>
@@ -152,6 +158,6 @@ export default function CourseManagement() {
           </div>
         </CardContent>
       </Card>
-    </AdminGuard>
+    </Suspense>
   );
 }

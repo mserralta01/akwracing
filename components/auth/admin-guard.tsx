@@ -1,62 +1,52 @@
 "use client";
 
-import { useAuth } from "contexts/auth-context";
+import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { isAdminUser } from "lib/auth";
+import { isAdminUser } from "@/lib/auth";
 
 export function AdminGuard({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-  const [isChecking, setIsChecking] = useState(true);
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkAdmin = async () => {
-      if (!loading) {
+    async function checkAuth() {
+      if (!authLoading) {
         if (!user) {
           router.push("/");
           return;
         }
 
         try {
-          const adminStatus = await isAdminUser(user);
-          setIsAdmin(adminStatus);
-          if (!adminStatus) {
+          const isAdmin = await isAdminUser(user);
+          setIsAuthorized(isAdmin);
+          if (!isAdmin) {
             router.push("/");
           }
         } catch (error) {
           console.error("Error checking admin status:", error);
           router.push("/");
         } finally {
-          setIsChecking(false);
+          setLoading(false);
         }
       }
-    };
+    }
 
-    checkAdmin();
-  }, [user, loading, router]);
+    checkAuth();
+  }, [user, authLoading, router]);
 
-  if (loading || isChecking) {
+  if (loading || authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="flex flex-col items-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-racing-red"></div>
-          <p className="text-lg">Loading...</p>
-        </div>
+      <div className="flex h-screen items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
     );
   }
 
-  if (!user || !isAdmin) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-2">Access Denied</h2>
-          <p className="text-gray-600">You do not have permission to access this page.</p>
-        </div>
-      </div>
-    );
+  if (!isAuthorized) {
+    return null;
   }
 
   return <>{children}</>;

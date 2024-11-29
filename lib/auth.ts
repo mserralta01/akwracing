@@ -1,7 +1,7 @@
 import { User, signInWithPopup, GoogleAuthProvider, Auth } from "firebase/auth";
-import { getFirestore, doc, getDoc } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "./firebase";
 
-const db = getFirestore();
 const provider = new GoogleAuthProvider();
 
 export async function signInWithGoogle(auth: Auth): Promise<User | null> {
@@ -14,9 +14,12 @@ export async function signInWithGoogle(auth: Auth): Promise<User | null> {
   }
 }
 
-export async function isAdminUser(user: User | null): Promise<boolean> {
-  if (!user) return false;
-
-  const userDoc = await getDoc(doc(db, "users", user.uid));
-  return userDoc.exists() && userDoc.data().role === "admin";
+export async function isAdminUser(user: User): Promise<boolean> {
+  try {
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+    return userDoc.exists() && userDoc.data()?.role === "admin";
+  } catch (error) {
+    console.error("Error checking admin status:", error);
+    return false;
+  }
 } 

@@ -116,73 +116,35 @@ export const courseService = {
     }
   },
 
-  async getCourses(
-    filters?: CourseFilters,
-    sortBy: string = 'startDate',
-    limit?: number
-  ): Promise<{ courses: Course[] }> {
+  async getCourses(filters: CourseFilters = {}, orderByField?: string, limit?: number) {
     try {
-      let constraints: QueryConstraint[] = [];
-
-      // Add featured filter if specified
-      if (filters?.featured !== undefined) {
-        console.log('Adding featured filter:', filters.featured);
-        constraints.push(where('featured', '==', filters.featured));
+      const queryConstraints: QueryConstraint[] = [];
+      
+      // Add filters
+      if (filters.featured !== undefined) {
+        queryConstraints.push(where('featured', '==', filters.featured));
       }
+      // ... other filters
 
-      // Add other filters
-      if (filters?.level) {
-        constraints.push(where('level', '==', filters.level));
-      }
-
-      if (filters?.location) {
-        constraints.push(where('location', '==', filters.location));
-      }
-
-      if (filters?.startDate) {
-        constraints.push(where('startDate', '>=', filters.startDate));
-      }
-
-      if (filters?.minPrice !== undefined) {
-        constraints.push(where('price', '>=', filters.minPrice));
-      }
-
-      if (filters?.maxPrice !== undefined) {
-        constraints.push(where('price', '<=', filters.maxPrice));
-      }
-
-      // Add sorting
-      if (sortBy && !filters?.featured) {
-        constraints.push(orderBy(sortBy));
+      // Add ordering if specified
+      if (orderByField) {
+        queryConstraints.push(orderBy(orderByField));
       }
 
       // Add limit if specified
       if (limit) {
-        constraints.push(firestoreLimit(limit));
+        queryConstraints.push(firestoreLimit(limit));
       }
 
-      try {
-        const q = query(collection(db, COURSES_COLLECTION), ...constraints);
-        const querySnapshot = await getDocs(q);
+      const q = query(collection(db, COURSES_COLLECTION), ...queryConstraints);
+      const snapshot = await getDocs(q);
+      
+      const courses = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Course[];
 
-        const courses = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        } as Course));
-
-        // Manual sorting for featured courses
-        if (filters?.featured && sortBy === 'startDate') {
-          courses.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
-        }
-
-        return { courses };
-      } catch (error: any) {
-        if (error.code === 'permission-denied') {
-          console.error('Permission denied accessing courses:', error);
-          throw new Error('Unable to access courses due to permissions');
-        }
-        throw error;
-      }
+      return { courses };
     } catch (error) {
       console.error('Error fetching courses:', error);
       throw error;

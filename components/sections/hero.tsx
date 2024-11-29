@@ -7,7 +7,7 @@ import { Trophy, ArrowRight } from "lucide-react";
 
 export function HeroSection() {
   return (
-    <section className="relative h-[calc(100vh-64px)] flex items-center justify-center overflow-hidden mt-16">
+    <section className="relative h-[calc(100vh-64px)] flex items-center justify-center overflow-hidden">
       {/* Video Background with Overlay */}
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-black/60 z-10" />

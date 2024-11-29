@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
+import { Calendar, Users, DollarSign } from "lucide-react";
 
 export function ProgramsSection() {
   const router = useRouter();
@@ -88,10 +89,10 @@ export function ProgramsSection() {
         </motion.div>
 
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[1, 2, 3].map((i) => (
               <Card key={i} className="animate-pulse">
-                <div className="h-48 bg-gray-300" />
+                <div className="h-64 bg-gray-300" />
                 <CardContent className="p-4">
                   <div className="h-6 bg-gray-300 rounded mb-2" />
                   <div className="h-4 bg-gray-300 rounded w-3/4" />
@@ -104,7 +105,7 @@ export function ProgramsSection() {
             No featured courses available at the moment.
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {featuredCourses.map((course) => (
               <motion.div
                 key={course.id}
@@ -113,8 +114,8 @@ export function ProgramsSection() {
                 transition={{ duration: 0.5 }}
                 viewport={{ once: true }}
               >
-                <Card className="overflow-hidden bg-card hover:shadow-lg transition-shadow">
-                  <div className="relative h-48">
+                <Card className="overflow-hidden h-full">
+                  <div className="relative h-64">
                     <Image
                       src={course.imageUrl}
                       alt={course.title}
@@ -122,20 +123,36 @@ export function ProgramsSection() {
                       className="object-cover"
                     />
                   </div>
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="text-lg font-semibold">{course.title}</h3>
-                      <Badge variant={getLevelBadgeVariant(course.level as CourseLevel)}>
+                  <CardContent className="pt-6">
+                    <div className="flex flex-col items-center text-center">
+                      <Badge 
+                        variant={getLevelBadgeVariant(course.level as CourseLevel)}
+                        className="mb-4"
+                      >
                         {course.level}
                       </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      {course.shortDescription}
-                    </p>
-                    <div className="flex justify-between items-center">
-                      <span className="font-semibold">${course.price}</span>
+                      <h3 className="text-xl font-bold mb-2">{course.title}</h3>
+                      <div 
+                        className="text-muted-foreground mb-6"
+                        dangerouslySetInnerHTML={{ __html: course.shortDescription }}
+                      />
+                      <div className="space-y-2 w-full mb-6">
+                        <div className="flex items-center justify-center text-sm">
+                          <Calendar className="h-4 w-4 mr-2 text-racing-red" />
+                          <span>{new Date(course.startDate).toLocaleDateString()}</span>
+                        </div>
+                        <div className="flex items-center justify-center text-sm">
+                          <Users className="h-4 w-4 mr-2 text-racing-red" />
+                          <span>{course.availableSpots} spots remaining</span>
+                        </div>
+                        <div className="flex items-center justify-center text-sm font-semibold">
+                          <DollarSign className="h-4 w-4 mr-2 text-racing-red" />
+                          <span>${course.price}</span>
+                        </div>
+                      </div>
                       <Button
                         variant="default"
+                        className="w-full bg-racing-red hover:bg-red-700"
                         onClick={() => router.push(`/courses/${course.id}`)}
                       >
                         Learn More

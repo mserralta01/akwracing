@@ -31,7 +31,7 @@ export default function RootLayout({
         >
           <AuthProvider>
             <Navigation />
-            <main className="flex-1 pt-16">
+            <main className="flex-1">
               {children}
             </main>
             <Footer />

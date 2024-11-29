@@ -13,12 +13,8 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
-import { Menu, ArrowRight } from "lucide-react";
+import { Menu } from "lucide-react";
 import { AuthButtons } from "./auth/auth-buttons";
-import { useEffect, useState } from "react";
-import { Course } from "@/types/course";
-import { courseService } from "@/lib/services/course-service";
-import { Badge } from "./ui/badge";
 
 const components: { title: string; href: string; description: string }[] = [
   {
@@ -66,49 +62,23 @@ ListItem.displayName = "ListItem";
 
 export function Navigation() {
   const [isOpen, setIsOpen] = React.useState(false);
-  const [courses, setCourses] = useState<Course[]>([]);
   const pathname = usePathname();
   
   const isAdminSection = pathname?.startsWith('/admin');
-
-  useEffect(() => {
-    const fetchCourses = async () => {
-      try {
-        const result = await courseService.getCourses({ featured: true });
-        setCourses(result.courses);
-      } catch (error) {
-        console.error("Error fetching courses:", error);
-      }
-    };
-
-    fetchCourses();
-  }, []);
-
-  const getLevelBadgeVariant = (level: string) => {
-    switch (level) {
-      case "Beginner":
-        return "default";
-      case "Intermediate":
-        return "secondary";
-      case "Advanced":
-        return "destructive";
-      default:
-        return "outline";
-    }
-  };
 
   return (
     <nav className="bg-black border-b">
       <div className="flex h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center">
-          <Image
-            src="/AKWacademylogo.png"
-            alt="AKW Racing Academy Logo"
-            width={160}
-            height={160}
-            className="object-contain -my-12"
-            priority
-          />
+          <div className="relative w-[160px] h-[60px]">
+            <Image
+              src="/AKWacademylogo.png"
+              alt="AKW Racing Academy Logo"
+              fill
+              className="object-contain"
+              priority
+            />
+          </div>
         </Link>
 
         {!isAdminSection && (

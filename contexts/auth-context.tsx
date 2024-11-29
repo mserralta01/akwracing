@@ -10,6 +10,8 @@ import {
   createUserWithEmailAndPassword
 } from "firebase/auth";
 import { auth, googleProvider } from "lib/firebase";
+import { useRouter } from "next/navigation";
+import { isAdminUser } from "lib/auth";
 
 type AuthContextType = {
   user: User | null;
@@ -20,21 +22,24 @@ type AuthContextType = {
   signUp: (email: string, password: string) => Promise<void>;
 };
 
-const AuthContext = createContext<AuthContextType>({
-  user: null as User | null,
+const defaultContext: AuthContextType = {
+  user: null,
   loading: true,
-  signIn: async () => Promise.resolve(),
-  signInWithGoogle: async () => Promise.resolve(null),
-  signOut: async () => Promise.resolve(),
-  signUp: async () => Promise.resolve(),
-});
+  signIn: async () => {},
+  signInWithGoogle: async () => null,
+  signOut: async () => {},
+  signUp: async () => {},
+};
+
+const AuthContext = createContext<AuthContextType>(defaultContext);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
       setLoading(false);
     });
@@ -42,28 +47,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => unsubscribe();
   }, []);
 
-  const signIn = async (email: string, password: string) => {
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-    } catch (error) {
-      console.error("Error signing in:", error);
-      throw error;
-    }
-  };
-
   const signInWithGoogle = async (): Promise<User | null> => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
-      return result.user;
+      try {
+        const adminStatus = await isAdminUser(result.user);
+        if (adminStatus) {
+          router.push("/admin");
+        }
+        return result.user;
+      } catch (error) {
+        console.error("Error checking admin status:", error);
+        return result.user;
+      }
     } catch (error) {
       console.error("Error signing in with Google:", error);
       return null;
     }
   };
 
+  const signIn = async (email: string, password: string) => {
+    try {
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      const adminStatus = await isAdminUser(result.user);
+      if (adminStatus) {
+        router.push("/admin");
+      }
+    } catch (error) {
+      console.error("Error signing in:", error);
+      throw error;
+    }
+  };
+
   const signOut = async () => {
     try {
       await firebaseSignOut(auth);
+      router.push("/");
     } catch (error) {
       console.error("Error signing out:", error);
     }
@@ -78,8 +97,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const value = {
+    user,
+    loading,
+    signIn,
+    signInWithGoogle,
+    signOut,
+    signUp,
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signInWithGoogle, signOut, signUp }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

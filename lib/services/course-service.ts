@@ -128,7 +128,7 @@ export const courseService = {
     try {
       const constraints: QueryConstraint[] = [];
 
-      // Add featured filter first
+      // Add featured filter first if specified
       if (filters?.featured !== undefined) {
         console.log('Adding featured filter:', filters.featured);
         constraints.push(where('featured', '==', filters.featured));
@@ -143,17 +143,16 @@ export const courseService = {
         constraints.push(firestoreLimit(limit));
       }
 
-      console.log('Query constraints:', constraints);
+      // Create the query
       const q = query(collection(db, COURSES_COLLECTION), ...constraints);
+      
+      // Execute query without requiring authentication
       const querySnapshot = await getDocs(q);
       
-      let courses = querySnapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data
-        } as Course;
-      });
+      let courses = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as Course));
 
       // Sort manually if we're filtering by featured
       if (filters?.featured) {
@@ -165,7 +164,6 @@ export const courseService = {
         });
       }
 
-      console.log('Returning courses:', courses);
       return { courses };
     } catch (error) {
       console.error('Error fetching courses:', error);

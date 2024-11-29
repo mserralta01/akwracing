@@ -86,6 +86,7 @@ export function SignInDialog({ open, onOpenChange }: SignInDialogProps) {
       const user = await signInWithGoogle();
       if (user) {
         await handleAdminNavigation(user);
+        onOpenChange(false);
       } else {
         toast({
           variant: "destructive",

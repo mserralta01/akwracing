@@ -14,6 +14,7 @@ import {
   QueryConstraint,
   Timestamp,
   increment,
+  setDoc,
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, storage } from '../firebase';
@@ -32,28 +33,23 @@ interface CourseFilters {
 }
 
 export const courseService = {
-  async createCourse(courseData: CourseFormData, imageFile: File): Promise<string> {
+  async createCourse(courseData: CourseFormData, imageFile: File | null = null): Promise<void> {
     try {
-      // Upload image first
-      const imageRef = ref(storage, `courses/${Date.now()}_${imageFile.name}`);
-      const uploadResult = await uploadBytes(imageRef, imageFile);
-      const imageUrl = await getDownloadURL(uploadResult.ref);
-
-      // Add logging
-      console.log('Creating course with data:', {
+      const courseRef = doc(collection(db, COURSES_COLLECTION));
+      const createData: any = {
         ...courseData,
-        featured: courseData.featured
-      });
-
-      // Create course document
-      const courseRef = await addDoc(collection(db, COURSES_COLLECTION), {
-        ...courseData,
-        imageUrl,
+        id: courseRef.id,
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
-      });
+      };
 
-      return courseRef.id;
+      if (imageFile) {
+        const imageRef = ref(storage, `courses/${Date.now()}_${imageFile.name}`);
+        const uploadResult = await uploadBytes(imageRef, imageFile);
+        createData.imageUrl = await getDownloadURL(uploadResult.ref);
+      }
+
+      await setDoc(courseRef, createData);
     } catch (error) {
       console.error('Error creating course:', error);
       throw error;

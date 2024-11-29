@@ -12,8 +12,12 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
-import { Menu } from "lucide-react";
+import { Menu, ArrowRight } from "lucide-react";
 import { AuthButtons } from "./auth/auth-buttons";
+import { useEffect, useState } from "react";
+import { Course } from "@/types/course";
+import { courseService } from "@/lib/services/course-service";
+import { Badge } from "./ui/badge";
 
 const components: { title: string; href: string; description: string }[] = [
   {
@@ -33,8 +37,61 @@ const components: { title: string; href: string; description: string }[] = [
   },
 ];
 
+const ListItem = React.forwardRef<
+  React.ElementRef<"a">,
+  React.ComponentPropsWithoutRef<"a">
+>(({ className, title, children, ...props }, ref) => {
+  return (
+    <li>
+      <NavigationMenuLink asChild>
+        <a
+          ref={ref}
+          className={cn(
+            "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
+            className
+          )}
+          {...props}
+        >
+          <div className="text-sm font-medium leading-none">{title}</div>
+          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+            {children}
+          </p>
+        </a>
+      </NavigationMenuLink>
+    </li>
+  );
+});
+ListItem.displayName = "ListItem";
+
 export function Navigation() {
   const [isOpen, setIsOpen] = React.useState(false);
+  const [courses, setCourses] = useState<Course[]>([]);
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const result = await courseService.getCourses({ featured: true });
+        setCourses(result.courses);
+      } catch (error) {
+        console.error("Error fetching courses:", error);
+      }
+    };
+
+    fetchCourses();
+  }, []);
+
+  const getLevelBadgeVariant = (level: string) => {
+    switch (level) {
+      case "Beginner":
+        return "default";
+      case "Intermediate":
+        return "secondary";
+      case "Advanced":
+        return "destructive";
+      default:
+        return "outline";
+    }
+  };
 
   return (
     <nav className="bg-black border-b">
@@ -50,17 +107,16 @@ export function Navigation() {
           />
         </Link>
 
-        {/* Centered Navigation */}
         <div className="flex-1 flex justify-center">
           <div className="hidden md:flex space-x-8">
             <NavigationMenu>
-              <NavigationMenuList className="flex space-x-8">
+              <NavigationMenuList>
                 <NavigationMenuItem>
                   <NavigationMenuTrigger className="text-white text-lg font-bold hover:text-racing-red">
                     Programs
                   </NavigationMenuTrigger>
                   <NavigationMenuContent>
-                    <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] bg-white">
+                    <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
                       {components.map((component) => (
                         <ListItem
                           key={component.title}
@@ -73,6 +129,15 @@ export function Navigation() {
                     </ul>
                   </NavigationMenuContent>
                 </NavigationMenuItem>
+
+                <NavigationMenuItem>
+                  <Link href="/courses" legacyBehavior passHref>
+                    <NavigationMenuLink className="text-white text-lg font-bold hover:text-racing-red">
+                      Courses
+                    </NavigationMenuLink>
+                  </Link>
+                </NavigationMenuItem>
+
                 <NavigationMenuItem>
                   <Link href="/facilities" legacyBehavior passHref>
                     <NavigationMenuLink className="text-white text-lg font-bold hover:text-racing-red">
@@ -80,6 +145,7 @@ export function Navigation() {
                     </NavigationMenuLink>
                   </Link>
                 </NavigationMenuItem>
+
                 <NavigationMenuItem>
                   <Link href="/instructors" legacyBehavior passHref>
                     <NavigationMenuLink className="text-white text-lg font-bold hover:text-racing-red">
@@ -121,6 +187,9 @@ export function Navigation() {
           <Link href="/programs" className="block text-lg font-bold hover:text-racing-red">
             Programs
           </Link>
+          <Link href="/courses" className="block text-lg font-bold hover:text-racing-red">
+            Courses
+          </Link>
           <Link href="/facilities" className="block text-lg font-bold hover:text-racing-red">
             Facilities
           </Link>
@@ -136,29 +205,3 @@ export function Navigation() {
     </nav>
   );
 }
-
-const ListItem = React.forwardRef<
-  React.ElementRef<"a">,
-  React.ComponentPropsWithoutRef<"a">
->(({ className, title, children, ...props }, ref) => {
-  return (
-    <li>
-      <NavigationMenuLink asChild>
-        <a
-          ref={ref}
-          className={cn(
-            "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-gray-50 hover:text-racing-red",
-            className
-          )}
-          {...props}
-        >
-          <div className="text-sm font-medium leading-none text-gray-900">{title}</div>
-          <p className="line-clamp-2 text-sm leading-snug text-gray-500">
-            {children}
-          </p>
-        </a>
-      </NavigationMenuLink>
-    </li>
-  );
-});
-ListItem.displayName = "ListItem";

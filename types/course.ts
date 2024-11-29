@@ -29,7 +29,7 @@ export type CourseFormData = {
   level: CourseLevel;
   availableSpots: number;
   price: number;
-  imageUrl: string;
+  imageUrl: string | null;
   featured: boolean;
 }
 

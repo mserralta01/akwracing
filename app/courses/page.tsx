@@ -2,65 +2,22 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { courseService } from "@/lib/services/course-service";
-import { Course, CourseLevel } from "@/types/course";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { format } from "date-fns";
-import { CalendarIcon, Filter } from "lucide-react";
-import Image from "next/image";
-
-// Add these type definitions at the top of the file
-type FilterLevel = "all" | CourseLevel;
-
-interface CourseFilters {
-  level: FilterLevel;
-  location: string;
-  startDate: Date | undefined;
-  minPrice: string;
-  maxPrice: string;
-  sortBy: string;
-}
+import { Button } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
+import { Course, CourseLevel } from "@/types/course";
+import { courseService } from "@/lib/services/course-service";
 
 export default function CoursesPage() {
-  const router = useRouter();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState<CourseFilters>({
-    level: "all",
-    location: "",
-    startDate: undefined,
-    minPrice: "",
-    maxPrice: "",
-    sortBy: "startDate",
-  });
+  const router = useRouter();
 
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        setLoading(true);
-        const result = await courseService.getCourses({
-          level: filters.level === "all" ? undefined : filters.level as CourseLevel,
-          location: filters.location || undefined,
-          startDate: filters.startDate,
-          minPrice: filters.minPrice ? parseFloat(filters.minPrice) : undefined,
-          maxPrice: filters.maxPrice ? parseFloat(filters.maxPrice) : undefined,
-        }, filters.sortBy);
+        const result = await courseService.getCourses({});
         setCourses(result.courses);
       } catch (error) {
         console.error("Error fetching courses:", error);
@@ -70,7 +27,7 @@ export default function CoursesPage() {
     };
 
     fetchCourses();
-  }, [filters]);
+  }, []);
 
   const getLevelBadgeVariant = (level: CourseLevel) => {
     switch (level) {
@@ -86,166 +43,73 @@ export default function CoursesPage() {
   };
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-4">Racing Courses</h1>
-        <p className="text-muted-foreground">
-          Browse our selection of professional racing courses
+    <div className="container mx-auto py-12">
+      <div className="mb-8 text-center">
+        <h1 className="text-4xl font-bold mb-4">Accelerate Your Racing Career</h1>
+        <p className="text-muted-foreground text-lg mb-2">
+          Master the art of racing with our professional-grade courses designed for every skill level.
+        </p>
+        <p className="text-muted-foreground text-lg">
+          From beginner fundamentals to advanced racing techniques, unlock your full potential on the track.
         </p>
       </div>
 
-      <div className="mb-8">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="h-5 w-5" />
-              Filters
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              <Select
-                value={filters.level}
-                onValueChange={(value: FilterLevel) =>
-                  setFilters((prev: CourseFilters) => ({
-                    ...prev,
-                    level: value,
-                  }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Level" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Levels</SelectItem>
-                  <SelectItem value="Beginner">Beginner</SelectItem>
-                  <SelectItem value="Intermediate">Intermediate</SelectItem>
-                  <SelectItem value="Advanced">Advanced</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Input
-                placeholder="Location"
-                value={filters.location}
-                onChange={(e) =>
-                  setFilters((prev) => ({ ...prev, location: e.target.value }))
-                }
-              />
-
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="justify-start text-left font-normal"
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {filters.startDate ? (
-                      format(filters.startDate, "PPP")
-                    ) : (
-                      <span>Start Date</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={filters.startDate}
-                    onSelect={(date) =>
-                      setFilters((prev) => ({ ...prev, startDate: date }))
-                    }
-                    disabled={(date) => date < new Date()}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-
-              <Input
-                type="number"
-                placeholder="Min Price"
-                value={filters.minPrice}
-                onChange={(e) =>
-                  setFilters((prev) => ({ ...prev, minPrice: e.target.value }))
-                }
-              />
-
-              <Input
-                type="number"
-                placeholder="Max Price"
-                value={filters.maxPrice}
-                onChange={(e) =>
-                  setFilters((prev) => ({ ...prev, maxPrice: e.target.value }))
-                }
-              />
-
-              <Select
-                value={filters.sortBy}
-                onValueChange={(value) =>
-                  setFilters((prev) => ({ ...prev, sortBy: value }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="startDate">Start Date</SelectItem>
-                  <SelectItem value="price">Price</SelectItem>
-                  <SelectItem value="title">Title</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <div className="h-48 bg-muted rounded-t-lg" />
-              <CardContent className="p-4">
-                <div className="h-6 bg-muted rounded w-3/4 mb-2" />
-                <div className="h-4 bg-muted rounded w-1/2 mb-4" />
-                <div className="space-y-2">
-                  <div className="h-4 bg-muted rounded w-full" />
-                  <div className="h-4 bg-muted rounded w-5/6" />
-                </div>
-              </CardContent>
-            </Card>
+        <div className="grid grid-cols-1 gap-6">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="animate-pulse">
+              <div className="h-48 bg-muted rounded-lg mb-4" />
+            </div>
           ))}
         </div>
+      ) : courses.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">No courses available at the moment.</p>
+        </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6">
           {courses.map((course) => (
-            <Card
+            <Card 
               key={course.id}
-              className="overflow-hidden cursor-pointer transition-transform hover:scale-[1.02]"
-              onClick={() => router.push(`/courses/${course.id}`)}
+              className="overflow-hidden hover:shadow-lg transition-shadow"
             >
-              <div className="relative h-48">
-                <Image
-                  src={course.imageUrl}
-                  alt={course.title}
-                  fill
-                  className="object-cover"
-                />
-              </div>
-              <CardContent className="p-4">
-                <h3 className="text-lg font-semibold mb-2">{course.title}</h3>
-                <Badge variant={getLevelBadgeVariant(course.level as CourseLevel)}>
-                  {course.level}
-                </Badge>
-                <p className="text-sm text-muted-foreground mt-2">
-                  {course.shortDescription}
-                </p>
-                <div className="mt-4 flex items-center justify-between">
-                  <div className="text-sm">
-                    <span className="font-medium">{course.availableSpots}</span>{" "}
-                    spots left
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between gap-6">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h2 className="text-2xl font-bold">{course.title}</h2>
+                      <Badge variant={getLevelBadgeVariant(course.level as CourseLevel)}>
+                        {course.level}
+                      </Badge>
+                    </div>
+                    <div 
+                      className="text-muted-foreground mb-4"
+                      dangerouslySetInnerHTML={{ __html: course.shortDescription }}
+                    />
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Duration</p>
+                        <p className="font-medium">{course.duration} days</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Available Spots</p>
+                        <p className="font-medium">{course.availableSpots}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Price</p>
+                        <p className="font-medium">${course.price}</p>
+                      </div>
+                    </div>
                   </div>
-                  <div className="font-semibold">${course.price}</div>
-                </div>
-                <div className="mt-2 text-sm text-muted-foreground">
-                  {format(new Date(course.startDate), "PPP")}
+                  <div className="flex items-center">
+                    <Button 
+                      onClick={() => router.push(`/courses/${course.id}`)}
+                      className="bg-racing-red hover:bg-red-700"
+                    >
+                      More Info
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>

@@ -116,12 +116,16 @@ export function ProgramsSection() {
               >
                 <Card className="overflow-hidden h-full">
                   <div className="relative h-64">
-                    <Image
-                      src={course.imageUrl}
-                      alt={course.title}
-                      fill
-                      className="object-cover"
-                    />
+                    {course.imageUrl ? (
+                      <Image
+                        src={course.imageUrl}
+                        alt={course.title}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gray-200" />
+                    )}
                   </div>
                   <CardContent className="pt-6">
                     <div className="flex flex-col items-center text-center">

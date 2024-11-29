@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Course, CourseLevel } from "@/types/course";
+import { Course, CourseFormData } from "@/types/course";
 import { courseService } from "@/lib/services/course-service";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,6 +36,8 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import { Editor } from "@/components/ui/editor";
 import { Switch } from "@/components/ui/switch";
+import { ImageUpload } from "@/components/image-upload";
+import { Instructor } from "@/types/instructor";
 
 const formSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -49,20 +51,25 @@ const formSchema = z.object({
   availableSpots: z.number().min(1, "Must have at least 1 available spot"),
   price: z.number().min(0, "Price must be 0 or greater"),
   featured: z.boolean().default(false),
-  imageUrl: z.string().nullable().default(null),
+  imageUrl: z.string().nullable(),
+  instructorId: z.string().min(1, "Instructor is required"),
 });
+
+type FormValues = z.infer<typeof formSchema>;
 
 type CourseFormProps = {
   initialData?: Course;
   isEditing?: boolean;
+  instructors: Instructor[];
 };
 
-export function CourseForm({ initialData, isEditing = false }: CourseFormProps) {
+export function CourseForm({ initialData, isEditing = false, instructors }: CourseFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData || {
       title: "",
@@ -77,26 +84,32 @@ export function CourseForm({ initialData, isEditing = false }: CourseFormProps) 
       price: 0,
       featured: false,
       imageUrl: null,
+      instructorId: "",
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: FormValues) => {
     try {
       setLoading(true);
+      const formData: CourseFormData = {
+        ...values,
+        imageUrl: values.imageUrl || null,
+      };
+
       if (isEditing && initialData) {
-        await courseService.updateCourse(initialData.id, values);
+        await courseService.updateCourse(initialData.id, formData, imageFile || undefined);
         toast({
           title: "Success",
           description: "Course updated successfully",
         });
       } else {
-        await courseService.createCourse(values, null);
+        await courseService.createCourse(formData, imageFile || undefined);
         toast({
           title: "Success",
           description: "Course created successfully",
         });
       }
-      router.push("/admin/course-management");
+      router.push("/admin/academy/course-management");
       router.refresh();
     } catch (error) {
       toast({
@@ -190,6 +203,68 @@ export function CourseForm({ initialData, isEditing = false }: CourseFormProps) 
                           onCheckedChange={field.onChange}
                         />
                       </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="imageUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Course Image</FormLabel>
+                      <FormControl>
+                        <ImageUpload
+                          value={field.value || ""}
+                          onChange={(file) => {
+                            setImageFile(file);
+                            if (!file && initialData) {
+                              field.onChange(initialData.imageUrl);
+                            }
+                          }}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Upload an image for the course. This will be displayed on the course listing and details pages.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="instructorId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Instructor</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select an instructor" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {instructors?.length > 0 ? (
+                            instructors.map((instructor) => (
+                              <SelectItem 
+                                key={instructor.id} 
+                                value={instructor.id}
+                              >
+                                {instructor.name}
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <SelectItem value="" disabled>
+                              No instructors available
+                            </SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
@@ -332,7 +407,7 @@ export function CourseForm({ initialData, isEditing = false }: CourseFormProps) 
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => router.push("/admin/course-management")}
+                onClick={() => router.push("/admin/academy/course-management")}
               >
                 Cancel
               </Button>

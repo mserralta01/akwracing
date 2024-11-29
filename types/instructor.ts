@@ -6,10 +6,7 @@ export type SocialMedia = {
   youtube?: string;
 }
 
-export type Language = {
-  language: string;
-  level: 'Basic' | 'Intermediate' | 'Fluent' | 'Native';
-}
+export type Language = string;
 
 export type ExperienceEntry = {
   description: string;
@@ -38,18 +35,16 @@ export type RacingIcon =
   | 'Chart'       // For performance milestones
   | 'Award';      // For special recognition
 
-export interface Instructor {
+export type Instructor = {
   id: string;
   name: string;
   role: string;
   experiences: ExperienceEntry[];
   achievements: AchievementEntry[];
-  languages: Language[];
-  imageUrl: string;
+  languages: string[];
   featured: boolean;
   socialMedia: SocialMedia;
-  createdAt: string;
-  updatedAt: string;
+  imageUrl: string;
 }
 
 export type InstructorFormData = Omit<Instructor, 'id' | 'createdAt' | 'updatedAt'>; 

@@ -1,24 +1,7 @@
 export type CourseLevel = 'Beginner' | 'Intermediate' | 'Advanced';
 
-export interface Course {
+export type Course = {
   id: string;
-  title: string;
-  shortDescription: string;
-  longDescription: string;
-  startDate: string;
-  endDate: string;
-  duration: number; // in days
-  location: string;
-  level: CourseLevel;
-  availableSpots: number;
-  price: number;
-  imageUrl: string;
-  createdAt: string;
-  updatedAt: string;
-  featured: boolean;
-}
-
-export type CourseFormData = {
   title: string;
   shortDescription: string;
   longDescription: string;
@@ -29,9 +12,14 @@ export type CourseFormData = {
   level: CourseLevel;
   availableSpots: number;
   price: number;
-  imageUrl: string | null;
   featured: boolean;
-}
+  imageUrl: string | null;
+  instructorId: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CourseFormData = Omit<Course, 'id' | 'createdAt' | 'updatedAt'>;
 
 export interface Registration {
   id: string;

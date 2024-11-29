@@ -6,9 +6,9 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Instructor, RacingIcon, InstructorFormData } from "@/types/instructor";
-import { instructorService } from "@/lib/services/instructor-service";
-import { Button } from "@/components/ui/button";
+import { Instructor, RacingIcon, InstructorFormData } from "types/instructor";
+import { instructorService } from "lib/services/instructor-service";
+import { Button } from "components/ui/button";
 import {
   Form,
   FormControl,
@@ -17,15 +17,22 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { FileUpload } from "@/components/ui/file-upload";
-import { Card, CardContent } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
+} from "components/ui/form";
+import { Input } from "components/ui/input";
+import { Switch } from "components/ui/switch";
+import { FileUpload } from "components/ui/file-upload";
+import { Card, CardContent } from "components/ui/card";
+import { useToast } from "components/ui/use-toast";
 import { X } from "lucide-react";
-import { RacingIconSelector } from "@/components/ui/racing-icon-selector";
-import { icons } from "@/lib/constants/icons";
+import { RacingIconSelector } from "components/ui/racing-icon-selector";
+import { icons } from "lib/constants/icons";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "components/ui/select";
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -35,17 +42,14 @@ const formSchema = z.object({
     icon: z.enum(['Trophy', 'Flag', 'Medal', 'Star', 'Crown', 'Certificate', 
       'Timer', 'Car', 'Tools', 'Users', 'Target', 'Chart', 'Award']),
     year: z.string()
-  })),
+  })).default([]),
   achievements: z.array(z.object({
     description: z.string(),
     icon: z.enum(['Trophy', 'Flag', 'Medal', 'Star', 'Crown', 'Certificate', 
       'Timer', 'Car', 'Tools', 'Users', 'Target', 'Chart', 'Award']),
     year: z.string()
-  })),
-  languages: z.array(z.object({
-    language: z.string(),
-    level: z.enum(['Basic', 'Intermediate', 'Fluent', 'Native'])
-  })),
+  })).default([]),
+  languages: z.array(z.string()).default([]),
   featured: z.boolean().default(false),
   socialMedia: z.object({
     instagram: z.string().optional(),
@@ -54,7 +58,7 @@ const formSchema = z.object({
     twitter: z.string().optional(),
     youtube: z.string().optional()
   }).default({}),
-  imageUrl: z.string().optional()
+  imageUrl: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -62,6 +66,7 @@ type FormValues = z.infer<typeof formSchema>;
 type InstructorFormProps = {
   initialData?: Instructor;
   isEditing?: boolean;
+  instructors?: Instructor[];
 };
 
 interface ExperienceEntry {
@@ -76,7 +81,7 @@ interface AchievementEntry {
   year: string;
 }
 
-export function InstructorForm({ initialData, isEditing = false }: InstructorFormProps) {
+export function InstructorForm({ initialData, isEditing = false, instructors = [] }: InstructorFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -92,22 +97,23 @@ export function InstructorForm({ initialData, isEditing = false }: InstructorFor
     year: new Date().getFullYear().toString()
   });
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: initialData || {
-      name: "",
-      role: "",
-      experiences: [],
-      achievements: [],
-      languages: [],
-      featured: false,
-      socialMedia: {
+    defaultValues: {
+      name: initialData?.name || "",
+      role: initialData?.role || "",
+      experiences: initialData?.experiences || [],
+      achievements: initialData?.achievements || [],
+      languages: initialData?.languages || [],
+      featured: initialData?.featured || false,
+      socialMedia: initialData?.socialMedia || {
         instagram: "",
         facebook: "",
         linkedin: "",
         twitter: "",
         youtube: "",
       },
+      imageUrl: initialData?.imageUrl || "",
     },
   });
 
@@ -154,7 +160,7 @@ export function InstructorForm({ initialData, isEditing = false }: InstructorFor
       setLoading(true);
       const formData: InstructorFormData = {
         ...values,
-        imageUrl: values.imageUrl || '', // Ensure imageUrl is always a string
+        imageUrl: values.imageUrl || '',
         experiences: values.experiences || [],
         achievements: values.achievements || [],
         languages: values.languages || [],
@@ -174,12 +180,17 @@ export function InstructorForm({ initialData, isEditing = false }: InstructorFor
           description: "Instructor created successfully",
         });
       }
-      router.push("/admin/academy/instructor-management");
+      
+      // Force a refresh of the page data
       router.refresh();
+      
+      // Navigate back to the instructor management page
+      router.push("/admin/academy/instructor-management");
     } catch (error) {
+      console.error('Form submission error:', error);
       toast({
         title: "Error",
-        description: "Something went wrong",
+        description: "Something went wrong. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -247,10 +258,10 @@ export function InstructorForm({ initialData, isEditing = false }: InstructorFor
                     </Button>
                   </div>
                   <div className="space-y-2">
-                    {(form.watch("experiences") || []).map((experience, index) => (
-                      <div key={index} className="flex items-center gap-2 bg-secondary/20 p-2 rounded-md">
+                    {form.watch("experiences")?.map((experience, index) => (
+                      <div key={index} className="flex items-center gap-4 bg-secondary/20 p-2 rounded-md">
                         {icons[experience.icon as RacingIcon] && (
-                          <div className="h-4 w-4 text-racing-red">
+                          <div className="h-5 w-5 text-racing-red flex-shrink-0 flex items-center justify-center">
                             {React.createElement(icons[experience.icon as RacingIcon])}
                           </div>
                         )}
@@ -293,10 +304,10 @@ export function InstructorForm({ initialData, isEditing = false }: InstructorFor
                     </Button>
                   </div>
                   <div className="space-y-2">
-                    {(form.watch("achievements") || []).map((achievement, index) => (
-                      <div key={index} className="flex items-center gap-2 bg-secondary/20 p-2 rounded-md">
+                    {form.watch("achievements")?.map((achievement, index) => (
+                      <div key={index} className="flex items-center gap-4 bg-secondary/20 p-2 rounded-md">
                         {icons[achievement.icon as RacingIcon] && (
-                          <div className="h-4 w-4 text-racing-red">
+                          <div className="h-5 w-5 text-racing-red flex-shrink-0 flex items-center justify-center">
                             {React.createElement(icons[achievement.icon as RacingIcon])}
                           </div>
                         )}
@@ -340,6 +351,52 @@ export function InstructorForm({ initialData, isEditing = false }: InstructorFor
                   <FormLabel>Profile Image</FormLabel>
                   <FileUpload onFileSelect={handleImageChange} />
                 </div>
+
+                <FormField
+                  control={form.control}
+                  name="languages"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Languages</FormLabel>
+                      <div className="space-y-2">
+                        {field.value.map((lang, index) => (
+                          <div key={index} className="flex gap-2">
+                            <Input
+                              value={lang}
+                              onChange={(e) => {
+                                const newLanguages = [...field.value];
+                                newLanguages[index] = e.target.value;
+                                field.onChange(newLanguages);
+                              }}
+                              placeholder="Language"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const newLanguages = field.value.filter((_, i) => i !== index);
+                                field.onChange(newLanguages);
+                              }}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            field.onChange([...field.value, ""]);
+                          }}
+                        >
+                          Add Language
+                        </Button>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
             </div>
 
@@ -369,4 +426,4 @@ export function InstructorForm({ initialData, isEditing = false }: InstructorFor
       </CardContent>
     </Card>
   );
-} 
+}

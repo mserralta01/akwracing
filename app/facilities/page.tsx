@@ -3,79 +3,118 @@ import { FacilityCard, type FacilityProps } from "@/components/facilities/facili
 import { HeroSection } from "@/components/facilities/hero-section";
 
 export const metadata: Metadata = {
-  title: "Facilities | AKW Racing",
-  description: "Explore AKW Racing's world-class facilities including our home track at Piquet Race Park, AMR Homestead, and our high-end headquarters in Wellington, FL.",
+  title: "Professional Racing Academy Facilities | AKW Racing Karting School",
+  description: "Explore AKW Racing Academy's world-class karting facilities in Florida. From professional race tracks to advanced simulators, we provide elite training facilities for young racers aged 5-15. Join the premier youth racing academy that develops future motorsport champions.",
+  keywords: "karting academy, racing school, youth racing program, professional karting, racing academy Florida, junior racing development, karting training facility, motorsport education, racing simulator training, professional race track",
+  openGraph: {
+    title: "Professional Racing Academy Facilities | AKW Racing Karting School",
+    description: "Elite karting facilities designed for young racers. Professional tracks, advanced simulators, and comprehensive training facilities to develop future motorsport champions.",
+    images: [
+      {
+        url: "/images/PiquetTrack.webp",
+        width: 1200,
+        height: 630,
+        alt: "AKW Racing Academy Professional Race Track",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Professional Racing Academy Facilities | AKW Racing",
+    description: "Elite karting facilities designed for young racers. Professional tracks, advanced simulators, and comprehensive training facilities to develop future motorsport champions.",
+    images: ["/images/PiquetTrack.webp"],
+  },
 };
 
 const facilities: FacilityProps[] = [
   {
-    title: "Home Track - Piquet Race Park",
-    location: "16169 Southern Boulevard, Loxahatchee Groves FL 33470",
-    description: "Our home track at Piquet Race Park features one of the largest, safest, and fastest kart tracks in South Florida. The mile-long asphalt track accommodates karts reaching speeds of 45 mph, providing an ideal environment for both experienced racers and newcomers to the sport.",
+    title: "AKW Racing Academy Training Center",
+    location: "Wellington, FL",
+    description: "Our state-of-the-art racing academy headquarters is the epicenter of young driver development, purposefully designed for aspiring champions aged 5-15. This comprehensive facility combines cutting-edge technology, professional instruction, and specialized training environments to nurture the next generation of motorsport talent. From our advanced simulators to our fully-equipped maintenance bays, every aspect is optimized for youth development and safety.",
     features: [
-      "Mile-long professional asphalt track",
-      "Speeds up to 45 mph",
-      "Safety equipment provided",
-      "20-kart maximum capacity",
-      "Professional racing environment"
+      "Professional race strategy and analytics center",
+      "Youth-focused physical conditioning facility",
+      "Advanced driver development classrooms",
+      "State-of-the-art kart maintenance workshop",
+      "Dedicated parent observation areas",
+      "Professional race preparation zones",
+      "Performance analysis technology suite"
+    ],
+    stats: [
+      { label: "Training Zones", value: "4" },
+      { label: "Service Bays", value: "3" },
+      { label: "Classroom Spaces", value: "2" },
+      { label: "Analysis Stations", value: "4" }
+    ],
+    sections: [
+      {
+        title: "Professional Racing Headquarters",
+        description: "Our Wellington headquarters serves as the command center for developing future racing champions. Featuring state-of-the-art facilities for both theoretical and practical training, our academy provides a comprehensive learning environment that covers every aspect of professional racing.",
+        imageSrc: "/images/akwracingheadquarters.jpg",
+        imageAlt: "AKW Racing Academy Professional Training Facility Interior"
+      },
+      {
+        title: "Advanced Simulation Training Center",
+        description: "Our cutting-edge simulator facility features professional-grade racing simulators specifically calibrated for young drivers. These advanced systems allow drivers to master racing techniques, learn track layouts, and develop strategic thinking in a safe, controlled environment.",
+        simulatorImages: [
+          {
+            src: "/images/kartsimpro.jpg",
+            alt: "Professional Youth Racing Simulator Training"
+          },
+          {
+            src: "/images/wilma.webp",
+            alt: "Advanced Junior Karting Simulator"
+          }
+        ]
+      },
+      {
+        title: "Mobile Racing Operations Unit",
+        description: "Our professional racing trailer represents AKW Racing Academy's commitment to comprehensive race support. Fully equipped with tools, spare parts, and mobile workshop capabilities, this mobile unit ensures our young racers have professional-level support at every competition and training event across the country.",
+        imageSrc: "/images/akwracingtrailor.jpg",
+        imageAlt: "AKW Racing Academy Professional Racing Support Trailer"
+      }
+    ]
+  },
+  {
+    title: "Professional Race Track - Piquet Race Park",
+    location: "16169 Southern Boulevard, Loxahatchee Groves FL 33470",
+    description: "Our main racing academy track is specially designed for youth driver development, featuring multiple configurations to suit different skill levels and age groups. This professional facility offers the perfect environment for young racers to progress from their first laps to competitive racing, with comprehensive safety measures and professional instruction at every step.",
+    features: [
+      "FIA-approved youth racing circuit",
+      "Progressive track configurations for different skill levels",
+      "Complete safety equipment and protocols",
+      "Professional race control and monitoring",
+      "Youth-specific training zones",
+      "Parent viewing areas and facilities"
     ],
     stats: [
       { label: "Track Length", value: "1 Mile" },
-      { label: "Max Speed", value: "45 MPH" },
-      { label: "Kart Capacity", value: "20" },
-      { label: "Safety Rating", value: "A+" }
+      { label: "Safety Rating", value: "A+" },
+      { label: "Training Zones", value: "5" },
+      { label: "Track Variants", value: "3" }
     ],
     imageSrc: "/images/PiquetTrack.webp",
-    imageAlt: "Piquet Race Park Track"
+    imageAlt: "Professional Youth Karting Track at Piquet Race Park"
   },
   {
-    title: "AMR Homestead-Miami Motorplex",
+    title: "AMR Homestead-Miami Racing Academy Circuit",
     location: "1835 SE 38th Avenue, Homestead, FL 33035",
-    description: "Our second training facility at AMR Homestead-Miami Motorplex offers additional opportunities for our drivers to practice and compete on a professional-grade track, expanding our racing capabilities and providing diverse racing experiences.",
+    description: "Our advanced training facility caters to developing young racers ready for more challenging experiences. This professional-grade track offers varied racing conditions and advanced training programs, providing the perfect stepping stone for junior racers advancing toward professional motorsport careers.",
     features: [
-      "Professional-grade karting track",
-      "State-of-the-art facilities",
-      "Additional training opportunities",
-      "Competitive racing environment"
+      "Advanced youth racing circuits",
+      "Professional race simulation facilities",
+      "Specialized junior driver training areas",
+      "Competition preparation facilities",
+      "Youth development programs"
     ],
     stats: [
-      { label: "Track Type", value: "Pro" },
-      { label: "Layout", value: "Multi" },
-      { label: "Surface", value: "Premium" },
-      { label: "Experience", value: "Elite" }
+      { label: "Track Grade", value: "Pro" },
+      { label: "Safety Level", value: "Elite" },
+      { label: "Training Areas", value: "4" },
+      { label: "Race Support", value: "Full" }
     ],
     imageSrc: "/images/HomesteadTrack.jpg",
-    imageAlt: "AMR Homestead-Miami Motorplex Track"
-  },
-  {
-    title: "AKW Racing Headquarters",
-    location: "Wellington, FL",
-    description: "Our headquarters is where the magic happens - a high-end education, maintenance, and driver development facility. This state-of-the-art complex is designed to foster teamwork and collaboration between coaches, mechanics, and drivers, serving as our central hub for race preparation and training.",
-    features: [
-      "Full workout room for physical conditioning",
-      "Agility training equipment",
-      "Two full motion racing simulators",
-      "Professional kart maintenance facility",
-      "Team meeting and collaboration spaces",
-      "Race preparation areas",
-      "Advanced driver development programs"
-    ],
-    stats: [
-      { label: "Simulators", value: "2" },
-      { label: "Training Areas", value: "4" },
-      { label: "Maintenance Bays", value: "3" },
-      { label: "Team Spaces", value: "2" }
-    ],
-    simulatorImages: [
-      {
-        src: "/images/kartsimpro.jpg",
-        alt: "Full Motion Kart Sim Pro Simulator"
-      },
-      {
-        src: "/images/wilma.webp",
-        alt: "Wilma Racing Simulator"
-      }
-    ]
+    imageAlt: "Professional Youth Racing Development Track at AMR Homestead-Miami"
   }
 ];
 
@@ -106,7 +145,6 @@ export default function FacilitiesPage() {
                   key={index} 
                   className="relative"
                 >
-                  {/* Decorative line */}
                   {index > 0 && (
                     <div className="absolute -top-12 left-0 w-full h-px bg-gradient-to-r from-transparent via-racing-red/30 to-transparent" />
                   )}
@@ -117,7 +155,6 @@ export default function FacilitiesPage() {
           </div>
         </div>
 
-        {/* Decorative elements */}
         <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-racing-red/30 to-transparent" />
       </section>
     </main>

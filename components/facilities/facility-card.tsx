@@ -6,6 +6,14 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { MapPin } from "lucide-react";
 
+export type FacilitySection = {
+  title: string;
+  description: string;
+  imageSrc?: string;
+  imageAlt?: string;
+  simulatorImages?: Array<{src: string; alt: string}>;
+};
+
 export type FacilityProps = {
   title: string;
   location: string;
@@ -15,6 +23,7 @@ export type FacilityProps = {
     label: string;
     value: string;
   }>;
+  sections?: FacilitySection[];
   imageSrc?: string;
   imageAlt?: string;
   simulatorImages?: Array<{src: string; alt: string}>;
@@ -26,6 +35,7 @@ export const FacilityCard = ({
   description, 
   features, 
   stats,
+  sections,
   imageSrc, 
   imageAlt,
   simulatorImages
@@ -73,29 +83,6 @@ export const FacilityCard = ({
                   <span className="text-lg">{location}</span>
                 </motion.div>
               </div>
-            </div>
-          )}
-          {simulatorImages && (
-            <div className="grid grid-cols-2 gap-6 p-8">
-              {simulatorImages.map((sim, index) => (
-                <motion.div 
-                  key={index}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: index * 0.2 }}
-                  className="relative h-[300px] w-full overflow-hidden rounded-xl"
-                >
-                  <Image
-                    src={sim.src}
-                    alt={sim.alt}
-                    fill
-                    className="object-cover transition-transform duration-700 group-hover:scale-105"
-                    sizes="(max-width: 768px) 50vw, 33vw"
-                    priority
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                </motion.div>
-              ))}
             </div>
           )}
         </div>
@@ -173,6 +160,62 @@ export const FacilityCard = ({
               ))}
             </div>
           </motion.div>
+
+          {/* Facility Sections */}
+          {sections && (
+            <div className="mt-12 space-y-16">
+              {sections.map((section, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.2 }}
+                  className="relative"
+                >
+                  <h4 className="text-2xl font-bold text-gray-900 mb-4">{section.title}</h4>
+                  <p className="text-lg leading-relaxed text-gray-700 mb-6">{section.description}</p>
+                  
+                  {section.imageSrc && (
+                    <div className="relative h-[400px] w-full overflow-hidden rounded-xl">
+                      <Image
+                        src={section.imageSrc}
+                        alt={section.imageAlt || ""}
+                        fill
+                        className="object-cover transition-transform duration-700 group-hover:scale-105"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        priority
+                      />
+                    </div>
+                  )}
+
+                  {section.simulatorImages && (
+                    <div className="grid grid-cols-2 gap-6">
+                      {section.simulatorImages.map((sim, simIndex) => (
+                        <motion.div 
+                          key={simIndex}
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: simIndex * 0.2 }}
+                          className="relative h-[300px] w-full overflow-hidden rounded-xl"
+                        >
+                          <Image
+                            src={sim.src}
+                            alt={sim.alt}
+                            fill
+                            className="object-cover transition-transform duration-700 group-hover:scale-105"
+                            sizes="(max-width: 768px) 50vw, 33vw"
+                            priority
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+          )}
 
           <motion.button
             initial={{ opacity: 0 }}

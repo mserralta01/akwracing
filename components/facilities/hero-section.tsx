@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 
 export const HeroSection = () => {
   return (
-    <section className="relative bg-[#1a1e31] py-24 lg:py-32 overflow-hidden">
+    <div className="relative min-h-[60vh] flex items-center justify-center overflow-hidden bg-navy-900">
       {/* Racing-inspired background pattern */}
       <div className="absolute inset-0 z-0">
         {/* Diagonal stripes */}
@@ -29,7 +29,7 @@ export const HeroSection = () => {
       </div>
 
       {/* Content */}
-      <div className="container relative z-10 mx-auto px-4">
+      <div className="relative z-10 container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -42,20 +42,26 @@ export const HeroSection = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.8 }}
           >
-            Our World-Class{" "}
-            <span className="text-racing-red">Facilities</span>
+            Professional Youth Racing{" "}
+            <span className="text-racing-red">Academy Facilities</span>
           </motion.h1>
           
           <motion.p 
-            className="mx-auto mb-12 max-w-3xl text-lg text-gray-300 lg:text-xl leading-relaxed"
+            className="mx-auto mb-6 max-w-3xl text-xl text-gray-300 lg:text-2xl leading-relaxed"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4, duration: 0.8 }}
           >
-            AKW Racing operates across three strategic locations, each designed to provide
-            our drivers with the best possible training, development, and racing experiences.
-            From professional tracks to high-end simulators, we offer comprehensive
-            facilities that cater to every aspect of karting excellence.
+            Welcome to Florida's premier youth karting academy, where future racing champions begin their journey.
+          </motion.p>
+
+          <motion.p 
+            className="mx-auto mb-12 max-w-3xl text-lg text-gray-300 lg:text-xl leading-relaxed"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 0.8 }}
+          >
+            Our professional facilities are specifically designed for young drivers aged 5-15, combining world-class tracks, advanced simulators, and comprehensive training areas to provide the perfect environment for developing professional racing careers.
           </motion.p>
 
           {/* Decorative elements */}
@@ -79,6 +85,6 @@ export const HeroSection = () => {
           ))}
         </div>
       </div>
-    </section>
+    </div>
   );
 };

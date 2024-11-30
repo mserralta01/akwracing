@@ -63,7 +63,7 @@ export const FacilitiesSection = () => {
         "Expert instruction facilities",
         "Safety equipment and protocols",
       ],
-      imageSrc: "/images/racetrack.jpg", // You'll need to add these images
+      imageSrc: "/images/PiquetTrack.webp",
       imageAlt: "Piquet Entertainment Race Track",
     },
     {
@@ -77,13 +77,26 @@ export const FacilitiesSection = () => {
         "Dedicated workout room",
         "Parts department",
       ],
-      imageSrc: "/images/headquarters.jpg", // You'll need to add these images
+      imageSrc: "/images/akwracingheadquarters.jpg",
       imageAlt: "AKW Racing Headquarters",
     },
   ];
 
   return (
-    <section id="facilities" className="py-20 bg-gray-50">
+    <section className="relative py-20 bg-gradient-to-b from-navy-800 to-navy-900">
+      {/* Racing-inspired background pattern */}
+      <div className="absolute inset-0 opacity-5">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `repeating-linear-gradient(
+            45deg,
+            rgba(0,0,0,0.1) 0px,
+            rgba(0,0,0,0.1) 1px,
+            transparent 1px,
+            transparent 10px
+          )`
+        }} />
+      </div>
+
       <div className="container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -91,8 +104,8 @@ export const FacilitiesSection = () => {
           viewport={{ once: true }}
           className="text-center mb-12"
         >
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">Our Facilities</h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          <h2 className="text-4xl font-bold text-white mb-4">Our Facilities</h2>
+          <p className="text-xl text-gray-300 max-w-2xl mx-auto">
             Experience racing excellence at our two premier facilities, equipped with
             everything you need for professional racing development.
           </p>

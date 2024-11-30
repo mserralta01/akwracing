@@ -71,7 +71,20 @@ export function ProgramsSection() {
   }
 
   return (
-    <section className="py-20 bg-gradient-to-b from-racing-black to-background">
+    <section className="relative py-20 bg-gradient-to-b from-navy-900 to-navy-800">
+      {/* Racing-inspired background pattern */}
+      <div className="absolute inset-0 opacity-5">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `repeating-linear-gradient(
+            -45deg,
+            #000 0px,
+            #000 1px,
+            transparent 1px,
+            transparent 10px
+          )`
+        }} />
+      </div>
+
       <div className="container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

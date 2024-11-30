@@ -9,7 +9,20 @@ import { Mail, Phone, MapPin } from "lucide-react";
 
 export function ContactSection() {
   return (
-    <section className="py-20 bg-background">
+    <section className="relative py-20 bg-gradient-to-b from-navy-800 to-navy-900">
+      {/* Racing-inspired background pattern */}
+      <div className="absolute inset-0 opacity-5">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `repeating-linear-gradient(
+            45deg,
+            rgba(255,255,255,0.1) 0px,
+            rgba(255,255,255,0.1) 1px,
+            transparent 1px,
+            transparent 10px
+          )`
+        }} />
+      </div>
+
       <div className="container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -18,8 +31,8 @@ export function ContactSection() {
           viewport={{ once: true }}
           className="text-center mb-12"
         >
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Contact Us</h2>
-          <p className="text-gray-500 max-w-2xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Contact Us</h2>
+          <p className="text-gray-300 max-w-2xl mx-auto">
             Get in touch with us to start your racing journey or learn more about our programs.
           </p>
         </motion.div>

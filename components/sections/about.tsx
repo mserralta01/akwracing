@@ -7,8 +7,21 @@ import { ArrowRight } from 'lucide-react';
 
 export function AboutSection() {
   return (
-    <section className="py-20 bg-racing-black">
-      <div className="container mx-auto px-4">
+    <section className="relative py-16 lg:py-24 bg-gradient-to-b from-navy-900 to-navy-800">
+      {/* Racing-inspired background pattern */}
+      <div className="absolute inset-0 opacity-5">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `repeating-linear-gradient(
+            -45deg,
+            rgba(255,255,255,0.1) 0px,
+            rgba(255,255,255,0.1) 1px,
+            transparent 1px,
+            transparent 10px
+          )`
+        }} />
+      </div>
+
+      <div className="container relative mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
@@ -52,14 +65,17 @@ export function AboutSection() {
             className="relative h-[400px] rounded-lg overflow-hidden"
           >
             <Image
-              src="https://placehold.co/800x600/1a1a1a/ffffff?text=Racing+Academy"
-              alt="Racing Academy Facility"
+              src="/images/akwracingtrailor.jpg"
+              alt="AKW Racing Academy Facility"
               fill
               className="object-cover"
             />
           </motion.div>
         </div>
       </div>
+
+      {/* Section divider */}
+      <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-racing-red/30 to-transparent" />
     </section>
   );
 }

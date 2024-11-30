@@ -45,6 +45,8 @@ export type Instructor = {
   featured: boolean;
   socialMedia: SocialMedia;
   imageUrl: string;
+  phone?: string;
+  email?: string;
 }
 
 export type InstructorFormData = Omit<Instructor, 'id' | 'createdAt' | 'updatedAt'>; 

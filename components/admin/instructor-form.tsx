@@ -59,6 +59,8 @@ const formSchema = z.object({
     youtube: z.string().optional()
   }).default({}),
   imageUrl: z.string().optional(),
+  phone: z.string().optional(),
+  email: z.string().email("Invalid email address").optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -114,6 +116,8 @@ export function InstructorForm({ initialData, isEditing = false, instructors = [
         youtube: "",
       },
       imageUrl: initialData?.imageUrl || "",
+      phone: initialData?.phone || "",
+      email: initialData?.email || "",
     },
   });
 
@@ -165,6 +169,8 @@ export function InstructorForm({ initialData, isEditing = false, instructors = [
         achievements: values.achievements || [],
         languages: values.languages || [],
         socialMedia: values.socialMedia || {},
+        phone: values.phone || "",
+        email: values.email || "",
       };
 
       if (isEditing && initialData) {
@@ -393,6 +399,40 @@ export function InstructorForm({ initialData, isEditing = false, instructors = [
                           Add Language
                         </Button>
                       </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Phone Number</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Phone number" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        For internal use only - not displayed publicly
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email Address</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Email address" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        For internal use only - not displayed publicly
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

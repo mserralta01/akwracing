@@ -79,11 +79,12 @@ export default function InstructorManagement() {
       </CardHeader>
       <CardContent>
         <div className="rounded-md border">
-          <div className="grid grid-cols-6 gap-4 p-4 border-b font-medium">
+          <div className="grid grid-cols-7 gap-4 p-4 border-b font-medium">
             <div className="col-span-2">Name</div>
             <div>Role</div>
             <div>Experience</div>
-            <div>Featured</div>
+            <div>Phone</div>
+            <div>Email</div>
             <div className="text-right">Actions</div>
           </div>
           {loading ? (
@@ -96,7 +97,7 @@ export default function InstructorManagement() {
             instructors.map((instructor) => (
               <div
                 key={instructor.id}
-                className="grid grid-cols-6 gap-4 p-4 border-b last:border-0 items-center"
+                className="grid grid-cols-7 gap-4 p-4 border-b last:border-0 items-center"
               >
                 <div className="col-span-2 font-medium flex items-center gap-3">
                   {instructor.imageUrl && (
@@ -119,13 +120,8 @@ export default function InstructorManagement() {
                     </span>
                   )) || "No experience listed"}
                 </div>
-                <div>
-                  {instructor.featured ? (
-                    <Badge>Featured</Badge>
-                  ) : (
-                    <Badge variant="outline">Not Featured</Badge>
-                  )}
-                </div>
+                <div>{instructor.phone || "N/A"}</div>
+                <div>{instructor.email || "N/A"}</div>
                 <div className="text-right">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>

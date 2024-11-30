@@ -12,8 +12,8 @@ import { ContactSection } from "@/components/sections/contact";
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-navy-900 via-white to-gray-50">
-      {/* Background pattern */}
-      <div className="absolute inset-0 opacity-5">
+      {/* Background pattern - Lowered z-index */}
+      <div className="absolute inset-0 opacity-5 -z-10">
         <div className="absolute inset-0" style={{
           backgroundImage: `repeating-linear-gradient(
             -45deg,
@@ -25,8 +25,8 @@ export default function HomePage() {
         }} />
       </div>
 
-      {/* Content */}
-      <div className="relative">
+      {/* Content - Ensure positive z-index */}
+      <div className="relative z-10">
         <HeroSection />
         <AboutSection />
         <BenefitsSection />
@@ -37,8 +37,8 @@ export default function HomePage() {
         <ContactSection />
       </div>
 
-      {/* Bottom racing line accent */}
-      <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-racing-red/30 to-transparent" />
+      {/* Bottom racing line accent - Lower z-index */}
+      <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-racing-red/30 to-transparent -z-10" />
     </main>
   );
 }

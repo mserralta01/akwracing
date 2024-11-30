@@ -5,8 +5,8 @@ import { motion } from "framer-motion";
 export const HeroSection = () => {
   return (
     <div className="relative min-h-[60vh] flex items-center justify-center overflow-hidden bg-navy-900">
-      {/* Racing-inspired background pattern */}
-      <div className="absolute inset-0 z-0">
+      {/* Racing-inspired background pattern - Lowered z-index */}
+      <div className="absolute inset-0 -z-10">
         {/* Diagonal stripes */}
         <div 
           className="absolute inset-0" 
@@ -28,7 +28,7 @@ export const HeroSection = () => {
         <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-racing-red to-transparent" />
       </div>
 
-      {/* Content */}
+      {/* Content - Ensure positive z-index */}
       <div className="relative z-10 container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

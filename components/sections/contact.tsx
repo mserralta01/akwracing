@@ -10,8 +10,8 @@ import { Mail, Phone, MapPin } from "lucide-react";
 export function ContactSection() {
   return (
     <section className="relative py-20 bg-gradient-to-b from-navy-800 to-navy-900">
-      {/* Racing-inspired background pattern */}
-      <div className="absolute inset-0 opacity-5">
+      {/* Racing-inspired background pattern - Lowered z-index */}
+      <div className="absolute inset-0 opacity-5 -z-10">
         <div className="absolute inset-0" style={{
           backgroundImage: `repeating-linear-gradient(
             45deg,
@@ -23,7 +23,8 @@ export function ContactSection() {
         }} />
       </div>
 
-      <div className="container mx-auto px-4">
+      {/* Content - Ensure positive z-index */}
+      <div className="container relative z-10 mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}

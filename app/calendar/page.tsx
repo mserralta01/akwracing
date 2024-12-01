@@ -24,6 +24,7 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { ClassNames } from "react-day-picker";
+import { DayPicker } from "react-day-picker";
 
 type Filter = {
   level?: CourseLevel | "all";
@@ -324,7 +325,6 @@ export default function CalendarPage() {
                   onSelect={(newDate) => newDate && setDate(newDate)}
                   className="rounded-md"
                   classNames={{
-                    root: "space-y-4",
                     months: "space-y-4",
                     month: "space-y-4",
                     caption: "flex justify-center pt-1 relative items-center",
@@ -333,23 +333,26 @@ export default function CalendarPage() {
                     nav_button: cn(
                       "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 hover:text-racing-red"
                     ),
+                    nav_button_previous: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 hover:text-racing-red",
+                    nav_button_next: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 hover:text-racing-red",
                     table: "w-full border-collapse space-y-1",
                     head_row: "flex",
                     head_cell: "text-gray-500 rounded-md w-8 font-normal text-[0.8rem]",
                     row: "flex w-full mt-2",
-                    cell: cn(
-                      "relative p-0 text-center text-sm focus-within:relative focus-within:z-20",
-                      "h-8 w-8 font-normal aria-selected:opacity-100"
-                    ),
+                    cell: "relative p-0 text-center text-sm focus-within:relative focus-within:z-20",
                     day: cn(
                       "h-8 w-8 p-0 font-normal hover:bg-gray-100 hover:text-racing-red transition-colors",
                       "aria-selected:bg-racing-red aria-selected:text-white aria-selected:hover:bg-racing-red aria-selected:hover:text-white"
                     ),
+                    day_selected: "bg-racing-red text-white hover:bg-racing-red hover:text-white",
                     day_today: "bg-gray-100 text-gray-900 font-semibold",
                     day_outside: "text-gray-400",
                     day_disabled: "text-gray-300",
                     day_hidden: "invisible",
-                  } as ClassNames}
+                    day_range_start: "bg-racing-red text-white",
+                    day_range_end: "bg-racing-red text-white",
+                    day_range_middle: "bg-gray-100",
+                  }}
                 />
               </CardContent>
             </Card>

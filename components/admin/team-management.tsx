@@ -180,7 +180,7 @@ export default function TeamManagement() {
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
-                              onClick={() => router.push(`/admin/academy/instructor-management/${member.id}/edit`)}
+                              onClick={() => router.push(`/admin/team-management/${member.id}/edit`)}
                             >
                               <Pencil className="h-4 w-4 mr-2" />
                               Edit

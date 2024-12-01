@@ -542,7 +542,11 @@ export function TeamForm({ initialData, isEditing = false }: TeamFormProps) {
                           Facebook
                         </FormLabel>
                         <FormControl>
-                          <Input placeholder="Facebook profile URL" {...field} />
+                          <Input 
+                            placeholder="Facebook profile URL" 
+                            {...field}
+                            value={field.value || ""}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -559,7 +563,11 @@ export function TeamForm({ initialData, isEditing = false }: TeamFormProps) {
                           LinkedIn
                         </FormLabel>
                         <FormControl>
-                          <Input placeholder="LinkedIn profile URL" {...field} />
+                          <Input 
+                            placeholder="LinkedIn profile URL" 
+                            {...field}
+                            value={field.value || ""}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -576,7 +584,11 @@ export function TeamForm({ initialData, isEditing = false }: TeamFormProps) {
                           Twitter
                         </FormLabel>
                         <FormControl>
-                          <Input placeholder="Twitter profile URL" {...field} />
+                          <Input 
+                            placeholder="Twitter profile URL" 
+                            {...field}
+                            value={field.value || ""}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -617,7 +629,7 @@ export function TeamForm({ initialData, isEditing = false }: TeamFormProps) {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => router.push("/admin/academy/instructor-management")}
+                  onClick={() => router.push("/admin/team-management")}
                 >
                   Cancel
                 </Button>

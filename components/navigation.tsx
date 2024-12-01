@@ -18,6 +18,8 @@ import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UserMenu } from "@/components/ui/user-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { MenuIcon } from "lucide-react";
 
 type NavItem = {
   title: string;
@@ -30,6 +32,7 @@ const navItems: NavItem[] = [
   {
     title: "Programs",
     href: "/programs",
+    description: "Elite racing programs designed for every skill level",
     children: [
       {
         title: "Beginner Course",
@@ -51,18 +54,22 @@ const navItems: NavItem[] = [
   {
     title: "Courses",
     href: "/courses",
+    description: "World-class racing circuits and specialized training tracks",
   },
   {
     title: "Facilities",
     href: "/facilities",
+    description: "State-of-the-art equipment and premium racing facilities",
   },
   {
-    title: "Instructors",
-    href: "/instructors",
+    title: "Meet Our Team",
+    href: "/team",
+    description: "From F1 veterans to karting champions - meet the experts who'll guide your racing journey",
   },
   {
     title: "Contact",
     href: "/contact",
+    description: "Start your racing journey today - get in touch with us",
   },
 ];
 

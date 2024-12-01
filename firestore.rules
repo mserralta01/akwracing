@@ -35,6 +35,12 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    // Roles collection
+    match /roles/{roleId} {
+      allow read: if true;  // Anyone can read roles
+      allow create, update, delete: if isAdmin();
+    }
+
     // Default deny
     match /{document=**} {
       allow read, write: if false;

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "components/ui/button";
 import { Input } from "components/ui/input";
@@ -16,6 +16,8 @@ import { FileUpload } from "@/components/ui/file-upload";
 import { courseService } from "@/lib/services/course-service";
 import { useToast } from "@/components/ui/use-toast";
 import { CourseFormData, CourseLevel } from "@/types/course";
+import { instructorService } from "@/lib/services/instructor-service";
+import { Instructor } from "@/types/instructor";
 
 type NewCourse = Omit<CourseFormData, 'imageUrl'> & {
   photo: File | null;
@@ -38,7 +40,22 @@ export function AddCourse() {
     photo: null,
     availableSpots: 0,
     featured: false,
+    instructorId: "",
   });
+  const [instructors, setInstructors] = useState<Instructor[]>([]);
+
+  useEffect(() => {
+    const fetchInstructors = async () => {
+      try {
+        const { instructors } = await instructorService.getInstructors();
+        setInstructors(instructors);
+      } catch (error) {
+        console.error("Error fetching instructors:", error);
+      }
+    };
+
+    fetchInstructors();
+  }, []);
 
   const handleAddCourse = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -164,6 +181,21 @@ export function AddCourse() {
           required
           min="0"
         />
+        <Select
+          value={newCourse.instructorId}
+          onValueChange={(value) => setNewCourse({ ...newCourse, instructorId: value })}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select Instructor" />
+          </SelectTrigger>
+          <SelectContent>
+            {instructors.map((instructor) => (
+              <SelectItem key={instructor.id} value={instructor.id}>
+                {instructor.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Button 
           type="submit" 
           className="w-full bg-racing-red hover:bg-red-700"

@@ -52,6 +52,11 @@ const navItems: NavItem[] = [
     ],
   },
   {
+    title: "Calendar",
+    href: "/calendar",
+    description: "View our upcoming racing courses and events",
+  },
+  {
     title: "Courses",
     href: "/courses",
     description: "World-class racing circuits and specialized training tracks",

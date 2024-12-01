@@ -7,6 +7,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Course, CourseFormData } from "@/types/course";
 import { courseService } from "@/lib/services/course-service";
+import { auth, db } from "@/lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -30,17 +32,22 @@ import { Calendar } from "@/components/ui/calendar";
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { Editor } from "@/components/ui/editor";
 import { Switch } from "@/components/ui/switch";
 import { ImageUpload } from "@/components/image-upload";
 import { Instructor } from "@/types/instructor";
-import { getDoc, doc } from "firebase/firestore";
-import { auth } from "@/lib/firebase";
-import { db } from "@/lib/firebase";
+import { Separator } from "@/components/ui/separator";
+import { 
+  BookOpen, 
+  Calendar as CalendarIcon, 
+  MapPin, 
+  Users, 
+  DollarSign,
+  GraduationCap,
+  Clock
+} from "lucide-react";
 
 const formSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -71,6 +78,7 @@ export function CourseForm({ initialData, isEditing = false, instructors }: Cour
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | undefined>(initialData?.imageUrl || undefined);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -86,7 +94,7 @@ export function CourseForm({ initialData, isEditing = false, instructors }: Cour
       availableSpots: 1,
       price: 0,
       featured: false,
-      imageUrl: null,
+      imageUrl: undefined,
       instructorId: "",
     },
   });
@@ -95,7 +103,6 @@ export function CourseForm({ initialData, isEditing = false, instructors }: Cour
     try {
       setLoading(true);
       
-      // Check if user is authenticated
       if (!auth.currentUser) {
         toast({
           title: "Error",
@@ -105,15 +112,7 @@ export function CourseForm({ initialData, isEditing = false, instructors }: Cour
         return;
       }
 
-      // Log authentication state
-      console.log("Current user:", auth.currentUser.uid);
-      
-      // Check admin status first
       const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
-      
-      // Log user document data
-      console.log("User doc exists:", userDoc.exists());
-      console.log("User data:", userDoc.data());
       
       if (!userDoc.exists() || userDoc.data()?.role !== 'admin') {
         toast({
@@ -128,10 +127,6 @@ export function CourseForm({ initialData, isEditing = false, instructors }: Cour
         ...values,
         imageUrl: values.imageUrl || null,
       };
-
-      // Log form data before submission
-      console.log("Submitting form data:", formData);
-      console.log("Image file:", imageFile);
 
       if (isEditing && initialData) {
         await courseService.updateCourse(initialData.id, formData, imageFile || undefined);
@@ -150,7 +145,6 @@ export function CourseForm({ initialData, isEditing = false, instructors }: Cour
       router.push("/admin/academy/course-management");
       router.refresh();
     } catch (error) {
-      // Enhanced error logging
       console.error('Form submission error:', {
         error,
         errorMessage: error instanceof Error ? error.message : 'Unknown error',
@@ -173,155 +167,141 @@ export function CourseForm({ initialData, isEditing = false, instructors }: Cour
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{isEditing ? 'Edit Course' : 'Create Course'}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <div className="grid grid-cols-2 gap-8">
-              <div className="space-y-8">
-                <FormField
-                  control={form.control}
-                  name="title"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Title</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Course title" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="shortDescription"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Short Description</FormLabel>
-                      <FormControl>
-                        <Editor
-                          content={field.value}
-                          onChange={field.onChange}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        A brief summary of the course (appears in course listings)
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="longDescription"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Long Description</FormLabel>
-                      <FormControl>
-                        <Editor
-                          content={field.value}
-                          onChange={field.onChange}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Detailed course description (appears on course page)
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="featured"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-base">Featured Course</FormLabel>
-                        <FormDescription>
-                          Display this course on the homepage
-                        </FormDescription>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="imageUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Course Image</FormLabel>
-                      <FormControl>
-                        <ImageUpload
-                          value={field.value || ""}
-                          onChange={(file) => {
-                            setImageFile(file);
-                            if (!file && initialData) {
-                              field.onChange(initialData.imageUrl);
-                            }
-                          }}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Upload an image for the course. This will be displayed on the course listing and details pages.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="instructorId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Instructor</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={field.value}
-                      >
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main Course Information */}
+          <Card className="lg:col-span-2 shadow-lg">
+            <CardContent className="p-6">
+              <div className="space-y-6">
+                <div className="flex items-center space-x-2">
+                  <BookOpen className="h-5 w-5 text-racing-red" />
+                  <h2 className="text-xl font-semibold">Course Details</h2>
+                </div>
+                <Separator />
+                
+                <div className="grid gap-6">
+                  <FormField
+                    control={form.control}
+                    name="title"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Course Title</FormLabel>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select an instructor" />
-                          </SelectTrigger>
+                          <Input placeholder="Advanced Racing Techniques" {...field} />
                         </FormControl>
-                        <SelectContent>
-                          {instructors?.length > 0 ? (
-                            instructors.map((instructor) => (
-                              <SelectItem 
-                                key={instructor.id} 
-                                value={instructor.id}
-                              >
-                                {instructor.name}
-                              </SelectItem>
-                            ))
-                          ) : (
-                            <SelectItem value="" disabled>
-                              No instructors available
-                            </SelectItem>
-                          )}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-              <div className="space-y-8">
-                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="level"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Level</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select level" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Beginner">Beginner</SelectItem>
+                              <SelectItem value="Intermediate">Intermediate</SelectItem>
+                              <SelectItem value="Advanced">Advanced</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="instructorId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Instructor</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select instructor" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {instructors.map((instructor) => (
+                                <SelectItem key={instructor.id} value={instructor.id}>
+                                  {instructor.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="shortDescription"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Short Description</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Brief overview of the course"
+                            className="resize-none"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Course Image */}
+          <Card className="shadow-lg">
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <GraduationCap className="h-5 w-5 text-racing-red" />
+                  <h2 className="text-xl font-semibold">Course Image</h2>
+                </div>
+                <Separator />
+                <div className="aspect-video relative rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-800">
+                  <ImageUpload
+                    value={previewUrl}
+                    onChange={(file) => {
+                      setImageFile(file);
+                      if (file) {
+                        setPreviewUrl(URL.createObjectURL(file));
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Course Schedule & Logistics */}
+          <Card className="lg:col-span-3 shadow-lg">
+            <CardContent className="p-6">
+              <div className="space-y-6">
+                <div className="flex items-center space-x-2">
+                  <CalendarIcon className="h-5 w-5 text-racing-red" />
+                  <h2 className="text-xl font-semibold">Schedule & Logistics</h2>
+                </div>
+                <Separator />
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <FormField
                     control={form.control}
                     name="startDate"
@@ -329,10 +309,7 @@ export function CourseForm({ initialData, isEditing = false, instructors }: Cour
                       <FormItem>
                         <FormLabel>Start Date</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="date" 
-                            {...field}
-                          />
+                          <Input type="date" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -346,9 +323,24 @@ export function CourseForm({ initialData, isEditing = false, instructors }: Cour
                       <FormItem>
                         <FormLabel>End Date</FormLabel>
                         <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="duration"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Duration (days)</FormLabel>
+                        <FormControl>
                           <Input 
-                            type="date" 
+                            type="number" 
                             {...field}
+                            onChange={(e) => field.onChange(parseInt(e.target.value))}
                           />
                         </FormControl>
                         <FormMessage />
@@ -357,93 +349,80 @@ export function CourseForm({ initialData, isEditing = false, instructors }: Cour
                   />
                 </div>
 
-                <FormField
-                  control={form.control}
-                  name="duration"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Duration (days)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value))}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="location"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Location</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="level"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Level</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="location"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Location</FormLabel>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select level" />
-                          </SelectTrigger>
+                          <Input {...field} />
                         </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Beginner">Beginner</SelectItem>
-                          <SelectItem value="Intermediate">Intermediate</SelectItem>
-                          <SelectItem value="Advanced">Advanced</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="price"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Price ($)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number"
+                            {...field}
+                            onChange={(e) => field.onChange(parseInt(e.target.value))}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="availableSpots"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Available Spots</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number"
+                            {...field}
+                            onChange={(e) => field.onChange(parseInt(e.target.value))}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Course Description */}
+          <Card className="lg:col-span-3 shadow-lg">
+            <CardContent className="p-6">
+              <div className="space-y-6">
+                <div className="flex items-center space-x-2">
+                  <BookOpen className="h-5 w-5 text-racing-red" />
+                  <h2 className="text-xl font-semibold">Detailed Description</h2>
+                </div>
+                <Separator />
 
                 <FormField
                   control={form.control}
-                  name="availableSpots"
+                  name="longDescription"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Available Spots</FormLabel>
                       <FormControl>
-                        <Input
-                          type="number"
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value))}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="price"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Price ($)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value))}
+                        <Editor
+                          content={field.value}
+                          onChange={field.onChange}
                         />
                       </FormControl>
                       <FormMessage />
@@ -451,32 +430,64 @@ export function CourseForm({ initialData, isEditing = false, instructors }: Cour
                   )}
                 />
               </div>
-            </div>
+            </CardContent>
+          </Card>
+        </div>
 
-            <div className="flex justify-end gap-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.push("/admin/academy/course-management")}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={loading}>
-                {loading ? (
-                  <div className="flex items-center gap-2">
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                    {isEditing ? "Updating..." : "Creating..."}
-                  </div>
-                ) : isEditing ? (
-                  "Update Course"
-                ) : (
-                  "Create Course"
+        {/* Featured Toggle & Actions */}
+        <Card className="lg:col-span-3 shadow-lg">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <FormField
+                control={form.control}
+                name="featured"
+                render={({ field }) => (
+                  <FormItem className="flex items-center space-x-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Featured Course</FormLabel>
+                      <FormDescription>
+                        Display this course on the homepage
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
                 )}
-              </Button>
+              />
+
+              <div className="flex space-x-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.push("/admin/academy/course-management")}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={loading}
+                  className="bg-racing-red hover:bg-racing-red/90"
+                >
+                  {loading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      {isEditing ? "Updating..." : "Creating..."}
+                    </div>
+                  ) : isEditing ? (
+                    "Update Course"
+                  ) : (
+                    "Create Course"
+                  )}
+                </Button>
+              </div>
             </div>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+          </CardContent>
+        </Card>
+      </form>
+    </Form>
   );
 }

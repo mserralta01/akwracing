@@ -2,6 +2,8 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
+import { Card, CardContent } from "@/components/ui/card";
+import { CheckCircle2 } from "lucide-react";
 
 type FacilityCardProps = {
   title: string;
@@ -9,76 +11,82 @@ type FacilityCardProps = {
   features: string[];
   imageSrc: string;
   imageAlt: string;
+  className: string;
 };
 
-const FacilityCard = ({ title, description, features, imageSrc, imageAlt }: FacilityCardProps) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    whileInView={{ opacity: 1, y: 0 }}
-    viewport={{ once: true }}
-    className="bg-white rounded-lg shadow-xl overflow-hidden"
-  >
-    <div className="relative h-64 w-full">
-      <Image
-        src={imageSrc}
-        alt={imageAlt}
-        fill
-        className="object-cover"
-        sizes="(max-width: 768px) 100vw, 50vw"
-      />
-    </div>
-    <div className="p-6">
-      <h3 className="text-2xl font-bold text-gray-900 mb-3">{title}</h3>
-      <p className="text-gray-600 mb-4">{description}</p>
-      <ul className="space-y-2">
-        {features.map((feature, index) => (
-          <li key={index} className="flex items-center text-gray-700">
-            <svg
-              className="w-5 h-5 text-primary mr-2"
-              fill="currentColor"
-              viewBox="0 0 20 20"
+const FacilityCard = ({ title, description, features, imageSrc, imageAlt, className }: FacilityCardProps) => (
+  <div className={`${className} bg-navy-700/50 backdrop-blur-sm border-navy-600`}>
+    <CardContent className="p-0">
+      <div className="aspect-video relative">
+        <Image
+          src={imageSrc}
+          alt={imageAlt}
+          fill
+          className="object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+      </div>
+      <div className="p-6 space-y-4">
+        <h3 className="text-2xl font-bold text-white">{title}</h3>
+        <p className="text-gray-300">{description}</p>
+        <ul className="grid grid-cols-2 gap-2">
+          {features.map((feature, featureIndex) => (
+            <li
+              key={featureIndex}
+              className="flex items-center text-sm text-gray-300"
             >
-              <path
-                fillRule="evenodd"
-                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                clipRule="evenodd"
-              />
-            </svg>
-            {feature}
-          </li>
-        ))}
-      </ul>
-    </div>
-  </motion.div>
+              <CheckCircle2 className="h-4 w-4 mr-2 text-racing-red" />
+              {feature}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </CardContent>
+  </div>
 );
 
 export const FacilitiesSection = () => {
   const facilities = [
     {
-      title: "Race Track - Piquet Entertainment",
-      description: "Our primary racing facility located in Loxahatchee, Florida, providing a professional racing environment for training and competitions.",
+      title: "AKW Racing Academy Training Center",
+      description: "Our state-of-the-art racing academy headquarters in Wellington, FL combines cutting-edge technology with professional instruction. From advanced simulators to fully-equipped maintenance bays, every aspect is optimized for youth development and safety.",
       features: [
-        "Professional-grade race track",
-        "State-of-the-art racing equipment",
-        "Expert instruction facilities",
-        "Safety equipment and protocols",
-      ],
-      imageSrc: "/images/PiquetTrack.webp",
-      imageAlt: "Piquet Entertainment Race Track",
-    },
-    {
-      title: "AKW Racing Headquarters",
-      description: "Our Wellington, FL headquarters serves as our main operations center, featuring comprehensive training and maintenance facilities.",
-      features: [
+        "Professional race strategy center",
         "2 Full motion racing simulators",
+        "Advanced driver development classrooms",
         "Professional maintenance garage",
         "Equipment storage and warehouse",
-        "Agility and reflex training equipment",
-        "Dedicated workout room",
         "Parts department",
       ],
       imageSrc: "/images/akwracingheadquarters.jpg",
       imageAlt: "AKW Racing Headquarters",
+      className: "md:col-span-2", // Full width for headquarters
+    },
+    {
+      title: "Race Track - Piquet Race Park",
+      description: "Our main racing academy track in Loxahatchee, FL features multiple configurations for different skill levels. This professional facility offers the perfect environment for young racers to progress from their first laps to competitive racing.",
+      features: [
+        "FIA-approved youth racing circuit",
+        "Progressive track configurations",
+        "Professional race control",
+        "Complete safety protocols",
+      ],
+      imageSrc: "/images/PiquetTrack.webp",
+      imageAlt: "Piquet Entertainment Race Track",
+      className: "md:col-span-1", // Half width for tracks
+    },
+    {
+      title: "AMR Homestead-Miami Circuit",
+      description: "Our advanced training facility caters to developing young racers ready for more challenging experiences. This professional-grade track provides the perfect stepping stone for junior racers advancing toward professional careers.",
+      features: [
+        "Advanced youth racing circuits",
+        "Competition preparation facilities",
+        "Professional race simulation",
+        "Elite safety standards",
+      ],
+      imageSrc: "/images/HomesteadTrack.jpg",
+      imageAlt: "AMR Homestead-Miami Racing Circuit",
+      className: "md:col-span-1", // Half width for tracks
     },
   ];
 
@@ -106,8 +114,8 @@ export const FacilitiesSection = () => {
         >
           <h2 className="text-4xl font-bold text-white mb-4">Our Facilities</h2>
           <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-            Experience racing excellence at our two premier facilities, equipped with
-            everything you need for professional racing development.
+            Experience racing excellence at our premier facilities, equipped with
+            everything needed for professional racing development.
           </p>
         </motion.div>
 

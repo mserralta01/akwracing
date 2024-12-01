@@ -17,7 +17,7 @@ import {
   setDoc,
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import { db, storage } from '../firebase';
+import { db, storage, auth } from '../firebase';
 import { Course, CourseFormData, CourseLevel } from '@/types/course';
 
 const COURSES_COLLECTION = 'courses';
@@ -35,6 +35,31 @@ interface CourseFilters {
 export const courseService = {
   async createCourse(courseData: CourseFormData, imageFile: File | null = null): Promise<void> {
     try {
+      // Check authentication
+      if (!auth.currentUser) {
+        throw new Error('No authenticated user found');
+      }
+
+      // Log current user and authentication state
+      console.log('Creating course with auth:', {
+        uid: auth.currentUser.uid,
+        email: auth.currentUser.email,
+        isAuthenticated: !!auth.currentUser
+      });
+
+      // First check if user has admin rights through Firestore
+      const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
+      
+      // Log user document data
+      console.log('User document:', {
+        exists: userDoc.exists(),
+        data: userDoc.data()
+      });
+
+      if (!userDoc.exists() || userDoc.data()?.role !== 'admin') {
+        throw new Error('Unauthorized: Only admins can create courses');
+      }
+
       const courseRef = doc(collection(db, COURSES_COLLECTION));
       const createData: any = {
         ...courseData,
@@ -44,14 +69,63 @@ export const courseService = {
       };
 
       if (imageFile) {
-        const imageRef = ref(storage, `courses/${Date.now()}_${imageFile.name}`);
-        const uploadResult = await uploadBytes(imageRef, imageFile);
-        createData.imageUrl = await getDownloadURL(uploadResult.ref);
+        try {
+          // Validate file size and type
+          if (imageFile.size > 5 * 1024 * 1024) { // 5MB limit
+            throw new Error('Image file is too large. Maximum size is 5MB.');
+          }
+
+          if (!imageFile.type.startsWith('image/')) {
+            throw new Error('Invalid file type. Only images are allowed.');
+          }
+
+          console.log('Uploading image:', {
+            fileName: imageFile.name,
+            fileSize: imageFile.size,
+            fileType: imageFile.type
+          });
+
+          // Create a clean filename
+          const cleanFileName = imageFile.name.replace(/[^a-zA-Z0-9.]/g, '_');
+          const timestamp = Date.now();
+          const imageRef = ref(storage, `courses/${timestamp}_${cleanFileName}`);
+
+          // Upload with metadata
+          const metadata = {
+            contentType: imageFile.type,
+            customMetadata: {
+              uploadedBy: auth.currentUser.uid,
+              uploadedAt: new Date().toISOString()
+            }
+          };
+
+          const uploadResult = await uploadBytes(imageRef, imageFile, metadata);
+          createData.imageUrl = await getDownloadURL(uploadResult.ref);
+          
+          console.log('Image upload successful:', {
+            downloadUrl: createData.imageUrl,
+            path: uploadResult.ref.fullPath
+          });
+        } catch (uploadError) {
+          console.error('Error uploading image:', {
+            error: uploadError,
+            fileName: imageFile.name,
+            fileSize: imageFile.size,
+            errorMessage: uploadError instanceof Error ? uploadError.message : 'Unknown error'
+          });
+          throw new Error(`Failed to upload image: ${uploadError instanceof Error ? uploadError.message : 'Unknown error'}`);
+        }
       }
 
       await setDoc(courseRef, createData);
     } catch (error) {
-      console.error('Error creating course:', error);
+      console.error('Error creating course:', {
+        error,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        errorStack: error instanceof Error ? error.stack : undefined,
+        userId: auth.currentUser?.uid,
+        hasImageFile: !!imageFile
+      });
       throw error;
     }
   },

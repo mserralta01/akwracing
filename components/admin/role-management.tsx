@@ -53,32 +53,18 @@ export default function RoleManagement() {
     }
   };
 
-  const validateRole = (role: string) => {
-    if (role.length < 2) {
-      return "Role name must be at least 2 characters";
-    }
-    if (role.length > 50) {
-      return "Role name must be less than 50 characters";
-    }
-    return "";
-  };
-
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmedRole = newRole.trim();
     
-    // Clear previous error
-    setRoleError("");
-    
-    // Validate
-    const error = validateRole(trimmedRole);
-    if (error) {
-      setRoleError(error);
+    if (!trimmedRole) {
+      setRoleError("Role name is required");
       return;
     }
 
     try {
       setIsLoading(true);
+      setRoleError("");
       await roleService.createRole(trimmedRole);
       setNewRole("");
       await fetchRoles();
@@ -87,11 +73,10 @@ export default function RoleManagement() {
         description: "Role added successfully",
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to add role";
-      setRoleError(message);
+      setRoleError("Failed to add role");
       toast({
         title: "Error",
-        description: message,
+        description: "Failed to add role",
         variant: "destructive",
       });
     } finally {
@@ -161,7 +146,9 @@ export default function RoleManagement() {
             Add Role
           </Button>
         </form>
-
+        {roleError && (
+          <p className="text-sm text-red-500 mb-4">{roleError}</p>
+        )}
         <div className="rounded-md border">
           {roles.length === 0 ? (
             <div className="p-4 text-center text-muted-foreground">

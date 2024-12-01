@@ -38,6 +38,9 @@ import { Editor } from "@/components/ui/editor";
 import { Switch } from "@/components/ui/switch";
 import { ImageUpload } from "@/components/image-upload";
 import { Instructor } from "@/types/instructor";
+import { getDoc, doc } from "firebase/firestore";
+import { auth } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 
 const formSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -91,10 +94,44 @@ export function CourseForm({ initialData, isEditing = false, instructors }: Cour
   const onSubmit = async (values: FormValues) => {
     try {
       setLoading(true);
+      
+      // Check if user is authenticated
+      if (!auth.currentUser) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to perform this action",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Log authentication state
+      console.log("Current user:", auth.currentUser.uid);
+      
+      // Check admin status first
+      const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
+      
+      // Log user document data
+      console.log("User doc exists:", userDoc.exists());
+      console.log("User data:", userDoc.data());
+      
+      if (!userDoc.exists() || userDoc.data()?.role !== 'admin') {
+        toast({
+          title: "Error",
+          description: "You don't have permission to perform this action",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const formData: CourseFormData = {
         ...values,
         imageUrl: values.imageUrl || null,
       };
+
+      // Log form data before submission
+      console.log("Submitting form data:", formData);
+      console.log("Image file:", imageFile);
 
       if (isEditing && initialData) {
         await courseService.updateCourse(initialData.id, formData, imageFile || undefined);
@@ -109,12 +146,25 @@ export function CourseForm({ initialData, isEditing = false, instructors }: Cour
           description: "Course created successfully",
         });
       }
+      
       router.push("/admin/academy/course-management");
       router.refresh();
     } catch (error) {
+      // Enhanced error logging
+      console.error('Form submission error:', {
+        error,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        errorStack: error instanceof Error ? error.stack : undefined,
+        currentUser: auth.currentUser?.uid,
+        isEditing,
+        hasImageFile: !!imageFile
+      });
+      
       toast({
         title: "Error",
-        description: "Something went wrong",
+        description: error instanceof Error 
+          ? `Error: ${error.message}` 
+          : "Something went wrong. Please try again.",
         variant: "destructive",
       });
     } finally {

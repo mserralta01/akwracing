@@ -3,14 +3,23 @@ service firebase.storage {
   match /b/{bucket}/o {
     function isAdmin() {
       return request.auth != null && 
-             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+             request.auth.token.email != null &&
+             firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    // If user is admin, allow full access to all storage paths
+    match /courses/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /instructors/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     match /{allPaths=**} {
-      allow read: if true;  // Allow public read access
-      allow write: if isAdmin();  // Only admins can write/modify/delete
+      allow read: if true;
+      allow write: if isAdmin();
     }
   }
 }

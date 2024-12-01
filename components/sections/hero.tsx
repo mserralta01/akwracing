@@ -68,9 +68,6 @@ export function HeroSection() {
                 cursor: "|",
                 wrapperClassName: "text-white",
                 cursorClassName: "text-white",
-                typeSpeed: 50,
-                deleteSpeed: 50,
-                autoStyled: true,
               }}
             />
           </h1>

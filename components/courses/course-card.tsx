@@ -39,11 +39,7 @@ export function CourseCard({ course }: CourseCardProps) {
   };
 
   const handleLearnMore = () => {
-    const slug = course.title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '');
-    router.push(`/courses/${course.id}/${slug}`);
+    router.push(`/courses/${course.id}`);
   };
 
   return (

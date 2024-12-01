@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/hover-card";
 import { ClassNames } from "react-day-picker";
 import { DayPicker } from "react-day-picker";
+import { useRouter } from "next/navigation";
 
 type Filter = {
   level?: CourseLevel | "all";
@@ -47,6 +48,8 @@ export default function CalendarPage() {
     location: "all",
     instructorId: "all",
   });
+
+  const router = useRouter();
 
   useEffect(() => {
     fetchCourses();
@@ -283,7 +286,7 @@ export default function CalendarPage() {
                                     getLevelColor(course.level as CourseLevel),
                                     "hover:scale-[1.02] hover:shadow-md"
                                   )}
-                                  onClick={() => window.location.href = `/courses/${course.id}`}
+                                  onClick={() => router.push(`/courses/${course.id}`)}
                                 >
                                   {course.title}
                                 </div>

@@ -38,6 +38,7 @@ next-env.d.ts
 /lh*
 .history
 /.history
+/.lh/*
 
 # Firebase
 .firebase/

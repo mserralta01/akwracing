@@ -52,10 +52,10 @@ export function TeamSection() {
           className="text-center mb-12"
         >
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            Meet Our Team
+            Elite Racing Mentors Shaping Future Champions
           </h2>
           <p className="text-gray-300 max-w-2xl mx-auto">
-            Learn from experienced professionals who are passionate about racing and teaching.
+          Train with championship-winning professionals who've mastered the art of transforming young talent into racing excellence.
           </p>
         </motion.div>
 

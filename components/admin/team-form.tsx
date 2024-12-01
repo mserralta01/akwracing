@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { Instructor, RacingIcon } from "@/types/instructor";
+import { instructorService } from "@/lib/services/instructor-service";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -16,28 +18,30 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileUpload } from "@/components/ui/file-upload";
-import { Checkbox } from "@/components/ui/checkbox";
-import { X } from "lucide-react";
-import { instructorService } from "@/lib/services/instructor-service";
-import { Instructor, RacingIcon } from "@/types/instructor";
+import { Switch } from "@/components/ui/switch";
+import { ImageUpload } from "@/components/image-upload";
+import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
-import {
-  Trophy,
-  Flag,
+import { RacingIconSelector } from "@/components/ui/racing-icon-selector";
+import { Separator } from "@/components/ui/separator";
+import { 
+  User, 
+  Mail, 
+  Phone, 
+  Trophy, 
   Medal,
-  Star,
-  Crown,
-  ScrollText,
-  Timer,
-  Car,
-  Wrench,
-  Users,
-  Target,
-  BarChart2,
-  Award,
+  Calendar,
+  Plus,
+  X,
+  Globe,
+  Instagram,
+  Facebook,
+  Linkedin,
+  Twitter,
+  Youtube
 } from "lucide-react";
+import { roleService } from "@/lib/services/role-service";
+import type { Role } from "../../types/role";
 import {
   Select,
   SelectContent,
@@ -45,7 +49,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Role, roleService } from "@/lib/services/role-service";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -73,14 +76,14 @@ const formSchema = z.object({
   languages: z.array(z.string()),
   featured: z.boolean(),
   socialMedia: z.object({
-    instagram: z.string().optional(),
-    facebook: z.string().optional(),
-    linkedin: z.string().optional(),
-    twitter: z.string().optional(),
-    youtube: z.string().optional(),
-  }),
-  phone: z.string().optional(),
-  email: z.string().email().optional(),
+    instagram: z.string().optional().nullable(),
+    facebook: z.string().optional().nullable(),
+    linkedin: z.string().optional().nullable(),
+    twitter: z.string().optional().nullable(),
+    youtube: z.string().optional().nullable(),
+  }).optional().default({}),
+  phone: z.string().optional().nullable(),
+  email: z.string().email().optional().nullable(),
   imageUrl: z.string(),
 });
 
@@ -92,62 +95,74 @@ type TeamFormProps = {
 export function TeamForm({ initialData, isEditing = false }: TeamFormProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | undefined>(
+    initialData?.imageUrl || undefined
+  );
   const [roles, setRoles] = useState<Role[]>([]);
-  const [isLoadingRoles, setIsLoadingRoles] = useState(true);
 
   useEffect(() => {
     const fetchRoles = async () => {
       try {
-        setIsLoadingRoles(true);
-        const fetchedRoles = await roleService.getRoles();
-        setRoles(fetchedRoles);
+        const rolesData = await roleService.getRoles();
+        setRoles(rolesData);
       } catch (error) {
         console.error("Error fetching roles:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load roles",
-          variant: "destructive",
-        });
       } finally {
-        setIsLoadingRoles(false);
+        setLoading(false);
       }
     };
 
     fetchRoles();
-  }, [toast]);
-
-  const defaultValues = {
-    name: initialData?.name ?? "",
-    role: initialData?.role ?? "",
-    experiences: initialData?.experiences ?? [],
-    achievements: initialData?.achievements ?? [],
-    languages: initialData?.languages ?? [],
-    featured: initialData?.featured ?? false,
-    socialMedia: initialData?.socialMedia ?? {},
-    phone: initialData?.phone ?? "",
-    email: initialData?.email ?? "",
-    imageUrl: initialData?.imageUrl ?? "",
-  };
+  }, []);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues,
+    defaultValues: initialData || {
+      name: "",
+      role: "",
+      experiences: [],
+      achievements: [],
+      languages: [],
+      featured: false,
+      socialMedia: {
+        instagram: "",
+        facebook: "",
+        linkedin: "",
+        twitter: "",
+        youtube: "",
+      },
+      imageUrl: "",
+      phone: "",
+      email: "",
+    },
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
+      const cleanedSocialMedia = Object.fromEntries(
+        Object.entries(values.socialMedia || {})
+          .filter(([_, value]) => value != null && value !== '')
+          .map(([key, value]) => [key, value || undefined])
+      );
+
+      const cleanedData = {
+        ...values,
+        socialMedia: cleanedSocialMedia,
+        phone: values.phone || undefined,
+        email: values.email || undefined,
+        imageUrl: values.imageUrl || "",
+      };
+
       if (isEditing && initialData) {
-        await instructorService.updateInstructor(initialData.id, values, selectedImage);
+        await instructorService.updateInstructor(initialData.id, cleanedData, selectedImage);
         toast({
           title: "Success",
           description: "Team member updated successfully",
         });
       } else {
-        await instructorService.createInstructor({
-          ...values,
-          imageUrl: values.imageUrl || "", // Ensure imageUrl is never undefined
-        }, selectedImage);
+        await instructorService.createInstructor(cleanedData, selectedImage);
         toast({
           title: "Success",
           description: "Team member created successfully",
@@ -165,492 +180,468 @@ export function TeamForm({ initialData, isEditing = false }: TeamFormProps) {
     }
   };
 
-  const handleImageChange = (file: File | null) => {
-    setSelectedImage(file);
+  const [newExperience, setNewExperience] = useState({
+    description: "",
+    icon: "Trophy" as RacingIcon,
+    year: new Date().getFullYear().toString(),
+  });
+
+  const [newAchievement, setNewAchievement] = useState({
+    description: "",
+    icon: "Medal" as RacingIcon,
+    year: new Date().getFullYear().toString(),
+  });
+
+  const addExperience = () => {
+    if (newExperience.description) {
+      const currentExperiences = form.getValues("experiences");
+      form.setValue("experiences", [...currentExperiences, newExperience]);
+      setNewExperience({
+        description: "",
+        icon: "Trophy",
+        year: new Date().getFullYear().toString(),
+      });
+    }
+  };
+
+  const addAchievement = () => {
+    if (newAchievement.description) {
+      const currentAchievements = form.getValues("achievements");
+      form.setValue("achievements", [...currentAchievements, newAchievement]);
+      setNewAchievement({
+        description: "",
+        icon: "Medal",
+        year: new Date().getFullYear().toString(),
+      });
+    }
+  };
+
+  const removeExperience = (index: number) => {
+    const currentExperiences = form.getValues("experiences");
+    form.setValue(
+      "experiences",
+      currentExperiences.filter((_, i) => i !== index)
+    );
+  };
+
+  const removeAchievement = (index: number) => {
+    const currentAchievements = form.getValues("achievements");
+    form.setValue(
+      "achievements",
+      currentAchievements.filter((_, i) => i !== index)
+    );
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{isEditing ? "Edit Team Member" : "Add Team Member"}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Basic Information */}
+          <Card className="lg:col-span-2 shadow-lg">
+            <CardContent className="p-6">
+              <div className="space-y-6">
+                <div className="flex items-center space-x-2">
+                  <User className="h-5 w-5 text-racing-red" />
+                  <h2 className="text-xl font-semibold">Basic Information</h2>
+                </div>
+                <Separator />
+                
+                <div className="grid gap-6">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="John Doe" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-            <FormField
-              control={form.control}
-              name="role"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Role</FormLabel>
-                  <Select
-                    disabled={isLoadingRoles}
-                    onValueChange={field.onChange}
-                    value={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a role" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {roles.map((role) => (
-                        <SelectItem key={role.id} value={role.name}>
-                          {role.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  <FormField
+                    control={form.control}
+                    name="role"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Role</FormLabel>
+                        <Select 
+                          disabled={loading}
+                          onValueChange={field.onChange} 
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a role" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {roles.map((role) => (
+                              <SelectItem key={role.id} value={role.name}>
+                                {role.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-            <div className="space-y-4">
-              <FormLabel>Profile Image</FormLabel>
-              <FileUpload onFileSelect={handleImageChange} />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="featured"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="email" 
+                              placeholder="john@example.com" 
+                              {...field}
+                              value={field.value || ""}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel>Featured Member</FormLabel>
-                    <FormDescription>
-                      Show this member on the homepage
-                    </FormDescription>
+
+                    <FormField
+                      control={form.control}
+                      name="phone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Phone</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="+1 234 567 8900" 
+                              {...field}
+                              value={field.value || ""}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
-                </FormItem>
-              )}
-            />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input type="email" placeholder="Enter email" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          {/* Profile Image */}
+          <Card className="shadow-lg">
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <User className="h-5 w-5 text-racing-red" />
+                  <h2 className="text-xl font-semibold">Profile Image</h2>
+                </div>
+                <Separator />
+                <div className="aspect-square relative rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-800">
+                  <ImageUpload
+                    value={previewUrl}
+                    onChange={(file) => {
+                      setSelectedImage(file);
+                      if (file) {
+                        setPreviewUrl(URL.createObjectURL(file));
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-            <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Phone</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter phone number" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Experiences Section */}
-            <FormField
-              control={form.control}
-              name="experiences"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Experiences</FormLabel>
-                  <div className="space-y-2">
-                    {field.value.map((exp, index) => (
-                      <div key={index} className="flex gap-2">
-                        <Input
-                          value={exp.description}
-                          onChange={(e) => {
-                            const newExperiences = [...field.value];
-                            newExperiences[index] = {
-                              ...newExperiences[index],
-                              description: e.target.value,
-                            };
-                            field.onChange(newExperiences);
-                          }}
-                          placeholder="Experience description"
-                          className="flex-1"
-                        />
-                        <Input
-                          value={exp.year}
-                          onChange={(e) => {
-                            const newExperiences = [...field.value];
-                            newExperiences[index] = {
-                              ...newExperiences[index],
-                              year: e.target.value,
-                            };
-                            field.onChange(newExperiences);
-                          }}
-                          placeholder="Year"
-                          className="w-24"
-                        />
-                        <Select
-                          value={exp.icon}
-                          onValueChange={(value) => {
-                            const newExperiences = [...field.value];
-                            newExperiences[index] = {
-                              ...newExperiences[index],
-                              icon: value as RacingIcon,
-                            };
-                            field.onChange(newExperiences);
-                          }}
-                        >
-                          <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Select icon" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Trophy">
-                              <div className="flex items-center gap-2">
-                                <Trophy className="h-4 w-4 text-racing-red" />
-                                <span>Trophy</span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="Flag">
-                              <div className="flex items-center gap-2">
-                                <Flag className="h-4 w-4 text-racing-red" />
-                                <span>Flag</span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="Medal">
-                              <div className="flex items-center gap-2">
-                                <Medal className="h-4 w-4 text-racing-red" />
-                                <span>Medal</span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="Star">
-                              <div className="flex items-center gap-2">
-                                <Star className="h-4 w-4 text-racing-red" />
-                                <span>Star</span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="Crown">
-                              <div className="flex items-center gap-2">
-                                <Crown className="h-4 w-4 text-racing-red" />
-                                <span>Crown</span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="Certificate">
-                              <div className="flex items-center gap-2">
-                                <ScrollText className="h-4 w-4 text-racing-red" />
-                                <span>Certificate</span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="Timer">
-                              <div className="flex items-center gap-2">
-                                <Timer className="h-4 w-4 text-racing-red" />
-                                <span>Timer</span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="Car">
-                              <div className="flex items-center gap-2">
-                                <Car className="h-4 w-4 text-racing-red" />
-                                <span>Car</span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="Tools">
-                              <div className="flex items-center gap-2">
-                                <Wrench className="h-4 w-4 text-racing-red" />
-                                <span>Tools</span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="Users">
-                              <div className="flex items-center gap-2">
-                                <Users className="h-4 w-4 text-racing-red" />
-                                <span>Users</span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="Target">
-                              <div className="flex items-center gap-2">
-                                <Target className="h-4 w-4 text-racing-red" />
-                                <span>Target</span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="Chart">
-                              <div className="flex items-center gap-2">
-                                <BarChart2 className="h-4 w-4 text-racing-red" />
-                                <span>Chart</span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="Award">
-                              <div className="flex items-center gap-2">
-                                <Award className="h-4 w-4 text-racing-red" />
-                                <span>Award</span>
-                              </div>
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            const newExperiences = field.value.filter((_, i) => i !== index);
-                            field.onChange(newExperiences);
-                          }}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        field.onChange([
-                          ...field.value,
-                          { description: "", icon: "Trophy" as RacingIcon, year: "" },
-                        ]);
-                      }}
-                    >
-                      Add Experience
-                    </Button>
+          {/* Experiences & Achievements */}
+          <Card className="lg:col-span-3 shadow-lg">
+            <CardContent className="p-6">
+              <div className="space-y-6">
+                {/* Experiences Section */}
+                <div>
+                  <div className="flex items-center space-x-2 mb-4">
+                    <Trophy className="h-5 w-5 text-racing-red" />
+                    <h2 className="text-xl font-semibold">Racing Experience</h2>
                   </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  <Separator className="mb-4" />
 
-            {/* Achievements Section */}
-            <FormField
-              control={form.control}
-              name="achievements"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Achievements</FormLabel>
-                  <div className="space-y-2">
-                    {field.value.map((achievement, index) => (
-                      <div key={index} className="flex gap-2">
-                        <Input
-                          value={achievement.description}
-                          onChange={(e) => {
-                            const newAchievements = [...field.value];
-                            newAchievements[index] = {
-                              ...newAchievements[index],
-                              description: e.target.value,
-                            };
-                            field.onChange(newAchievements);
-                          }}
-                          placeholder="Achievement description"
-                          className="flex-1"
-                        />
-                        <Input
-                          value={achievement.year}
-                          onChange={(e) => {
-                            const newAchievements = [...field.value];
-                            newAchievements[index] = {
-                              ...newAchievements[index],
-                              year: e.target.value,
-                            };
-                            field.onChange(newAchievements);
-                          }}
-                          placeholder="Year"
-                          className="w-24"
-                        />
-                        <Select
-                          value={achievement.icon}
-                          onValueChange={(value) => {
-                            const newAchievements = [...field.value];
-                            newAchievements[index] = {
-                              ...newAchievements[index],
-                              icon: value as RacingIcon,
-                            };
-                            field.onChange(newAchievements);
-                          }}
+                  <div className="space-y-4">
+                    <div className="flex gap-4">
+                      <Input
+                        placeholder="Experience description"
+                        value={newExperience.description}
+                        onChange={(e) => setNewExperience({ 
+                          ...newExperience, 
+                          description: e.target.value 
+                        })}
+                        className="flex-1"
+                      />
+                      <Input
+                        type="number"
+                        placeholder="Year"
+                        value={newExperience.year}
+                        onChange={(e) => setNewExperience({ 
+                          ...newExperience, 
+                          year: e.target.value 
+                        })}
+                        className="w-24"
+                      />
+                      <RacingIconSelector
+                        value={newExperience.icon}
+                        onChange={(icon) => setNewExperience({ 
+                          ...newExperience, 
+                          icon: icon as RacingIcon 
+                        })}
+                      />
+                      <Button 
+                        type="button" 
+                        onClick={addExperience}
+                        className="bg-racing-red hover:bg-racing-red/90"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    <div className="space-y-2">
+                      {form.watch("experiences")?.map((experience, index) => (
+                        <div 
+                          key={index} 
+                          className="flex items-center gap-4 bg-muted/50 p-3 rounded-lg"
                         >
-                          <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Select icon" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Trophy">
-                              <div className="flex items-center gap-2">
-                                <Trophy className="h-4 w-4 text-racing-red" />
-                                <span>Trophy</span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="Flag">
-                              <div className="flex items-center gap-2">
-                                <Flag className="h-4 w-4 text-racing-red" />
-                                <span>Flag</span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="Medal">
-                              <div className="flex items-center gap-2">
-                                <Medal className="h-4 w-4 text-racing-red" />
-                                <span>Medal</span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="Star">
-                              <div className="flex items-center gap-2">
-                                <Star className="h-4 w-4 text-racing-red" />
-                                <span>Star</span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="Crown">
-                              <div className="flex items-center gap-2">
-                                <Crown className="h-4 w-4 text-racing-red" />
-                                <span>Crown</span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="Certificate">
-                              <div className="flex items-center gap-2">
-                                <ScrollText className="h-4 w-4 text-racing-red" />
-                                <span>Certificate</span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="Timer">
-                              <div className="flex items-center gap-2">
-                                <Timer className="h-4 w-4 text-racing-red" />
-                                <span>Timer</span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="Car">
-                              <div className="flex items-center gap-2">
-                                <Car className="h-4 w-4 text-racing-red" />
-                                <span>Car</span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="Tools">
-                              <div className="flex items-center gap-2">
-                                <Wrench className="h-4 w-4 text-racing-red" />
-                                <span>Tools</span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="Users">
-                              <div className="flex items-center gap-2">
-                                <Users className="h-4 w-4 text-racing-red" />
-                                <span>Users</span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="Target">
-                              <div className="flex items-center gap-2">
-                                <Target className="h-4 w-4 text-racing-red" />
-                                <span>Target</span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="Chart">
-                              <div className="flex items-center gap-2">
-                                <BarChart2 className="h-4 w-4 text-racing-red" />
-                                <span>Chart</span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="Award">
-                              <div className="flex items-center gap-2">
-                                <Award className="h-4 w-4 text-racing-red" />
-                                <span>Award</span>
-                              </div>
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            const newAchievements = field.value.filter((_, i) => i !== index);
-                            field.onChange(newAchievements);
-                          }}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        field.onChange([
-                          ...field.value,
-                          { description: "", icon: "Trophy" as RacingIcon, year: "" },
-                        ]);
-                      }}
-                    >
-                      Add Achievement
-                    </Button>
+                          <Trophy className="h-4 w-4 text-racing-red flex-shrink-0" />
+                          <span className="flex-1">{experience.description}</span>
+                          <span className="text-sm text-muted-foreground">{experience.year}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeExperience(index)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                </div>
 
-            {/* Languages Section */}
-            <FormField
-              control={form.control}
-              name="languages"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Languages</FormLabel>
-                  <div className="space-y-2">
-                    {field.value.map((lang, index) => (
-                      <div key={index} className="flex gap-2">
-                        <Input
-                          value={lang}
-                          onChange={(e) => {
-                            const newLanguages = [...field.value];
-                            newLanguages[index] = e.target.value;
-                            field.onChange(newLanguages);
-                          }}
-                          placeholder="Language"
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            const newLanguages = field.value.filter((_, i) => i !== index);
-                            field.onChange(newLanguages);
-                          }}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        field.onChange([...field.value, ""]);
-                      }}
-                    >
-                      Add Language
-                    </Button>
+                {/* Achievements Section */}
+                <div>
+                  <div className="flex items-center space-x-2 mb-4">
+                    <Medal className="h-5 w-5 text-racing-red" />
+                    <h2 className="text-xl font-semibold">Achievements</h2>
                   </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  <Separator className="mb-4" />
 
-            <Button type="submit">
-              {isEditing ? "Update Team Member" : "Create Team Member"}
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+                  <div className="space-y-4">
+                    <div className="flex gap-4">
+                      <Input
+                        placeholder="Achievement description"
+                        value={newAchievement.description}
+                        onChange={(e) => setNewAchievement({ 
+                          ...newAchievement, 
+                          description: e.target.value 
+                        })}
+                        className="flex-1"
+                      />
+                      <Input
+                        type="number"
+                        placeholder="Year"
+                        value={newAchievement.year}
+                        onChange={(e) => setNewAchievement({ 
+                          ...newAchievement, 
+                          year: e.target.value 
+                        })}
+                        className="w-24"
+                      />
+                      <RacingIconSelector
+                        value={newAchievement.icon}
+                        onChange={(icon) => setNewAchievement({ 
+                          ...newAchievement, 
+                          icon: icon as RacingIcon 
+                        })}
+                      />
+                      <Button 
+                        type="button" 
+                        onClick={addAchievement}
+                        className="bg-racing-red hover:bg-racing-red/90"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    <div className="space-y-2">
+                      {form.watch("achievements")?.map((achievement, index) => (
+                        <div 
+                          key={index} 
+                          className="flex items-center gap-4 bg-muted/50 p-3 rounded-lg"
+                        >
+                          <Medal className="h-4 w-4 text-racing-red flex-shrink-0" />
+                          <span className="flex-1">{achievement.description}</span>
+                          <span className="text-sm text-muted-foreground">{achievement.year}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeAchievement(index)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Social Media */}
+          <Card className="lg:col-span-3 shadow-lg">
+            <CardContent className="p-6">
+              <div className="space-y-6">
+                <div className="flex items-center space-x-2">
+                  <Globe className="h-5 w-5 text-racing-red" />
+                  <h2 className="text-xl font-semibold">Social Media</h2>
+                </div>
+                <Separator />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="socialMedia.instagram"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-2">
+                          <Instagram className="h-4 w-4" />
+                          Instagram
+                        </FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Instagram profile URL" 
+                            {...field}
+                            value={field.value || ""}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="socialMedia.facebook"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-2">
+                          <Facebook className="h-4 w-4" />
+                          Facebook
+                        </FormLabel>
+                        <FormControl>
+                          <Input placeholder="Facebook profile URL" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="socialMedia.linkedin"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-2">
+                          <Linkedin className="h-4 w-4" />
+                          LinkedIn
+                        </FormLabel>
+                        <FormControl>
+                          <Input placeholder="LinkedIn profile URL" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="socialMedia.twitter"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-2">
+                          <Twitter className="h-4 w-4" />
+                          Twitter
+                        </FormLabel>
+                        <FormControl>
+                          <Input placeholder="Twitter profile URL" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Featured Toggle & Actions */}
+        <Card className="shadow-lg">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <FormField
+                control={form.control}
+                name="featured"
+                render={({ field }) => (
+                  <FormItem className="flex items-center space-x-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Featured Team Member</FormLabel>
+                      <FormDescription>
+                        Display this team member on the homepage
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <div className="flex space-x-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.push("/admin/academy/instructor-management")}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={loading}
+                  className="bg-racing-red hover:bg-racing-red/90"
+                >
+                  {loading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      {isEditing ? "Updating..." : "Creating..."}
+                    </div>
+                  ) : isEditing ? (
+                    "Update Team Member"
+                  ) : (
+                    "Create Team Member"
+                  )}
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </form>
+    </Form>
   );
 } 

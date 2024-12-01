@@ -11,6 +11,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  CardDescription,
 } from "@/components/ui/card";
 import {
   DropdownMenu,
@@ -20,49 +21,61 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
+import { 
+  MoreHorizontal, 
+  Pencil, 
+  Plus, 
+  Trash2, 
+  Search,
+  Filter,
+  SortAsc,
+  Users,
+  Calendar,
+  MapPin,
+  DollarSign
+} from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { db } from "@/lib/firebase";
-import { collection, onSnapshot, query } from "firebase/firestore";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 
 export default function CourseManagement() {
   const router = useRouter();
   const { toast } = useToast();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterLevel, setFilterLevel] = useState<CourseLevel | "all">("all");
 
   useEffect(() => {
-    const coursesQuery = query(collection(db, 'courses'));
-    
-    const unsubscribe = onSnapshot(
-      coursesQuery,
-      (snapshot) => {
-        const fetchedCourses = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as Course[];
-        setCourses(fetchedCourses);
-        setLoading(false);
-      },
-      (error) => {
-        console.error("Error fetching courses:", error);
+    const fetchCourses = async () => {
+      try {
+        const { courses } = await courseService.getCourses();
+        setCourses(courses);
+      } catch (error) {
         toast({
           title: "Error",
           description: "Failed to fetch courses",
           variant: "destructive",
         });
+      } finally {
         setLoading(false);
       }
-    );
+    };
 
-    return () => unsubscribe();
+    fetchCourses();
   }, [toast]);
 
   const handleDelete = async (courseId: string) => {
-    if (!window.confirm("Are you sure you want to delete this course?")) return;
-
     try {
       await courseService.deleteCourse(courseId);
+      setCourses(courses.filter((course) => course.id !== courseId));
       toast({
         title: "Success",
         description: "Course deleted successfully",
@@ -76,88 +89,145 @@ export default function CourseManagement() {
     }
   };
 
+  const filteredCourses = courses
+    .filter((course) => 
+      course.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
+      (filterLevel === "all" || course.level === filterLevel)
+    )
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
   const getLevelBadgeVariant = (level: CourseLevel) => {
     switch (level) {
       case "Beginner":
-        return "default";
+        return "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20";
       case "Intermediate":
-        return "secondary";
+        return "bg-blue-500/10 text-blue-500 hover:bg-blue-500/20";
       case "Advanced":
-        return "destructive";
+        return "bg-racing-red/10 text-racing-red hover:bg-racing-red/20";
       default:
-        return "outline";
+        return "bg-gray-500/10 text-gray-500 hover:bg-gray-500/20";
     }
   };
 
   return (
-    <Suspense fallback={<div className="p-4 text-center">Loading...</div>}>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Courses</CardTitle>
-          <Button onClick={() => router.push("/admin/academy/course-management/new")}>
+    <div className="space-y-6">
+      <Card className="shadow-lg">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <div>
+            <CardTitle className="text-2xl font-bold">Course Management</CardTitle>
+            <CardDescription>Manage your racing academy courses</CardDescription>
+          </div>
+          <Button 
+            onClick={() => router.push("/admin/academy/course-management/new")}
+            className="bg-racing-red hover:bg-racing-red/90"
+          >
             <Plus className="h-4 w-4 mr-2" />
             Add Course
           </Button>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border">
-            <div className="grid grid-cols-6 gap-4 p-4 border-b font-medium">
-              <div className="col-span-2">Title</div>
-              <div>Level</div>
-              <div>Start Date</div>
-              <div>Price</div>
-              <div className="text-right">Actions</div>
+          <div className="flex items-center gap-4 mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search courses..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
             </div>
-            {courses.length === 0 ? (
-              <div className="p-4 text-center text-muted-foreground">
-                No courses found
+            <Select value={filterLevel} onValueChange={(value: CourseLevel | "all") => setFilterLevel(value)}>
+              <SelectTrigger className="w-[180px]">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Filter by level" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Levels</SelectItem>
+                <SelectItem value="Beginner">Beginner</SelectItem>
+                <SelectItem value="Intermediate">Intermediate</SelectItem>
+                <SelectItem value="Advanced">Advanced</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-4">
+            {filteredCourses.map((course) => (
+              <Card key={course.id} className="hover:bg-muted/50 transition-colors">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-3">
+                      <div className="space-y-1">
+                        <h3 className="text-xl font-semibold">{course.title}</h3>
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {course.shortDescription}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          {new Date(course.startDate).toLocaleDateString()}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <MapPin className="h-4 w-4" />
+                          {course.location}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Users className="h-4 w-4" />
+                          {course.availableSpots} spots
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <DollarSign className="h-4 w-4" />
+                          {course.price}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <Badge className={getLevelBadgeVariant(course.level)}>
+                        {course.level}
+                      </Badge>
+                      {course.featured && (
+                        <Badge variant="outline" className="border-racing-red text-racing-red">
+                          Featured
+                        </Badge>
+                      )}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => router.push(`/admin/academy/course-management/${course.id}/edit`)}
+                          >
+                            <Pencil className="h-4 w-4 mr-2" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => handleDelete(course.id)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+
+            {filteredCourses.length === 0 && (
+              <div className="text-center py-12">
+                <div className="text-muted-foreground">No courses found</div>
               </div>
-            ) : (
-              courses.map((course) => (
-                <div
-                  key={course.id}
-                  className="grid grid-cols-6 gap-4 p-4 border-b last:border-0 items-center"
-                >
-                  <div className="col-span-2 font-medium">{course.title}</div>
-                  <div>
-                    <Badge variant={getLevelBadgeVariant(course.level as CourseLevel)}>
-                      {course.level}
-                    </Badge>
-                  </div>
-                  <div>{new Date(course.startDate).toLocaleDateString()}</div>
-                  <div>${course.price}</div>
-                  <div className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => router.push(`/admin/academy/course-management/${course.id}/edit`)}
-                        >
-                          <Pencil className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="text-red-600"
-                          onClick={() => handleDelete(course.id)}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </div>
-              ))
             )}
           </div>
         </CardContent>
       </Card>
-    </Suspense>
+    </div>
   );
 }

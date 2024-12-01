@@ -65,3 +65,5 @@ serviceAccountKey.json
 *.swo
 
 
+firestore.rules
+firestore.rules

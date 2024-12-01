@@ -31,13 +31,13 @@ const menuItems = [
         title: "Courses",
         href: "/admin/academy/course-management",
         icon: GraduationCap,
-      },
-      {
-        title: "Instructors",
-        href: "/admin/academy/instructor-management",
-        icon: Users,
-      },
+      }
     ],
+  },
+  {
+    title: "Team",
+    href: "/admin/team-management",
+    icon: Users,
   },
   {
     title: "Students",
@@ -48,6 +48,13 @@ const menuItems = [
     title: "Settings",
     href: "/admin/settings",
     icon: Settings,
+    submenu: [
+      {
+        title: "Roles",
+        href: "/admin/settings/roles",
+        icon: Users,
+      },
+    ],
   },
 ];
 

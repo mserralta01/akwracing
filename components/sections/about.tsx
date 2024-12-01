@@ -4,8 +4,11 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from 'lucide-react';
+import { useRouter } from "next/navigation";
 
 export function AboutSection() {
+  const router = useRouter();
+
   return (
     <section className="relative py-16 lg:py-24 bg-gradient-to-b from-navy-900 to-navy-800">
       {/* Racing-inspired background pattern */}
@@ -52,7 +55,10 @@ export function AboutSection() {
                 <span>Comprehensive training programs</span>
               </div>
             </div>
-            <Button className="mt-8 bg-racing-red hover:bg-red-700">
+            <Button 
+              className="mt-8 bg-racing-red hover:bg-red-700"
+              onClick={() => router.push('/courses')}
+            >
               Learn More
             </Button>
           </motion.div>

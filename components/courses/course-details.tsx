@@ -16,7 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { format } from "date-fns";
+import { format, isValid, parseISO } from 'date-fns';
 import Image from "next/image";
 import {
   Calendar,
@@ -32,6 +32,18 @@ interface CourseDetailsProps {
 }
 
 export function CourseDetails({ initialCourse }: CourseDetailsProps) {
+  const formatDate = (dateString: string) => {
+    try {
+      const date = parseISO(dateString);
+      if (!isValid(date)) {
+        return 'Date TBD';
+      }
+      return format(date, 'PPP');
+    } catch (error) {
+      return 'Date TBD';
+    }
+  };
+
   if (!initialCourse) {
     return (
       <div className="container mx-auto py-8">
@@ -83,11 +95,11 @@ export function CourseDetails({ initialCourse }: CourseDetailsProps) {
                 <div className="space-y-2">
                   <p>
                     <span className="text-muted-foreground">Start Date:</span>{" "}
-                    {format(new Date(initialCourse.startDate), "PPP")}
+                    {formatDate(initialCourse.startDate)}
                   </p>
                   <p>
                     <span className="text-muted-foreground">End Date:</span>{" "}
-                    {format(new Date(initialCourse.endDate), "PPP")}
+                    {formatDate(initialCourse.endDate)}
                   </p>
                 </div>
               </div>

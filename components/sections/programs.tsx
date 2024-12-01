@@ -60,6 +60,18 @@ export function ProgramsSection() {
     }
   };
 
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return 'Date TBD';
+      }
+      return date.toLocaleDateString();
+    } catch (error) {
+      return 'Date TBD';
+    }
+  };
+
   if (error) {
     return (
       <section className="py-20 bg-gradient-to-b from-racing-black to-background">
@@ -72,8 +84,8 @@ export function ProgramsSection() {
 
   return (
     <section className="relative py-20 bg-gradient-to-b from-navy-900 to-navy-800">
-      {/* Racing-inspired background pattern */}
-      <div className="absolute inset-0 opacity-5">
+      {/* Racing-inspired background pattern - Update z-index */}
+      <div className="absolute inset-0 opacity-5 -z-10">
         <div className="absolute inset-0" style={{
           backgroundImage: `repeating-linear-gradient(
             -45deg,
@@ -85,7 +97,7 @@ export function ProgramsSection() {
         }} />
       </div>
 
-      <div className="container mx-auto px-4">
+      <div className="container relative z-10 mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -127,7 +139,7 @@ export function ProgramsSection() {
                 transition={{ duration: 0.5 }}
                 viewport={{ once: true }}
               >
-                <Card className="overflow-hidden h-full">
+                <Card className="overflow-hidden h-full relative">
                   <div className="relative h-64">
                     {course.imageUrl ? (
                       <Image
@@ -156,7 +168,7 @@ export function ProgramsSection() {
                       <div className="space-y-2 w-full mb-6">
                         <div className="flex items-center justify-center text-sm">
                           <Calendar className="h-4 w-4 mr-2 text-racing-red" />
-                          <span>{new Date(course.startDate).toLocaleDateString()}</span>
+                          <span>{formatDate(course.startDate)}</span>
                         </div>
                         <div className="flex items-center justify-center text-sm">
                           <Users className="h-4 w-4 mr-2 text-racing-red" />
@@ -169,7 +181,7 @@ export function ProgramsSection() {
                       </div>
                       <Button
                         variant="default"
-                        className="w-full bg-racing-red hover:bg-red-700"
+                        className="w-full bg-racing-red hover:bg-red-700 cursor-pointer relative z-20"
                         onClick={() => router.push(`/courses/${course.id}`)}
                       >
                         Learn More

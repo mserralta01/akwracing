@@ -32,6 +32,11 @@ interface CourseFilters {
   featured?: boolean;
 }
 
+// Helper function to strip HTML tags
+const stripHtmlTags = (html: string): string => {
+  return html.replace(/<[^>]*>/g, '');
+};
+
 export const courseService = {
   async createCourse(courseData: CourseFormData, imageFile: File | null = null): Promise<void> {
     try {
@@ -194,18 +199,14 @@ export const courseService = {
     try {
       const queryConstraints: QueryConstraint[] = [];
       
-      // Add filters
       if (filters.featured !== undefined) {
         queryConstraints.push(where('featured', '==', filters.featured));
       }
-      // ... other filters
 
-      // Add ordering if specified
       if (orderByField) {
         queryConstraints.push(orderBy(orderByField));
       }
 
-      // Add limit if specified
       if (limit) {
         queryConstraints.push(firestoreLimit(limit));
       }
@@ -213,10 +214,17 @@ export const courseService = {
       const q = query(collection(db, COURSES_COLLECTION), ...queryConstraints);
       const snapshot = await getDocs(q);
       
-      const courses = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Course[];
+      const courses = snapshot.docs.map(doc => {
+        const data = doc.data();
+        // Clean the shortDescription HTML if it exists
+        if (data.shortDescription) {
+          data.shortDescription = stripHtmlTags(data.shortDescription);
+        }
+        return {
+          id: doc.id,
+          ...data
+        };
+      }) as Course[];
 
       return { courses };
     } catch (error) {

@@ -67,3 +67,4 @@ serviceAccountKey.json
 
 firestore.rules
 firestore.rules
+*.rules

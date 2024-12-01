@@ -13,6 +13,19 @@ interface CourseCardProps {
 export function CourseCard({ course }: CourseCardProps) {
   const router = useRouter();
 
+  const getLevelBadgeVariant = (level: CourseLevel) => {
+    switch (level) {
+      case "Beginner":
+        return "bg-emerald-500 hover:bg-emerald-600 text-white";
+      case "Intermediate":
+        return "bg-yellow-500 hover:bg-yellow-600 text-white";
+      case "Advanced":
+        return "bg-racing-red hover:bg-red-700 text-white";
+      default:
+        return "bg-gray-500 hover:bg-gray-600 text-white";
+    }
+  };
+
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString);
@@ -28,6 +41,14 @@ export function CourseCard({ course }: CourseCardProps) {
   return (
     <Card className="overflow-hidden h-full">
       <div className="relative h-48">
+        <div className="absolute top-2 left-2 z-20">
+          <Badge 
+            className={`${getLevelBadgeVariant(course.level)} px-4 py-0.5 text-sm font-medium rounded-sm`}
+          >
+            {course.level}
+          </Badge>
+        </div>
+        
         {course.imageUrl ? (
           <Image
             src={course.imageUrl}
@@ -40,10 +61,7 @@ export function CourseCard({ course }: CourseCardProps) {
         )}
       </div>
       <CardHeader>
-        <div className="flex justify-between items-start">
-          <h3 className="text-xl font-bold">{course.title}</h3>
-          <Badge variant="secondary">{course.level}</Badge>
-        </div>
+        <h3 className="text-xl font-bold">{course.title}</h3>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">

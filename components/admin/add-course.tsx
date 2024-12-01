@@ -1,6 +1,7 @@
+"use client";
+
 import React, { useState } from "react";
-import { db } from "lib/firebase";
-import { collection, addDoc } from "firebase/firestore";
+import { useRouter } from "next/navigation";
 import { Button } from "components/ui/button";
 import { Input } from "components/ui/input";
 import { Textarea } from "components/ui/textarea";
@@ -12,41 +13,72 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FileUpload } from "@/components/ui/file-upload";
+import { courseService } from "@/lib/services/course-service";
+import { useToast } from "@/components/ui/use-toast";
+import { CourseFormData, CourseLevel } from "@/types/course";
 
-type NewCourse = {
-  title: string;
-  briefDescription: string;
-  location: string;
-  description: string;
-  price: string;
-  duration: string;
-  level: "Beginner" | "Intermediate" | "Advanced";
-  ageRange: string;
+type NewCourse = Omit<CourseFormData, 'imageUrl'> & {
   photo: File | null;
-  spots: number;
 };
 
 export function AddCourse() {
+  const router = useRouter();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
   const [newCourse, setNewCourse] = useState<NewCourse>({
     title: "",
-    briefDescription: "",
+    shortDescription: "",
     location: "",
-    description: "",
-    price: "",
-    duration: "",
+    longDescription: "",
+    price: 0,
+    duration: 1,
     level: "Beginner",
-    ageRange: "",
+    startDate: "",
+    endDate: "",
     photo: null,
-    spots: 0,
+    availableSpots: 0,
+    featured: false,
   });
 
   const handleAddCourse = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+
     try {
-      await addDoc(collection(db, "courses"), newCourse);
-      // Reset form or navigate back to course management
+      const courseFormData: CourseFormData = {
+        ...newCourse,
+        imageUrl: null,
+      };
+
+      delete (courseFormData as any).photo;
+
+      const result = await courseService.createCourse(courseFormData, newCourse.photo);
+
+      if (!result.success) {
+        toast({
+          title: "Error",
+          description: result.error?.message || "Failed to create course",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Success",
+        description: "Course created successfully",
+      });
+
+      router.push("/admin/academy/course-management");
+      router.refresh();
     } catch (error) {
       console.error("Error adding course: ", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while creating the course",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -61,9 +93,9 @@ export function AddCourse() {
           required
         />
         <Input
-          placeholder="Brief Description"
-          value={newCourse.briefDescription}
-          onChange={(e) => setNewCourse({ ...newCourse, briefDescription: e.target.value })}
+          placeholder="Short Description"
+          value={newCourse.shortDescription}
+          onChange={(e) => setNewCourse({ ...newCourse, shortDescription: e.target.value })}
           required
         />
         <Input
@@ -73,28 +105,44 @@ export function AddCourse() {
           required
         />
         <Textarea
-          placeholder="Course Description"
-          value={newCourse.description}
-          onChange={(e) => setNewCourse({ ...newCourse, description: e.target.value })}
+          placeholder="Long Description"
+          value={newCourse.longDescription}
+          onChange={(e) => setNewCourse({ ...newCourse, longDescription: e.target.value })}
           required
         />
         <Input
           type="number"
           placeholder="Price"
-          value={newCourse.price}
-          onChange={(e) => setNewCourse({ ...newCourse, price: e.target.value })}
+          value={newCourse.price.toString()}
+          onChange={(e) => setNewCourse({ ...newCourse, price: Number(e.target.value) || 0 })}
           required
+          min="0"
         />
         <Input
           type="number"
           placeholder="Duration (days)"
-          value={newCourse.duration}
-          onChange={(e) => setNewCourse({ ...newCourse, duration: e.target.value })}
+          value={newCourse.duration.toString()}
+          onChange={(e) => setNewCourse({ ...newCourse, duration: Number(e.target.value) || 1 })}
+          required
+          min="1"
+        />
+        <Input
+          type="date"
+          placeholder="Start Date"
+          value={newCourse.startDate}
+          onChange={(e) => setNewCourse({ ...newCourse, startDate: e.target.value })}
+          required
+        />
+        <Input
+          type="date"
+          placeholder="End Date"
+          value={newCourse.endDate}
+          onChange={(e) => setNewCourse({ ...newCourse, endDate: e.target.value })}
           required
         />
         <Select
           value={newCourse.level}
-          onValueChange={(value) => setNewCourse({ ...newCourse, level: value as NewCourse["level"] })}
+          onValueChange={(value: CourseLevel) => setNewCourse({ ...newCourse, level: value })}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select Level" />
@@ -105,24 +153,30 @@ export function AddCourse() {
             <SelectItem value="Advanced">Advanced</SelectItem>
           </SelectContent>
         </Select>
-        <Input
-          placeholder="Age Range"
-          value={newCourse.ageRange}
-          onChange={(e) => setNewCourse({ ...newCourse, ageRange: e.target.value })}
-          required
-        />
         <FileUpload
           onFileSelect={(file: File | null) => setNewCourse({ ...newCourse, photo: file })}
         />
         <Input
           type="number"
           placeholder="Available Spots"
-          value={newCourse.spots}
-          onChange={(e) => setNewCourse({ ...newCourse, spots: parseInt(e.target.value) })}
+          value={newCourse.availableSpots.toString()}
+          onChange={(e) => setNewCourse({ ...newCourse, availableSpots: Number(e.target.value) || 0 })}
           required
+          min="0"
         />
-        <Button type="submit" className="w-full bg-racing-red hover:bg-red-700">
-          Add Course
+        <Button 
+          type="submit" 
+          className="w-full bg-racing-red hover:bg-red-700"
+          disabled={loading}
+        >
+          {loading ? (
+            <div className="flex items-center gap-2">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              Creating...
+            </div>
+          ) : (
+            "Add Course"
+          )}
         </Button>
       </form>
     </div>

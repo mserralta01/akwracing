@@ -44,6 +44,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 
 export default function CourseManagement() {
   const router = useRouter();
@@ -177,7 +178,10 @@ export default function CourseManagement() {
                         </div>
                         <div className="flex items-center gap-1">
                           <DollarSign className="h-4 w-4" />
-                          {course.price}
+                          ${course.price.toLocaleString('en-US', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                          })}
                         </div>
                       </div>
                     </div>
@@ -185,35 +189,51 @@ export default function CourseManagement() {
                       <Badge className={getLevelBadgeVariant(course.level)}>
                         {course.level}
                       </Badge>
-                      {course.featured && (
-                        <Badge variant="outline" className="border-racing-red text-racing-red">
+                      <div className="flex flex-col items-center gap-1">
+                        <span className="text-sm text-muted-foreground">
                           Featured
-                        </Badge>
-                      )}
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => router.push(`/admin/academy/course-management/${course.id}/edit`)}
-                          >
-                            <Pencil className="h-4 w-4 mr-2" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
-                            onClick={() => handleDelete(course.id)}
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                        </span>
+                        <Switch
+                          checked={course.featured}
+                          onCheckedChange={async (checked) => {
+                            try {
+                              await courseService.updateCourse(course.id, { featured: checked });
+                              setCourses(courses.map(c => 
+                                c.id === course.id ? { ...c, featured: checked } : c
+                              ));
+                              toast({
+                                title: "Success",
+                                description: `Course ${checked ? 'featured' : 'unfeatured'} successfully`,
+                              });
+                            } catch (error) {
+                              toast({
+                                title: "Error",
+                                description: "Failed to update course featured status",
+                                variant: "destructive",
+                              });
+                            }
+                          }}
+                          className="data-[state=checked]:bg-racing-red"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => router.push(`/admin/academy/course-management/${course.id}/edit`)}
+                          className="h-8 w-8"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDelete(course.id)}
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </CardContent>

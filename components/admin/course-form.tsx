@@ -7,8 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Course, CourseFormData } from "@/types/course";
 import { courseService } from "@/lib/services/course-service";
-import { auth, db } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { auth } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -82,20 +81,20 @@ export function CourseForm({ initialData, isEditing = false, instructors }: Cour
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: initialData || {
-      title: "",
-      shortDescription: "",
-      longDescription: "",
-      startDate: "",
-      endDate: "",
-      duration: 1,
-      location: "",
-      level: "Beginner",
-      availableSpots: 1,
-      price: 0,
-      featured: false,
-      imageUrl: undefined,
-      instructorId: "",
+    defaultValues: {
+      title: initialData?.title || "",
+      shortDescription: initialData?.shortDescription || "",
+      longDescription: initialData?.longDescription || "",
+      startDate: initialData?.startDate || "",
+      endDate: initialData?.endDate || "",
+      duration: initialData?.duration || 1,
+      location: initialData?.location || "",
+      level: initialData?.level || "Beginner",
+      availableSpots: initialData?.availableSpots || 1,
+      price: initialData?.price || 0,
+      featured: initialData?.featured || false,
+      imageUrl: initialData?.imageUrl || null,
+      instructorId: initialData?.instructorId || "",
     },
   });
 
@@ -112,30 +111,49 @@ export function CourseForm({ initialData, isEditing = false, instructors }: Cour
         return;
       }
 
-      const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
-      
-      if (!userDoc.exists() || userDoc.data()?.role !== 'admin') {
+      const formData: Omit<CourseFormData, 'id' | 'createdAt' | 'updatedAt'> = {
+        title: values.title,
+        shortDescription: values.shortDescription,
+        longDescription: values.longDescription,
+        startDate: values.startDate,
+        endDate: values.endDate,
+        duration: Number(values.duration),
+        location: values.location,
+        level: values.level,
+        availableSpots: Number(values.availableSpots),
+        price: Number(values.price),
+        featured: Boolean(values.featured),
+        imageUrl: values.imageUrl || null,
+        instructorId: values.instructorId,
+      };
+
+      if (isNaN(formData.duration) || isNaN(formData.availableSpots) || isNaN(formData.price)) {
         toast({
           title: "Error",
-          description: "You don't have permission to perform this action",
+          description: "Please enter valid numbers for duration, available spots, and price",
           variant: "destructive",
         });
         return;
       }
 
-      const formData: CourseFormData = {
-        ...values,
-        imageUrl: values.imageUrl || null,
-      };
-
-      if (isEditing && initialData) {
+      if (isEditing && initialData?.id) {
         await courseService.updateCourse(initialData.id, formData, imageFile || undefined);
         toast({
           title: "Success",
           description: "Course updated successfully",
         });
       } else {
-        await courseService.createCourse(formData, imageFile || undefined);
+        const result = await courseService.createCourse(formData, imageFile || null);
+        
+        if (!result.success) {
+          toast({
+            title: "Error",
+            description: result.error?.message || "Failed to create course",
+            variant: "destructive",
+          });
+          return;
+        }
+        
         toast({
           title: "Success",
           description: "Course created successfully",
@@ -145,15 +163,7 @@ export function CourseForm({ initialData, isEditing = false, instructors }: Cour
       router.push("/admin/academy/course-management");
       router.refresh();
     } catch (error) {
-      console.error('Form submission error:', {
-        error,
-        errorMessage: error instanceof Error ? error.message : 'Unknown error',
-        errorStack: error instanceof Error ? error.stack : undefined,
-        currentUser: auth.currentUser?.uid,
-        isEditing,
-        hasImageFile: !!imageFile
-      });
-      
+      console.error('Form submission error:', error);
       toast({
         title: "Error",
         description: error instanceof Error 

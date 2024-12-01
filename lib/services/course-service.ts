@@ -10,7 +10,6 @@ import {
   where,
   orderBy,
   limit as firestoreLimit,
-  startAfter,
   QueryConstraint,
   Timestamp,
   increment,
@@ -32,126 +31,130 @@ interface CourseFilters {
   featured?: boolean;
 }
 
+type CourseError = {
+  code: 'UNAUTHORIZED' | 'IMAGE_ERROR' | 'VALIDATION_ERROR' | 'UNKNOWN_ERROR';
+  message: string;
+  details?: string;
+};
+
 // Helper function to strip HTML tags
 const stripHtmlTags = (html: string): string => {
-  return html.replace(/<[^>]*>/g, '');
+  return html?.replace(/<[^>]*>/g, '') ?? '';
+};
+
+// Helper function to handle image upload
+const handleImageUpload = async (imageFile: File, userId: string): Promise<string> => {
+  if (imageFile.size > 5 * 1024 * 1024) {
+    throw new Error('Image file is too large. Maximum file size is 5MB');
+  }
+
+  if (!imageFile.type.startsWith('image/')) {
+    throw new Error('Invalid file type. Only image files are allowed');
+  }
+
+  const cleanFileName = imageFile.name.replace(/[^a-zA-Z0-9.]/g, '_');
+  const timestamp = Date.now();
+  const imageRef = ref(storage, `courses/${timestamp}_${cleanFileName}`);
+
+  const metadata = {
+    contentType: imageFile.type,
+    customMetadata: {
+      uploadedBy: userId,
+      uploadedAt: new Date().toISOString()
+    }
+  };
+
+  const uploadResult = await uploadBytes(imageRef, imageFile, metadata);
+  return getDownloadURL(uploadResult.ref);
 };
 
 export const courseService = {
-  async createCourse(courseData: CourseFormData, imageFile: File | null = null): Promise<void> {
+  async createCourse(courseData: CourseFormData, imageFile: File | null = null): Promise<{ success: boolean; error?: CourseError }> {
     try {
-      // Check authentication
       if (!auth.currentUser) {
-        throw new Error('No authenticated user found');
+        return {
+          success: false,
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'You must be logged in to create a course',
+          },
+        };
       }
 
-      // Log current user and authentication state
-      console.log('Creating course with auth:', {
-        uid: auth.currentUser.uid,
-        email: auth.currentUser.email,
-        isAuthenticated: !!auth.currentUser
-      });
-
-      // First check if user has admin rights through Firestore
       const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
       
-      // Log user document data
-      console.log('User document:', {
-        exists: userDoc.exists(),
-        data: userDoc.data()
-      });
-
       if (!userDoc.exists() || userDoc.data()?.role !== 'admin') {
-        throw new Error('Unauthorized: Only admins can create courses');
+        return {
+          success: false,
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'Only administrators can create courses',
+          },
+        };
       }
 
       const courseRef = doc(collection(db, COURSES_COLLECTION));
-      const createData: any = {
+      const createData = {
         ...courseData,
         id: courseRef.id,
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
+        startDate: courseData.startDate ? Timestamp.fromDate(new Date(courseData.startDate)) : null,
+        endDate: courseData.endDate ? Timestamp.fromDate(new Date(courseData.endDate)) : null,
+        availableSpots: Number(courseData.availableSpots),
+        price: Number(courseData.price),
+        duration: Number(courseData.duration),
+        featured: Boolean(courseData.featured),
       };
 
       if (imageFile) {
         try {
-          // Validate file size and type
-          if (imageFile.size > 5 * 1024 * 1024) { // 5MB limit
-            throw new Error('Image file is too large. Maximum size is 5MB.');
-          }
-
-          if (!imageFile.type.startsWith('image/')) {
-            throw new Error('Invalid file type. Only images are allowed.');
-          }
-
-          console.log('Uploading image:', {
-            fileName: imageFile.name,
-            fileSize: imageFile.size,
-            fileType: imageFile.type
-          });
-
-          // Create a clean filename
-          const cleanFileName = imageFile.name.replace(/[^a-zA-Z0-9.]/g, '_');
-          const timestamp = Date.now();
-          const imageRef = ref(storage, `courses/${timestamp}_${cleanFileName}`);
-
-          // Upload with metadata
-          const metadata = {
-            contentType: imageFile.type,
-            customMetadata: {
-              uploadedBy: auth.currentUser.uid,
-              uploadedAt: new Date().toISOString()
-            }
-          };
-
-          const uploadResult = await uploadBytes(imageRef, imageFile, metadata);
-          createData.imageUrl = await getDownloadURL(uploadResult.ref);
-          
-          console.log('Image upload successful:', {
-            downloadUrl: createData.imageUrl,
-            path: uploadResult.ref.fullPath
-          });
+          createData.imageUrl = await handleImageUpload(imageFile, auth.currentUser.uid);
         } catch (uploadError) {
-          console.error('Error uploading image:', {
-            error: uploadError,
-            fileName: imageFile.name,
-            fileSize: imageFile.size,
-            errorMessage: uploadError instanceof Error ? uploadError.message : 'Unknown error'
-          });
-          throw new Error(`Failed to upload image: ${uploadError instanceof Error ? uploadError.message : 'Unknown error'}`);
+          return {
+            success: false,
+            error: {
+              code: 'IMAGE_ERROR',
+              message: 'Failed to upload image',
+              details: uploadError instanceof Error ? uploadError.message : 'Unknown error occurred while uploading',
+            },
+          };
         }
       }
 
       await setDoc(courseRef, createData);
+      return { success: true };
+
     } catch (error) {
-      console.error('Error creating course:', {
-        error,
-        errorMessage: error instanceof Error ? error.message : 'Unknown error',
-        errorStack: error instanceof Error ? error.stack : undefined,
-        userId: auth.currentUser?.uid,
-        hasImageFile: !!imageFile
-      });
-      throw error;
+      console.error('Error creating course:', error);
+      return {
+        success: false,
+        error: {
+          code: 'UNKNOWN_ERROR',
+          message: 'Failed to create course',
+          details: error instanceof Error ? error.message : 'An unexpected error occurred',
+        },
+      };
     }
   },
 
   async updateCourse(courseId: string, courseData: Partial<CourseFormData>, newImageFile?: File): Promise<void> {
+    if (!auth.currentUser) {
+      throw new Error('Unauthorized: You must be logged in to update a course');
+    }
+
     try {
       const courseRef = doc(db, COURSES_COLLECTION, courseId);
-      const updateData: any = { ...courseData, updatedAt: Timestamp.now() };
+      const updateData = { ...courseData, updatedAt: Timestamp.now() };
 
       if (newImageFile) {
-        // Delete old image if exists
         const oldCourse = await getDoc(courseRef);
         if (oldCourse.exists() && oldCourse.data().imageUrl) {
           const oldImageRef = ref(storage, oldCourse.data().imageUrl);
           await deleteObject(oldImageRef).catch(console.error);
         }
 
-        // Upload new image
-        const imageRef = ref(storage, `courses/${Date.now()}_${newImageFile.name}`);
-        const uploadResult = await uploadBytes(imageRef, newImageFile);
-        updateData.imageUrl = await getDownloadURL(uploadResult.ref);
+        updateData.imageUrl = await handleImageUpload(newImageFile, auth.currentUser.uid);
       }
 
       await updateDoc(courseRef, updateData);
@@ -199,9 +202,11 @@ export const courseService = {
     try {
       const queryConstraints: QueryConstraint[] = [];
       
-      if (filters.featured !== undefined) {
-        queryConstraints.push(where('featured', '==', filters.featured));
-      }
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined) {
+          queryConstraints.push(where(key, '==', value));
+        }
+      });
 
       if (orderByField) {
         queryConstraints.push(orderBy(orderByField));
@@ -214,17 +219,11 @@ export const courseService = {
       const q = query(collection(db, COURSES_COLLECTION), ...queryConstraints);
       const snapshot = await getDocs(q);
       
-      const courses = snapshot.docs.map(doc => {
-        const data = doc.data();
-        // Clean the shortDescription HTML if it exists
-        if (data.shortDescription) {
-          data.shortDescription = stripHtmlTags(data.shortDescription);
-        }
-        return {
-          id: doc.id,
-          ...data
-        };
-      }) as Course[];
+      const courses = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        shortDescription: doc.data().shortDescription ? stripHtmlTags(doc.data().shortDescription) : '',
+      })) as Course[];
 
       return { courses };
     } catch (error) {

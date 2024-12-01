@@ -38,6 +38,14 @@ export function CourseCard({ course }: CourseCardProps) {
     }
   };
 
+  const handleLearnMore = () => {
+    const slug = course.title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+    router.push(`/courses/${course.id}/${slug}`);
+  };
+
   return (
     <Card className="overflow-hidden h-full">
       <div className="relative h-48">
@@ -82,7 +90,7 @@ export function CourseCard({ course }: CourseCardProps) {
           </div>
           <Button
             className="w-full bg-racing-red hover:bg-red-700 text-white"
-            onClick={() => router.push(`/courses/${course.id}`)}
+            onClick={handleLearnMore}
           >
             Learn More
           </Button>

@@ -37,6 +37,8 @@ import {
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
   role: z.string().min(1, "Role is required"),
+  bio: z.string().min(1, "Bio is required"),
+  level: z.enum(["Junior", "Senior", "Master"]),
   experiences: z.array(z.object({
     description: z.string(),
     icon: z.enum(['Trophy', 'Flag', 'Medal', 'Star', 'Crown', 'Certificate', 
@@ -104,6 +106,8 @@ export function InstructorForm({ initialData, isEditing = false, instructors = [
     defaultValues: {
       name: initialData?.name || "",
       role: initialData?.role || "",
+      bio: initialData?.bio || "",
+      level: initialData?.level || "Junior",
       experiences: initialData?.experiences || [],
       achievements: initialData?.achievements || [],
       languages: initialData?.languages || [],
@@ -164,6 +168,8 @@ export function InstructorForm({ initialData, isEditing = false, instructors = [
       setLoading(true);
       const formData: InstructorFormData = {
         ...values,
+        bio: values.bio,
+        level: values.level,
         imageUrl: values.imageUrl || '',
         experiences: values.experiences || [],
         achievements: values.achievements || [],
@@ -234,6 +240,43 @@ export function InstructorForm({ initialData, isEditing = false, instructors = [
                       <FormControl>
                         <Input placeholder="Instructor role" {...field} />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="bio"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Bio</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Instructor bio" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="level"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Level</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select level" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Junior">Junior</SelectItem>
+                          <SelectItem value="Senior">Senior</SelectItem>
+                          <SelectItem value="Master">Master</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}

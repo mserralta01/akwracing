@@ -8,8 +8,9 @@ type Props = PageProps<{
   courseName: string;
 }>
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const course = await courseService.getCourse(params.courseName)
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
+  const resolvedParams = await params
+  const course = await courseService.getCourse(resolvedParams.courseName)
   
   if (!course) {
     return {
@@ -34,8 +35,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function CoursePage({ params }: Props) {
-  const course = await courseService.getCourse(params.courseName)
+export default async function CoursePage({ params, searchParams }: Props) {
+  const resolvedParams = await params
+  const course = await courseService.getCourse(resolvedParams.courseName)
 
   if (!course) {
     notFound()

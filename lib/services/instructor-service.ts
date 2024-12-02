@@ -31,9 +31,14 @@ const convertTimestampsToDates = (data: any) => {
 };
 
 export const instructorService = {
-  async getInstructors() {
+  async getInstructors(filters?: { featured?: boolean }) {
     try {
       const queryConstraints: QueryConstraint[] = [];
+
+      if (filters?.featured !== undefined) {
+        queryConstraints.push(where('featured', '==', filters.featured));
+      }
+
       const q = query(collection(db, INSTRUCTORS_COLLECTION), ...queryConstraints);
       const snapshot = await getDocs(q);
       

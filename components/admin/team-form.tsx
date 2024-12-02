@@ -53,6 +53,8 @@ import {
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   role: z.string().min(2, "Role is required"),
+  bio: z.string().min(10, "Bio must be at least 10 characters"),
+  level: z.enum(["Junior", "Senior", "Master"]),
   experiences: z.array(
     z.object({
       description: z.string(),
@@ -122,6 +124,8 @@ export function TeamForm({ initialData, isEditing = false }: TeamFormProps) {
     defaultValues: initialData || {
       name: "",
       role: "",
+      bio: "",
+      level: "Junior",
       experiences: [],
       achievements: [],
       languages: [],
@@ -149,6 +153,8 @@ export function TeamForm({ initialData, isEditing = false }: TeamFormProps) {
 
       const cleanedData = {
         ...values,
+        bio: values.bio,
+        level: values.level,
         socialMedia: cleanedSocialMedia,
         phone: values.phone || undefined,
         email: values.email || undefined,
@@ -254,7 +260,7 @@ export function TeamForm({ initialData, isEditing = false }: TeamFormProps) {
                       <FormItem>
                         <FormLabel>Name</FormLabel>
                         <FormControl>
-                          <Input placeholder="John Doe" {...field} />
+                          <Input placeholder="Enter name" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -267,11 +273,7 @@ export function TeamForm({ initialData, isEditing = false }: TeamFormProps) {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Role</FormLabel>
-                        <Select 
-                          disabled={loading}
-                          onValueChange={field.onChange} 
-                          defaultValue={field.value}
-                        >
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select a role" />
@@ -283,6 +285,43 @@ export function TeamForm({ initialData, isEditing = false }: TeamFormProps) {
                                 {role.name}
                               </SelectItem>
                             ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="bio"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Bio</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter bio" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="level"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Level</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select level" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Junior">Junior</SelectItem>
+                            <SelectItem value="Senior">Senior</SelectItem>
+                            <SelectItem value="Master">Master</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />

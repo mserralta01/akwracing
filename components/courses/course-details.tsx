@@ -17,168 +17,154 @@ import {
   DollarSign,
 } from "lucide-react";
 import { format } from "date-fns";
+import { EnrollmentFlow } from "@/components/enrollment/enrollment-flow";
+import { motion } from "framer-motion";
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 interface CourseDetailsProps {
-  initialCourse: Course | null;
+  initialCourse: Course;
 }
 
 export function CourseDetails({ initialCourse }: CourseDetailsProps) {
-  const [isEnrolling, setIsEnrolling] = useState(false);
+  const [isEnrollmentOpen, setIsEnrollmentOpen] = useState(false);
 
-  const getLevelBadgeVariant = (level: string) => {
-    switch (level) {
-      case "Beginner":
-        return "bg-emerald-500 text-white hover:bg-emerald-600";
-      case "Intermediate":
-        return "bg-yellow-500 text-white hover:bg-yellow-600";
-      case "Advanced":
-        return "bg-racing-red text-white hover:bg-red-700";
-      default:
-        return "bg-gray-500 text-white hover:bg-gray-600";
+  const handleEnrollmentComplete = () => {
+    setIsEnrollmentOpen(false);
+  };
+
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric'
+      });
+    } catch (error) {
+      return 'Date TBD';
     }
   };
 
-  if (!initialCourse) {
-    return (
-      <div className="container mx-auto py-8">
-        <div className="text-center">
-          <p className="text-muted-foreground">Course not found or has been removed.</p>
-        </div>
-      </div>
-    );
-  }
-
-  const formatDate = (date: string) => {
-    try {
-      return format(new Date(date), "MMMM d, yyyy");
-    } catch {
-      return "Date TBD";
+  const getLevelBadgeVariant = (level: Course['level']) => {
+    switch (level) {
+      case "Beginner":
+        return "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20";
+      case "Intermediate":
+        return "bg-blue-500/10 text-blue-500 hover:bg-blue-500/20";
+      case "Advanced":
+        return "bg-racing-red/10 text-racing-red hover:bg-racing-red/20";
+      default:
+        return "bg-gray-500/10 text-gray-500 hover:bg-gray-500/20";
     }
   };
 
   return (
-    <div className="container mx-auto py-12 px-4">
-      <div className="max-w-6xl mx-auto">
-        {/* Hero Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12">
-          {/* Image Section */}
-          <div className="relative h-[400px] lg:h-[500px] rounded-2xl overflow-hidden shadow-xl">
-            <Image
-              src={initialCourse.imageUrl || "/placeholder-course.jpg"}
-              alt={initialCourse.title}
-              fill
-              className="object-cover"
-              priority
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-            <Badge 
-              className={`absolute top-4 left-4 ${getLevelBadgeVariant(initialCourse.level)}`}
-            >
-              {initialCourse.level}
-            </Badge>
+    <div className="container mx-auto py-12">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="grid grid-cols-1 md:grid-cols-3 gap-8"
+      >
+        {/* Course Image and Basic Info */}
+        <div className="md:col-span-2 space-y-6">
+          <div className="relative aspect-video rounded-lg overflow-hidden">
+            {initialCourse.imageUrl ? (
+              <img
+                src={initialCourse.imageUrl}
+                alt={initialCourse.title}
+                className="object-cover w-full h-full"
+              />
+            ) : (
+              <div className="w-full h-full bg-muted flex items-center justify-center">
+                <span className="text-muted-foreground">No image available</span>
+              </div>
+            )}
           </div>
+          <div>
+            <h1 className="text-3xl font-bold mb-4">{initialCourse.title}</h1>
+            <div className="flex flex-wrap gap-4 mb-6">
+              <Badge className={getLevelBadgeVariant(initialCourse.level)}>
+                {initialCourse.level}
+              </Badge>
+              <div className="flex items-center text-sm text-muted-foreground">
+                <Calendar className="h-4 w-4 mr-2" />
+                <span>{formatDate(initialCourse.startDate)}</span>
+              </div>
+              <div className="flex items-center text-sm text-muted-foreground">
+                <MapPin className="h-4 w-4 mr-2" />
+                <span>{initialCourse.location}</span>
+              </div>
+            </div>
+            <div 
+              className="prose max-w-none"
+              dangerouslySetInnerHTML={{ __html: initialCourse.longDescription }}
+            />
+          </div>
+        </div>
 
-          {/* Course Info Section */}
-          <div className="flex flex-col justify-between">
-            <div>
-              <h1 className="text-4xl font-bold mb-4">{initialCourse.title}</h1>
-              <p className="text-xl text-muted-foreground mb-6">
-                {initialCourse.shortDescription}
-              </p>
-
-              <div className="grid grid-cols-2 gap-4 mb-8">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5 text-racing-red" />
-                  <span>{formatDate(initialCourse.startDate)}</span>
+        {/* Enrollment Card */}
+        <div className="md:col-span-1">
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="sticky top-24"
+          >
+            <div className="bg-card rounded-lg shadow-lg p-6 space-y-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-lg font-semibold">Price</span>
+                  <span className="text-2xl font-bold">${initialCourse.price}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-racing-red" />
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <span>Duration</span>
                   <span>{initialCourse.duration} days</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5 text-racing-red" />
-                  <span>{initialCourse.location}</span>
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <span>Available Spots</span>
+                  <span>{initialCourse.availableSpots}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-racing-red" />
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-sm">
+                  <Calendar className="h-4 w-4 text-racing-red" />
+                  <span>Starts {formatDate(initialCourse.startDate)}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Users className="h-4 w-4 text-racing-red" />
                   <span>{initialCourse.availableSpots} spots remaining</span>
                 </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <DollarSign className="h-4 w-4 text-racing-red" />
+                  <span>Secure payment via NMI</span>
+                </div>
               </div>
+
+              <Dialog open={isEnrollmentOpen} onOpenChange={setIsEnrollmentOpen}>
+                <DialogTrigger asChild>
+                  <Button className="w-full bg-racing-red hover:bg-racing-red/90">
+                    Enroll Now
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[800px]">
+                  <DialogHeader>
+                    <DialogTitle>Course Enrollment</DialogTitle>
+                    <DialogDescription>
+                      Complete the enrollment process for {initialCourse.title}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <EnrollmentFlow 
+                    course={initialCourse} 
+                    onComplete={handleEnrollmentComplete} 
+                  />
+                </DialogContent>
+              </Dialog>
             </div>
-
-            <div className="space-y-6">
-              <div className="flex items-center justify-between p-6 bg-muted rounded-lg">
-                <div className="flex items-center gap-3">
-                  <DollarSign className="h-8 w-8 text-racing-red" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Course Price</p>
-                    <p className="text-3xl font-bold">${initialCourse.price.toLocaleString()}</p>
-                  </div>
-                </div>
-                <Button 
-                  size="lg"
-                  className="bg-racing-red hover:bg-red-700 text-white px-8"
-                  onClick={() => setIsEnrolling(true)}
-                >
-                  Enroll Now
-                </Button>
-              </div>
-            </div>
-          </div>
+          </motion.div>
         </div>
-
-        {/* Course Details Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 mt-12">
-          <div className="lg:col-span-2">
-            <Card className="p-6">
-              <h2 className="text-2xl font-bold mb-6">Course Details</h2>
-              <div className="prose prose-lg max-w-none dark:prose-invert"
-                dangerouslySetInnerHTML={{ 
-                  __html: initialCourse.longDescription 
-                }}
-              />
-            </Card>
-          </div>
-
-          <div className="space-y-6">
-            <Card className="p-6">
-              <h3 className="text-xl font-bold mb-4">What You'll Get</h3>
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <CheckCircle className="h-5 w-5 text-racing-red mt-0.5" />
-                  <span>Professional racing instruction</span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <CheckCircle className="h-5 w-5 text-racing-red mt-0.5" />
-                  <span>Access to premium racing facilities</span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <CheckCircle className="h-5 w-5 text-racing-red mt-0.5" />
-                  <span>Safety equipment and gear</span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <CheckCircle className="h-5 w-5 text-racing-red mt-0.5" />
-                  <span>Course completion certificate</span>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="p-6">
-              <h3 className="text-xl font-bold mb-4">Limited Availability</h3>
-              <p className="text-muted-foreground mb-4">
-                Only {initialCourse.availableSpots} spots remaining for this course.
-                Secure your place today!
-              </p>
-              <Button 
-                className="w-full bg-racing-red hover:bg-red-700 text-white"
-                onClick={() => setIsEnrolling(true)}
-              >
-                Reserve Your Spot
-              </Button>
-            </Card>
-          </div>
-        </div>
-      </div>
+      </motion.div>
     </div>
   );
 } 

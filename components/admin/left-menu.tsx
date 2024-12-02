@@ -16,6 +16,9 @@ import {
   X,
   ChevronRight,
   ChevronLeft,
+  Calendar,
+  CreditCard,
+  BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/firebase";
@@ -26,7 +29,7 @@ import { useState, useEffect } from "react";
 
 const menuItems = [
   {
-    title: "Dashboard",
+    title: "Overview",
     href: "/admin",
     icon: LayoutDashboard,
   },
@@ -37,9 +40,19 @@ const menuItems = [
     submenu: [
       {
         title: "Courses",
-        href: "/admin/academy/course-management",
+        href: "/admin/academy/courses",
         icon: GraduationCap,
-      }
+      },
+      {
+        title: "Enrollments",
+        href: "/admin/academy/enrollment-management",
+        icon: Calendar,
+      },
+      {
+        title: "Payments",
+        href: "/admin/academy/payments",
+        icon: CreditCard,
+      },
     ],
   },
   {
@@ -51,18 +64,28 @@ const menuItems = [
     title: "Students",
     href: "/admin/students",
     icon: Users,
+    submenu: [
+      {
+        title: "All Students",
+        href: "/admin/students/all",
+        icon: Users,
+      },
+      {
+        title: "Parents",
+        href: "/admin/students/parents",
+        icon: Users,
+      },
+      {
+        title: "Reports",
+        href: "/admin/students/reports",
+        icon: BarChart3,
+      },
+    ],
   },
   {
     title: "Settings",
     href: "/admin/settings",
     icon: Settings,
-    submenu: [
-      {
-        title: "Roles",
-        href: "/admin/settings/roles",
-        icon: Users,
-      },
-    ],
   },
 ];
 
@@ -89,7 +112,6 @@ export function LeftMenu() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  // Update document style when collapsed state changes
   useEffect(() => {
     document.documentElement.style.setProperty(
       '--sidebar-width',
@@ -138,7 +160,6 @@ export function LeftMenu() {
 
   return (
     <>
-      {/* Burger Menu Button - Only visible on mobile */}
       <button
         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
         className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-navy-900 text-white hover:bg-navy-800 lg:hidden"
@@ -150,7 +171,6 @@ export function LeftMenu() {
         )}
       </button>
 
-      {/* Sidebar */}
       <motion.div
         initial="hidden"
         animate={isSidebarOpen ? "visible" : "hidden"}
@@ -191,7 +211,6 @@ export function LeftMenu() {
             </h2>
           )}
           
-          {/* Collapse Toggle Button - Inside the header */}
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
             className={cn(
@@ -224,7 +243,7 @@ export function LeftMenu() {
               },
             }}
           >
-            {menuItems.map((item, index) => {
+            {menuItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);
               const isExpanded = expandedItems.includes(item.title);
@@ -277,7 +296,6 @@ export function LeftMenu() {
                       />
                     </button>
 
-                    {/* Tooltip for collapsed state */}
                     {isCollapsed && (
                       <div className="absolute left-full top-0 ml-2 p-2 bg-navy-900 rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity invisible group-hover:visible z-50 whitespace-nowrap">
                         <span className="text-white text-sm">{item.title}</span>
@@ -361,7 +379,6 @@ export function LeftMenu() {
         </div>
       </motion.div>
 
-      {/* Overlay for mobile */}
       {isSidebarOpen && (
         <motion.div
           initial={{ opacity: 0 }}

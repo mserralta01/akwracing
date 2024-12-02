@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Instructor } from "@/types/instructor";
+import { Role } from "@/types/role";
 import { instructorService } from "@/lib/services/instructor-service";
+import { roleService } from "@/lib/services/role-service";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -24,6 +26,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/use-toast";
 import { Input } from "@/components/ui/input";
@@ -43,28 +54,38 @@ import {
   Trash2,
   ExternalLink,
   User,
-  Briefcase
+  Briefcase,
+  Settings2,
+  X
 } from "lucide-react";
 
 export default function TeamManagement() {
   const router = useRouter();
   const { toast } = useToast();
   const [members, setMembers] = useState<Instructor[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
+  const [newRoleName, setNewRoleName] = useState("");
+  const [editingRole, setEditingRole] = useState<Role | null>(null);
 
   useEffect(() => {
-    fetchMembers();
+    fetchData();
   }, []);
 
-  const fetchMembers = async () => {
+  const fetchData = async () => {
     try {
-      const data = await instructorService.getInstructors();
-      setMembers(data.instructors);
+      const [membersData, rolesData] = await Promise.all([
+        instructorService.getInstructors(),
+        roleService.getRoles()
+      ]);
+      setMembers(membersData.instructors);
+      setRoles(rolesData);
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to load team members",
+        description: "Failed to load data",
         variant: "destructive",
       });
     } finally {
@@ -79,7 +100,7 @@ export default function TeamManagement() {
         title: "Success",
         description: "Team member deleted successfully",
       });
-      fetchMembers();
+      fetchData();
     } catch (error) {
       toast({
         title: "Error",
@@ -96,7 +117,7 @@ export default function TeamManagement() {
         title: "Success",
         description: `Team member ${featured ? 'featured' : 'unfeatured'} successfully`,
       });
-      fetchMembers();
+      fetchData();
     } catch (error) {
       toast({
         title: "Error",
@@ -104,6 +125,74 @@ export default function TeamManagement() {
         variant: "destructive",
       });
     }
+  };
+
+  const handleAddRole = async () => {
+    if (!newRoleName.trim()) return;
+
+    try {
+      await roleService.createRole(newRoleName.trim());
+      toast({
+        title: "Success",
+        description: "Role added successfully",
+      });
+      fetchData();
+      setNewRoleName("");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add role",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdateRole = async () => {
+    if (!editingRole || !newRoleName.trim()) return;
+
+    try {
+      await roleService.updateRole(editingRole.id, newRoleName.trim());
+      toast({
+        title: "Success",
+        description: "Role updated successfully",
+      });
+      fetchData();
+      setEditingRole(null);
+      setNewRoleName("");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update role",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteRole = async (roleId: string) => {
+    try {
+      await roleService.deleteRole(roleId);
+      toast({
+        title: "Success",
+        description: "Role deleted successfully",
+      });
+      fetchData();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete role",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const startEditRole = (role: Role) => {
+    setEditingRole(role);
+    setNewRoleName(role.name);
+  };
+
+  const cancelEdit = () => {
+    setEditingRole(null);
+    setNewRoleName("");
   };
 
   const filteredMembers = members
@@ -147,13 +236,119 @@ export default function TeamManagement() {
             <CardTitle className="text-2xl font-bold">Team Management</CardTitle>
             <CardDescription>Manage your racing academy team members</CardDescription>
           </div>
-          <Button 
-            onClick={() => router.push("/admin/team-management/new")}
-            className="bg-racing-red hover:bg-racing-red/90"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Team Member
-          </Button>
+          <div className="flex items-center gap-3">
+            <Dialog open={isRoleDialogOpen} onOpenChange={setIsRoleDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <Settings2 className="h-4 w-4 mr-2" />
+                  Manage Roles
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Manage Team Roles</DialogTitle>
+                  <DialogDescription>
+                    Add, edit, or remove team roles. These roles can be assigned to team members.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="py-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Input
+                      placeholder={editingRole ? "Update role name" : "Add new role"}
+                      value={newRoleName}
+                      onChange={(e) => setNewRoleName(e.target.value)}
+                    />
+                    {editingRole ? (
+                      <div className="flex gap-2">
+                        <Button 
+                          onClick={handleUpdateRole}
+                          className="bg-racing-red hover:bg-racing-red/90"
+                        >
+                          Update
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          onClick={cancelEdit}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button 
+                        onClick={handleAddRole}
+                        className="bg-racing-red hover:bg-racing-red/90"
+                      >
+                        Add
+                      </Button>
+                    )}
+                  </div>
+                  <Separator className="my-4" />
+                  <div className="space-y-2">
+                    {roles.map((role) => (
+                      <div
+                        key={role.id}
+                        className="flex items-center justify-between p-2 rounded-lg hover:bg-muted"
+                      >
+                        <span>{role.name}</span>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => startEditRole(role)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-destructive hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Role</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete this role? This will not affect team members currently assigned to this role.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDeleteRole(role.id)}
+                                  className="bg-destructive hover:bg-destructive/90"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsRoleDialogOpen(false)}
+                  >
+                    Close
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+            <Button 
+              onClick={() => router.push("/admin/team-management/new")}
+              className="bg-racing-red hover:bg-racing-red/90"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Team Member
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="relative mb-6">

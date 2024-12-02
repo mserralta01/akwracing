@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { instructorService } from "@/lib/services/instructor-service";
 import { Instructor } from "@/types/instructor";
 import { icons } from "@/lib/constants/icons";
-import { Instagram, Facebook, Linkedin, Twitter, Youtube, Mail, Phone } from "lucide-react";
+import { Instagram, Facebook, Linkedin, Twitter, Youtube } from "lucide-react";
 import * as React from "react";
 
 export default function InstructorDetailPage() {
@@ -125,32 +125,26 @@ export default function InstructorDetailPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.3 }}
-                className="text-xl text-racing-red font-semibold"
+                className="text-xl text-racing-red font-semibold mb-6"
               >
                 {instructor.role}
               </motion.p>
+              
+              {/* Bio Section */}
+              <Card className="bg-white/5 backdrop-blur-sm border-gray-800">
+                <CardContent className="p-6">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8, delay: 0.4 }}
+                    className="prose prose-lg max-w-none dark:prose-invert"
+                    dangerouslySetInnerHTML={{ 
+                      __html: instructor.bio 
+                    }}
+                  />
+                </CardContent>
+              </Card>
             </div>
-
-            {/* Contact Information */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-              className="space-y-4"
-            >
-              {instructor.email && (
-                <div className="flex items-center gap-3 text-gray-300">
-                  <Mail className="h-5 w-5 text-racing-red" />
-                  <span>{instructor.email}</span>
-                </div>
-              )}
-              {instructor.phone && (
-                <div className="flex items-center gap-3 text-gray-300">
-                  <Phone className="h-5 w-5 text-racing-red" />
-                  <span>{instructor.phone}</span>
-                </div>
-              )}
-            </motion.div>
 
             {/* Social Media */}
             {instructor.socialMedia && Object.entries(instructor.socialMedia).some(([_, url]) => url) && (
@@ -194,14 +188,16 @@ export default function InstructorDetailPage() {
                     <Card key={index} className="bg-white/5 backdrop-blur-sm border-gray-800">
                       <CardContent className="p-4">
                         <div className="flex items-start gap-3">
-                          {icons[experience.icon] && (
-                            <div className="h-5 w-5 text-racing-red flex-shrink-0 mt-1">
-                              {React.createElement(icons[experience.icon])}
-                            </div>
-                          )}
-                          <div className="flex-1">
-                            <p className="text-gray-300">{experience.description}</p>
-                            <p className="text-sm text-gray-500 mt-1">{experience.year}</p>
+                          <div className="flex-shrink-0 w-20 text-sm text-gray-500">
+                            {experience.year}
+                          </div>
+                          <div className="flex items-start gap-3 flex-1">
+                            {icons[experience.icon] && (
+                              <div className="h-5 w-5 text-racing-red flex-shrink-0 mt-1">
+                                {React.createElement(icons[experience.icon])}
+                              </div>
+                            )}
+                            <p className="text-gray-300 flex-1">{experience.description}</p>
                           </div>
                         </div>
                       </CardContent>
@@ -225,14 +221,16 @@ export default function InstructorDetailPage() {
                     <Card key={index} className="bg-white/5 backdrop-blur-sm border-gray-800">
                       <CardContent className="p-4">
                         <div className="flex items-start gap-3">
-                          {icons[achievement.icon] && (
-                            <div className="h-5 w-5 text-racing-red flex-shrink-0 mt-1">
-                              {React.createElement(icons[achievement.icon])}
-                            </div>
-                          )}
-                          <div className="flex-1">
-                            <p className="text-gray-300">{achievement.description}</p>
-                            <p className="text-sm text-gray-500 mt-1">{achievement.year}</p>
+                          <div className="flex-shrink-0 w-20 text-sm text-gray-500">
+                            {achievement.year}
+                          </div>
+                          <div className="flex items-start gap-3 flex-1">
+                            {icons[achievement.icon] && (
+                              <div className="h-5 w-5 text-racing-red flex-shrink-0 mt-1">
+                                {React.createElement(icons[achievement.icon])}
+                              </div>
+                            )}
+                            <p className="text-gray-300 flex-1">{achievement.description}</p>
                           </div>
                         </div>
                       </CardContent>

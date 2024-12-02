@@ -14,20 +14,24 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Switch } from "@/components/ui/switch";
+import { useToast } from "@/components/ui/use-toast";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
 import { 
-  MoreHorizontal, 
-  Pencil, 
   Plus, 
-  Trash2, 
   Search,
-  Filter,
   Mail,
   Phone,
   Instagram,
@@ -35,13 +39,12 @@ import {
   Linkedin,
   Twitter,
   Youtube,
-  Trophy,
-  Medal
+  Pencil,
+  Trash2,
+  ExternalLink,
+  User,
+  Briefcase
 } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
-import { Input } from "@/components/ui/input";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
 
 export default function TeamManagement() {
   const router = useRouter();
@@ -81,6 +84,23 @@ export default function TeamManagement() {
       toast({
         title: "Error",
         description: "Failed to delete team member",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleFeaturedToggle = async (member: Instructor, featured: boolean) => {
+    try {
+      await instructorService.updateInstructor(member.id, { ...member, featured });
+      toast({
+        title: "Success",
+        description: `Team member ${featured ? 'featured' : 'unfeatured'} successfully`,
+      });
+      fetchMembers();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update featured status",
         variant: "destructive",
       });
     }
@@ -150,14 +170,16 @@ export default function TeamManagement() {
             {filteredMembers.map((member) => (
               <Card key={member.id} className="hover:bg-muted/50 transition-colors">
                 <CardContent className="p-6">
-                  <div className="flex items-start gap-6">
+                  <div className="flex items-center gap-6">
                     <Avatar className="h-20 w-20">
                       <AvatarImage src={member.imageUrl || ""} alt={member.name} />
-                      <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
+                      <AvatarFallback>
+                        <User className="h-10 w-10 text-muted-foreground" />
+                      </AvatarFallback>
                     </Avatar>
                     
-                    <div className="flex-1 space-y-4">
-                      <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-2">
                         <div>
                           <h3 className="text-xl font-semibold flex items-center gap-2">
                             {member.name}
@@ -167,52 +189,85 @@ export default function TeamManagement() {
                               </Badge>
                             )}
                           </h3>
-                          <p className="text-muted-foreground">{member.role}</p>
                         </div>
-                        
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => router.push(`/admin/team-management/${member.id}/edit`)}
-                            >
-                              <Pencil className="h-4 w-4 mr-2" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
-                              onClick={() => handleDelete(member.id)}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+
+                        <div className="flex items-center gap-2">
+                          <div className="flex flex-col items-center gap-1">
+                            <span className="text-sm text-muted-foreground">Featured</span>
+                            <Switch
+                              checked={member.featured}
+                              onCheckedChange={(checked) => handleFeaturedToggle(member, checked)}
+                              className="data-[state=checked]:bg-racing-red"
+                            />
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => window.open(`/instructors/${member.id}`, '_blank')}
+                            className="h-8 w-8"
+                            title="View member page"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => router.push(`/admin/team-management/${member.id}/edit`)}
+                            className="h-8 w-8"
+                            title="Edit member"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive hover:text-destructive"
+                                title="Delete member"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Team Member</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete {member.name}? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDelete(member.id)}
+                                  className="bg-destructive hover:bg-destructive/90"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          {member.email && (
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <Mail className="h-4 w-4" />
-                              {member.email}
-                            </div>
-                          )}
-                          {member.phone && (
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <Phone className="h-4 w-4" />
-                              {member.phone}
-                            </div>
-                          )}
+                      <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                          <Briefcase className="h-4 w-4" />
+                          {member.role}
                         </div>
-                        
-                        <div className="flex items-center gap-3 justify-end">
+                        {member.email && (
+                          <div className="flex items-center gap-2">
+                            <Mail className="h-4 w-4" />
+                            {member.email}
+                          </div>
+                        )}
+                        {member.phone && (
+                          <div className="flex items-center gap-2">
+                            <Phone className="h-4 w-4" />
+                            {member.phone}
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2 ml-auto">
                           {Object.entries(member.socialMedia || {}).map(([platform, url]) => {
                             const Icon = getSocialIcon(platform);
                             if (Icon && url) {
@@ -234,23 +289,6 @@ export default function TeamManagement() {
                           })}
                         </div>
                       </div>
-
-                      {(member.experiences?.length > 0 || member.achievements?.length > 0) && (
-                        <div className="pt-4 border-t space-y-3">
-                          {member.experiences?.length > 0 && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <Trophy className="h-4 w-4 text-racing-red" />
-                              <span>{member.experiences[0].description}</span>
-                            </div>
-                          )}
-                          {member.achievements?.length > 0 && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <Medal className="h-4 w-4 text-racing-red" />
-                              <span>{member.achievements[0].description}</span>
-                            </div>
-                          )}
-                        </div>
-                      )}
                     </div>
                   </div>
                 </CardContent>

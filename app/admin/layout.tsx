@@ -31,11 +31,9 @@ export default function AdminLayout({
   return (
     <AdminGuard>
       <div className="flex h-screen">
-        <aside className="w-64 h-full">
-          <LeftMenu />
-        </aside>
-        <main className="flex-1 overflow-y-auto">
-          <div className="px-8 pb-8">
+        <LeftMenu />
+        <main className="flex-1 overflow-y-auto transition-[margin] duration-300 ease-in-out">
+          <div className="p-8">
             {children}
           </div>
         </main>

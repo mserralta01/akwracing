@@ -169,9 +169,10 @@ export function LeftMenu() {
           isCollapsed ? "p-4" : "p-6"
         )}>
           <div className={cn(
-            "relative transition-all duration-300",
+            "relative transition-all duration-300 cursor-pointer",
             isCollapsed ? "w-8 h-8" : "w-40 h-40"
-          )}>
+          )}
+          onClick={() => router.push("/")}>
             {isCollapsed ? (
               <Menu className="w-8 h-8 text-racing-red" />
             ) : (

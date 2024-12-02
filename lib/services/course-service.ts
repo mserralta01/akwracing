@@ -239,22 +239,34 @@ export const courseService = {
     }
   },
 
-  async deleteCourse(courseName: string): Promise<void> {
+  async deleteCourse(courseId: string): Promise<void> {
     try {
-      const courseData = await this.getCourseBySlug(courseName);
-      if (!courseData) return;
-      
-      const courseRef = doc(db, COURSES_COLLECTION, courseData.id);
+      const courseRef = doc(db, COURSES_COLLECTION, courseId);
       const courseDoc = await getDoc(courseRef);
 
-      if (courseDoc.exists() && courseDoc.data().imageUrl) {
-        const imageRef = ref(storage, courseDoc.data().imageUrl);
-        await deleteObject(imageRef).catch(console.error);
+      if (!courseDoc.exists()) {
+        throw new Error('Course not found');
       }
 
+      // Delete the image from storage if it exists
+      const courseData = courseDoc.data();
+      if (courseData?.imageUrl) {
+        try {
+          // Extract the path from the full URL
+          const imageUrl = new URL(courseData.imageUrl);
+          const imagePath = decodeURIComponent(imageUrl.pathname.split('/o/')[1]);
+          const imageRef = ref(storage, imagePath);
+          await deleteObject(imageRef);
+        } catch (storageError) {
+          // Log the error but continue with course deletion
+          console.error('Error deleting course image:', storageError);
+        }
+      }
+
+      // Delete the course document
       await deleteDoc(courseRef);
     } catch (error) {
-      console.error('Error deleting course:', error);
+      console.error('Error in deleteCourse:', error);
       throw error;
     }
   },

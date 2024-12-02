@@ -71,7 +71,7 @@ export default function EditCoursePage() {
       </div>
       <CourseForm 
         initialData={course} 
-        isEditing 
+        mode="edit"
         instructors={instructors}
       />
     </div>

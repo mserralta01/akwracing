@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Course, CourseFormData } from "@/types/course";
 import { courseService } from "@/lib/services/course-service";
-import { auth } from "@/lib/firebase";
+import { auth, storage } from "@/lib/firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -75,110 +76,102 @@ type CourseFormProps = {
 export function CourseForm({ initialData, instructors, mode = 'create' }: CourseFormProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | undefined>(initialData?.imageUrl || undefined);
+  const [previewUrl, setPreviewUrl] = useState<string>(initialData?.imageUrl || '');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      title: initialData?.title || "",
-      shortDescription: initialData?.shortDescription || "",
-      longDescription: initialData?.longDescription || "",
-      startDate: initialData?.startDate || "",
-      endDate: initialData?.endDate || "",
+      title: initialData?.title || '',
+      shortDescription: initialData?.shortDescription || '',
+      longDescription: initialData?.longDescription || '',
+      startDate: initialData?.startDate ? new Date(initialData.startDate).toISOString().split('T')[0] : '',
+      endDate: initialData?.endDate ? new Date(initialData.endDate).toISOString().split('T')[0] : '',
       duration: initialData?.duration || 1,
-      location: initialData?.location || "",
-      level: initialData?.level || "Beginner",
+      location: initialData?.location || '',
+      level: initialData?.level || 'Beginner',
       availableSpots: initialData?.availableSpots || 1,
       price: initialData?.price || 0,
       featured: initialData?.featured || false,
       imageUrl: initialData?.imageUrl || null,
-      instructorId: initialData?.instructorId || "",
+      instructorId: initialData?.instructorId || '',
     },
   });
 
-  const onSubmit = async (values: FormValues) => {
+  const uploadImage = async (file: File): Promise<string> => {
+    const storageRef = ref(storage, `courses/${Date.now()}_${file.name}`);
+    await uploadBytes(storageRef, file);
+    return getDownloadURL(storageRef);
+  };
+
+  const onSubmit = async (data: FormValues) => {
     try {
-      setLoading(true);
-      
-      if (!auth.currentUser) {
-        toast({
-          title: "Error",
-          description: "You must be logged in to perform this action",
-          variant: "destructive",
-        });
-        return;
+      setIsSubmitting(true);
+
+      let imageUrl = data.imageUrl;
+      if (imageFile) {
+        imageUrl = await uploadImage(imageFile);
       }
 
-      const formData: Omit<CourseFormData, 'id' | 'createdAt' | 'updatedAt'> = {
-        title: values.title,
-        shortDescription: values.shortDescription,
-        longDescription: values.longDescription,
-        startDate: values.startDate,
-        endDate: values.endDate,
-        duration: Number(values.duration),
-        location: values.location,
-        level: values.level,
-        availableSpots: Number(values.availableSpots),
-        price: Number(values.price),
-        featured: Boolean(values.featured),
-        imageUrl: values.imageUrl || null,
-        instructorId: values.instructorId,
+      const courseData = {
+        ...data,
+        imageUrl,
+        startDate: new Date(data.startDate).toISOString(),
+        endDate: new Date(data.endDate).toISOString(),
       };
 
-      if (isNaN(formData.duration) || isNaN(formData.availableSpots) || isNaN(formData.price)) {
-        toast({
-          title: "Error",
-          description: "Please enter valid numbers for duration, available spots, and price",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (mode === 'edit' && initialData?.id) {
-        await courseService.updateCourse(initialData.id, formData, imageFile || undefined);
+      if (initialData) {
+        const result = await courseService.updateCourse(initialData.slug, courseData);
+        if (!result.success) {
+          throw new Error(result.error?.message || 'Failed to update course');
+        }
         toast({
           title: "Success",
           description: "Course updated successfully",
         });
       } else {
-        const result = await courseService.createCourse(formData, imageFile || null);
-        
+        const result = await courseService.createCourse(courseData);
         if (!result.success) {
-          toast({
-            title: "Error",
-            description: result.error?.message || "Failed to create course",
-            variant: "destructive",
-          });
-          return;
+          throw new Error(result.error?.message || 'Failed to create course');
         }
-        
         toast({
           title: "Success",
           description: "Course created successfully",
         });
       }
-      
-      router.push("/admin/academy/course-management");
+
+      router.push('/admin/academy/course-management');
       router.refresh();
     } catch (error) {
-      console.error('Form submission error:', error);
+      console.error('Error submitting course:', error);
       toast({
         title: "Error",
-        description: error instanceof Error 
-          ? `Error: ${error.message}` 
-          : "Something went wrong. Please try again.",
+        description: error instanceof Error ? error.message : "Something went wrong",
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
+  // Add useEffect for automatic duration calculation
+  useEffect(() => {
+    const startDate = form.watch('startDate');
+    const endDate = form.watch('endDate');
+
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const diffTime = Math.abs(end.getTime() - start.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 to include both start and end days
+      form.setValue('duration', diffDays);
+    }
+  }, [form.watch('startDate'), form.watch('endDate')]);
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Course Information */}
           <Card className="lg:col-span-2 shadow-lg">
@@ -262,10 +255,9 @@ export function CourseForm({ initialData, instructors, mode = 'create' }: Course
                       <FormItem>
                         <FormLabel>Short Description</FormLabel>
                         <FormControl>
-                          <Textarea 
-                            placeholder="Brief overview of the course"
-                            className="resize-none"
-                            {...field}
+                          <Editor
+                            content={field.value}
+                            onChange={field.onChange}
                           />
                         </FormControl>
                         <FormMessage />
@@ -319,7 +311,11 @@ export function CourseForm({ initialData, instructors, mode = 'create' }: Course
                       <FormItem>
                         <FormLabel>Start Date</FormLabel>
                         <FormControl>
-                          <Input type="date" {...field} />
+                          <Input 
+                            type="date" 
+                            {...field}
+                            value={field.value || ''}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -333,7 +329,11 @@ export function CourseForm({ initialData, instructors, mode = 'create' }: Course
                       <FormItem>
                         <FormLabel>End Date</FormLabel>
                         <FormControl>
-                          <Input type="date" {...field} />
+                          <Input 
+                            type="date" 
+                            {...field}
+                            value={field.value || ''}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -385,6 +385,14 @@ export function CourseForm({ initialData, instructors, mode = 'create' }: Course
                             type="number"
                             {...field}
                             onChange={(e) => field.onChange(parseInt(e.target.value))}
+                            onFocus={(e) => {
+                              if (e.target.value === '0') {
+                                e.target.value = '';
+                              }
+                              e.target.select();
+                            }}
+                            min="0"
+                            step="1"
                           />
                         </FormControl>
                         <FormMessage />
@@ -479,10 +487,10 @@ export function CourseForm({ initialData, instructors, mode = 'create' }: Course
                 </Button>
                 <Button 
                   type="submit" 
-                  disabled={loading}
+                  disabled={isSubmitting}
                   className="bg-racing-red hover:bg-racing-red/90"
                 >
-                  {loading ? (
+                  {isSubmitting ? (
                     <div className="flex items-center gap-2">
                       <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
                       {mode === 'edit' ? "Updating..." : "Creating..."}

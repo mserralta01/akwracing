@@ -1,13 +1,18 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Racing_Sans_One } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "next-themes";
+import { ThemeProvider } from "@/components/theme-provider";
 import { Navigation } from "@/components/navigation";
 import { Footer } from "@/components/footer";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/contexts/auth-context";
 
 const inter = Inter({ subsets: ["latin"] });
+const racingSansOne = Racing_Sans_One({ 
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-racing"
+});
 
 export const metadata: Metadata = {
   title: "AKW Racing Academy",
@@ -21,14 +26,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head />
-      <body className={`${inter.className} antialiased`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem={true}
-          disableTransitionOnChange={true}
-        >
+      <body className={`${inter.className} ${racingSansOne.variable} antialiased bg-background text-foreground`} suppressHydrationWarning>
+        <ThemeProvider>
           <AuthProvider>
             <Navigation />
             <main className="flex-1">

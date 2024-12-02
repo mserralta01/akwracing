@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar, Users, DollarSign } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { generateCourseSlug } from "@/lib/utils/slug";
 
 interface CourseCardProps {
   course: Course;
@@ -39,7 +40,11 @@ export function CourseCard({ course }: CourseCardProps) {
   };
 
   const handleLearnMore = () => {
-    router.push(`/courses/${course.id}`);
+    if (!course.slug) {
+      console.error('Course slug is missing:', course);
+      return;
+    }
+    router.push(`/courses/${course.slug}`);
   };
 
   return (

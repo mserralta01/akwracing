@@ -73,15 +73,17 @@ export default function CourseManagement() {
     fetchCourses();
   }, [toast]);
 
-  const handleDelete = async (courseId: string) => {
+  const handleDelete = async (courseName: string) => {
     try {
-      await courseService.deleteCourse(courseId);
-      setCourses(courses.filter((course) => course.id !== courseId));
+      await courseService.deleteCourse(courseName);
+      setCourses(courses.filter((course) => course.slug !== courseName));
       toast({
         title: "Success",
         description: "Course deleted successfully",
+        variant: "default",
       });
     } catch (error) {
+      console.error('Error deleting course:', error);
       toast({
         title: "Error",
         description: "Failed to delete course",
@@ -108,6 +110,10 @@ export default function CourseManagement() {
       default:
         return "bg-gray-500/10 text-gray-500 hover:bg-gray-500/20";
     }
+  };
+
+  const handleEdit = (courseName: string) => {
+    router.push(`/admin/academy/course-management/${courseName}/edit`);
   };
 
   return (
@@ -220,7 +226,7 @@ export default function CourseManagement() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => router.push(`/admin/academy/course-management/${course.id}/edit`)}
+                          onClick={() => handleEdit(course.slug)}
                           className="h-8 w-8"
                         >
                           <Pencil className="h-4 w-4" />
@@ -228,7 +234,7 @@ export default function CourseManagement() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleDelete(course.id)}
+                          onClick={() => handleDelete(course.slug)}
                           className="h-8 w-8 text-destructive hover:text-destructive"
                         >
                           <Trash2 className="h-4 w-4" />

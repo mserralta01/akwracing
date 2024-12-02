@@ -20,6 +20,7 @@ export type Course = CourseFormData & {
   id: string;
   createdAt: string;
   updatedAt: string;
+  slug: string;
 };
 
 export interface Registration {

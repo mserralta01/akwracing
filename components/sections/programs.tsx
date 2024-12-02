@@ -182,7 +182,13 @@ export function ProgramsSection() {
                       <Button
                         variant="default"
                         className="w-full bg-racing-red hover:bg-red-700 cursor-pointer relative z-20"
-                        onClick={() => router.push(`/courses/${course.id}`)}
+                        onClick={() => {
+                          if (!course.slug) {
+                            console.error('Course slug is missing:', course);
+                            return;
+                          }
+                          router.push(`/courses/${course.slug}`);
+                        }}
                       >
                         Learn More
                       </Button>

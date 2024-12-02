@@ -1,29 +1,27 @@
 "use client";
 
-export const dynamic = 'force-dynamic';
-
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { CourseForm } from "@/components/admin/course-form";
 import { courseService } from "@/lib/services/course-service";
 import { instructorService } from "@/lib/services/instructor-service";
-import { Course } from "@/types/course";
-import { Instructor } from "@/types/instructor";
+import type { Course } from "@/types/course";
+import type { Instructor } from "@/types/instructor";
 
 export default function EditCoursePage() {
   const params = useParams();
-  const courseId = params?.courseId as string;
+  const identifier = params?.courseId as string;
   const [course, setCourse] = useState<Course | null>(null);
   const [instructors, setInstructors] = useState<Instructor[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!courseId) return;
+      if (!identifier) return;
 
       try {
         const [courseData, instructorsData] = await Promise.all([
-          courseService.getCourse(courseId),
+          courseService.getCourse(identifier),
           instructorService.getInstructors()
         ]);
         
@@ -37,7 +35,7 @@ export default function EditCoursePage() {
     };
 
     fetchData();
-  }, [courseId]);
+  }, [identifier]);
 
   if (loading) {
     return (

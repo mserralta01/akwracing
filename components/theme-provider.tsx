@@ -1,20 +1,18 @@
 "use client";
 
-import React, { createContext, useContext, useState } from 'react';
+import * as React from "react";
+import { ThemeProvider as NextThemesProvider } from "next-themes";
 
-const ThemeContext = createContext({
-  theme: 'light',
-  setTheme: (theme: string) => {},
-});
-
-export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
-  const [theme, setTheme] = useState('light');
-
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
   return (
-    <ThemeContext.Provider value={{ theme, setTheme }}>
+    <NextThemesProvider 
+      attribute="class" 
+      defaultTheme="light" 
+      enableSystem={false} 
+      forcedTheme="light"
+      disableTransitionOnChange
+    >
       {children}
-    </ThemeContext.Provider>
+    </NextThemesProvider>
   );
-};
-
-export const useTheme = () => useContext(ThemeContext);
+}

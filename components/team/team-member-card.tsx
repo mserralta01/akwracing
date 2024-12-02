@@ -1,5 +1,6 @@
 import * as React from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Instructor } from "@/types/instructor";
 import { icons } from "@/lib/constants/icons";
@@ -12,19 +13,26 @@ type TeamMemberCardProps = {
 export function TeamMemberCard({ member }: TeamMemberCardProps) {
   return (
     <Card className="overflow-hidden group">
-      <div className="relative h-64">
-        <Image
-          src={member.imageUrl || "/placeholder-instructor.jpg"}
-          alt={member.name}
-          fill
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-        />
-      </div>
+      <Link href={`/instructors/${member.id}`} className="block">
+        <div className="relative h-64">
+          <Image
+            src={member.imageUrl || "/placeholder-instructor.jpg"}
+            alt={member.name}
+            fill
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          />
+        </div>
+      </Link>
       <CardContent className="pt-6 space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-xl font-bold mb-2">{member.name}</h3>
+            <Link 
+              href={`/instructors/${member.id}`}
+              className="inline-block hover:text-racing-red transition-colors"
+            >
+              <h3 className="text-xl font-bold mb-2">{member.name}</h3>
+            </Link>
             <p className="text-racing-red font-semibold">{member.role}</p>
           </div>
           

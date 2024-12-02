@@ -4,7 +4,6 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { LeftMenu } from "@/components/admin/left-menu";
 import { AdminGuard } from "@/components/auth/admin-guard";
-import { ModeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/contexts/auth-context";
 
 export default function AdminLayout({
@@ -36,9 +35,6 @@ export default function AdminLayout({
           <LeftMenu />
         </aside>
         <main className="flex-1 overflow-y-auto">
-          <div className="p-4 flex justify-end">
-            <ModeToggle />
-          </div>
           <div className="px-8 pb-8">
             {children}
           </div>

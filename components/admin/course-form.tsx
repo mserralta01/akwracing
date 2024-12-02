@@ -68,11 +68,11 @@ type FormValues = z.infer<typeof formSchema>;
 
 type CourseFormProps = {
   initialData?: Course;
-  isEditing?: boolean;
   instructors: Instructor[];
+  mode?: 'create' | 'edit';
 };
 
-export function CourseForm({ initialData, isEditing = false, instructors }: CourseFormProps) {
+export function CourseForm({ initialData, instructors, mode = 'create' }: CourseFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -136,7 +136,7 @@ export function CourseForm({ initialData, isEditing = false, instructors }: Cour
         return;
       }
 
-      if (isEditing && initialData?.id) {
+      if (mode === 'edit' && initialData?.id) {
         await courseService.updateCourse(initialData.id, formData, imageFile || undefined);
         toast({
           title: "Success",
@@ -485,9 +485,9 @@ export function CourseForm({ initialData, isEditing = false, instructors }: Cour
                   {loading ? (
                     <div className="flex items-center gap-2">
                       <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                      {isEditing ? "Updating..." : "Creating..."}
+                      {mode === 'edit' ? "Updating..." : "Creating..."}
                     </div>
-                  ) : isEditing ? (
+                  ) : mode === 'edit' ? (
                     "Update Course"
                   ) : (
                     "Create Course"

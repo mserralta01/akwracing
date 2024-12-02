@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 1,
+            "activePatchIndex": 2,
             "patches": [
                 {
                     "date": 1732370505001,
@@ -12,6 +12,10 @@
                 {
                     "date": 1732378582824,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -21,9 +21,9 @@\n     \"paths\": {\n       \"@/*\": [\"./*\"]\n     },\n     \"baseUrl\": \".\",\n-    \"types\": [\"react-day-picker\"]\n+    \"types\": []\n   },\n   \"include\": [\n     \"next-env.d.ts\",\n     \"**/*.ts\",\n"
+                },
+                {
+                    "date": 1733096716625,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -18,12 +18,19 @@\n         \"name\": \"next\"\n       }\n     ],\n     \"paths\": {\n-      \"@/*\": [\"./*\"]\n+      \"@/*\": [\"./*\"],\n+      \"@/components/*\": [\"./components/*\"],\n+      \"@/lib/*\": [\"./lib/*\"],\n+      \"@/types/*\": [\"./types/*\"],\n+      \"@/utils/*\": [\"./utils/*\"],\n+      \"@/hooks/*\": [\"./hooks/*\"],\n+      \"@/styles/*\": [\"./styles/*\"],\n+      \"@/config/*\": [\"./config/*\"]\n     },\n     \"baseUrl\": \".\",\n-    \"types\": []\n+    \"types\": [\"react-day-picker\"]\n   },\n   \"include\": [\n     \"next-env.d.ts\",\n     \"**/*.ts\",\n"
                 }
             ],
             "date": 1732370505000,

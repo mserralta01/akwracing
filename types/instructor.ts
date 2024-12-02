@@ -35,18 +35,24 @@ export type RacingIcon =
   | 'Chart'       // For performance milestones
   | 'Award';      // For special recognition
 
+export type InstructorLevel = "Junior" | "Senior" | "Master";
+
 export type Instructor = {
   id: string;
   name: string;
   role: string;
+  bio: string;
+  level: InstructorLevel;
+  imageUrl?: string;
+  featured: boolean;
+  email?: string;
+  phone?: string;
+  socialMedia?: SocialMedia;
   experiences: ExperienceEntry[];
   achievements: AchievementEntry[];
-  languages: string[];
-  featured: boolean;
-  socialMedia: SocialMedia;
-  imageUrl: string;
-  phone?: string;
-  email?: string;
-}
+  languages: Language[];
+  createdAt: string;
+  updatedAt: string;
+};
 
 export type InstructorFormData = Omit<Instructor, 'id' | 'createdAt' | 'updatedAt'>; 

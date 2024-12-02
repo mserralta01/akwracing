@@ -35,10 +35,10 @@ yarn-error.log*
 next-env.d.ts
 
 .lh
-/lh*
+/lh/*
 .history
-/.history
-/.lh/*
+.history/*
+
 
 # Firebase
 .firebase/
@@ -64,7 +64,6 @@ serviceAccountKey.json
 .vscode/
 *.swp
 *.swo
-
 
 firestore.rules
 firestore.rules

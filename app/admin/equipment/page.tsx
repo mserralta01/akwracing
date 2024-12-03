@@ -13,7 +13,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from '@/components/ui/card'
 import {
   Select,
@@ -22,17 +21,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
 import { Equipment, Category, Brand } from '@/types/equipment'
 import { equipmentService } from '@/lib/services/equipment-service'
 import { CategoryManager } from '@/components/equipment/category-manager'
@@ -40,19 +28,18 @@ import { BrandManager } from '@/components/equipment/brand-manager'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useAuth } from '@/hooks/use-auth'
+import { ViewToggle } from '@/components/equipment/view-toggle'
+import { EquipmentGrid } from '@/components/equipment/equipment-grid'
+import { EquipmentTable } from '@/components/equipment/equipment-table'
 
-const statusColors = {
-  AVAILABLE: 'bg-green-500',
-  IN_USE: 'bg-blue-500',
-  MAINTENANCE: 'bg-yellow-500',
-  RETIRED: 'bg-gray-500'
-} as const
+type ViewMode = 'grid' | 'table'
 
 export default function EquipmentPage() {
   const [equipment, setEquipment] = useState<Equipment[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [brands, setBrands] = useState<Brand[]>([])
   const [selectedCategory, setSelectedCategory] = useState('all')
+  const [viewMode, setViewMode] = useState<ViewMode>('grid')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
@@ -110,6 +97,10 @@ export default function EquipmentPage() {
         description: 'Failed to delete equipment'
       })
     }
+  }
+
+  const handleEdit = (id: string) => {
+    router.push(`/admin/equipment/${id}`)
   }
 
   const handleAddCategory = async (name: string) => {
@@ -208,23 +199,8 @@ export default function EquipmentPage() {
     }
   }
 
-  const getCategoryName = (categoryId: string) => {
-    return categories.find(c => c.id === categoryId)?.name || 'Unknown'
-  }
-
-  const getBrandName = (brandId: string) => {
-    return brands.find(b => b.id === brandId)?.name || 'Unknown'
-  }
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(price)
-  }
-
   const filteredEquipment = equipment.filter(
-    (item) => selectedCategory === "all" || item.categoryId === selectedCategory
+    (item) => selectedCategory === "all" || item.category?.id === selectedCategory
   )
 
   if (authLoading || loading) {
@@ -280,6 +256,7 @@ export default function EquipmentPage() {
               onEdit={handleEditBrand}
               onDelete={handleDeleteBrand}
             />
+            <ViewToggle currentView={viewMode} onViewChange={setViewMode} />
             <Button asChild>
               <Link href="/admin/equipment/new">
                 <Plus className="mr-2 h-4 w-4" />
@@ -305,81 +282,19 @@ export default function EquipmentPage() {
             </Select>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredEquipment.map((item) => (
-              <Card key={item.id} className="shadow-lg">
-                <div className="relative h-48 w-full">
-                  {item.imageUrl ? (
-                    <Image
-                      src={item.imageUrl}
-                      alt={item.name}
-                      fill
-                      className="object-cover rounded-t-lg"
-                    />
-                  ) : (
-                    <div className="flex items-center justify-center h-full bg-gray-100 rounded-t-lg">
-                      <ImageIcon className="h-12 w-12 text-gray-400" />
-                    </div>
-                  )}
-                </div>
-                <CardContent className="p-4">
-                  <h3 className="font-semibold text-lg mb-2">{item.name}</h3>
-                  <p className="text-sm text-gray-500 mb-2">{item.shortDescription}</p>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-500">Category:</span>
-                      <span className="text-sm">{getCategoryName(item.categoryId)}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-500">Brand:</span>
-                      <span className="text-sm">{getBrandName(item.brandId)}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-500">Price:</span>
-                      <span className="text-sm font-medium">{formatPrice(item.price)}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-500">Status:</span>
-                      <Badge className={statusColors[item.status]}>{item.status}</Badge>
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="p-4 pt-0 flex justify-end space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => router.push(`/admin/equipment/${item.id}`)}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="destructive" size="sm">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Equipment</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to delete this equipment? This action cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => handleDelete(item.id)}
-                          className="bg-red-500 hover:bg-red-600"
-                        >
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
+          {viewMode === 'table' ? (
+            <EquipmentTable
+              equipment={filteredEquipment}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+          ) : (
+            <EquipmentGrid
+              equipment={filteredEquipment}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+          )}
         </CardContent>
       </Card>
     </div>

@@ -38,11 +38,22 @@ export const equipmentService = {
 
       return snapshot.docs.map((doc) => {
         const data = doc.data();
+        const category = categoryMap.get(data.categoryId);
+        const brand = brandMap.get(data.brandId);
+        
+        if (!category || !brand) {
+          console.warn(`Missing category or brand for equipment ${doc.id}`);
+        }
+
         return {
           id: doc.id,
-          ...data,
-          category: categoryMap.get(data.categoryId),
-          brand: brandMap.get(data.brandId),
+          name: data.name,
+          brand: brand || { id: '', name: 'Unknown Brand' },
+          category: category || { id: '', name: 'Unknown Category' },
+          image: data.image,
+          salePrice: data.salePrice,
+          forSale: data.forSale,
+          forLease: data.forLease,
           createdAt: data.createdAt?.toDate?.() || new Date(),
           updatedAt: data.updatedAt?.toDate?.() || new Date(),
         } as Equipment;
@@ -79,9 +90,13 @@ export const equipmentService = {
 
       return {
         id: docSnap.id,
-        ...data,
-        category,
-        brand,
+        name: data.name,
+        brand: brand || { id: '', name: 'Unknown Brand' },
+        category: category || { id: '', name: 'Unknown Category' },
+        image: data.image,
+        salePrice: data.salePrice,
+        forSale: data.forSale,
+        forLease: data.forLease,
         createdAt: data.createdAt?.toDate?.() || new Date(),
         updatedAt: data.updatedAt?.toDate?.() || new Date(),
       } as Equipment;
@@ -102,7 +117,7 @@ export const equipmentService = {
 
       const docRef = await addDoc(collection(db, EQUIPMENT_COLLECTION), {
         ...data,
-        imageUrl,
+        image: imageUrl,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
@@ -120,12 +135,12 @@ export const equipmentService = {
       const docSnap = await getDoc(docRef);
       if (!docSnap.exists()) throw new Error("Equipment not found");
 
-      let imageUrl = data.imageUrl;
+      let imageUrl = data.image;
       if (image) {
         // Delete old image if it exists
-        if (docSnap.data().imageUrl) {
+        if (docSnap.data().image) {
           try {
-            const oldImageRef = ref(storage, docSnap.data().imageUrl);
+            const oldImageRef = ref(storage, docSnap.data().image);
             await deleteObject(oldImageRef);
           } catch (error) {
             console.warn("Error deleting old image:", error);
@@ -137,13 +152,13 @@ export const equipmentService = {
         await uploadBytes(storageRef, image);
         imageUrl = await getDownloadURL(storageRef);
       } else if (imageUrl === undefined) {
-        // If no new image and no imageUrl in data, preserve the existing imageUrl
-        imageUrl = docSnap.data().imageUrl;
+        // If no new image and no image in data, preserve the existing image
+        imageUrl = docSnap.data().image;
       }
 
       const updateData: Record<string, any> = {
         ...data,
-        imageUrl,
+        image: imageUrl,
         updatedAt: serverTimestamp(),
       };
 
@@ -166,8 +181,8 @@ export const equipmentService = {
       if (!docSnap.exists()) throw new Error("Equipment not found");
 
       // Delete image if it exists
-      if (docSnap.data().imageUrl) {
-        const imageRef = ref(storage, docSnap.data().imageUrl);
+      if (docSnap.data().image) {
+        const imageRef = ref(storage, docSnap.data().image);
         await deleteObject(imageRef);
       }
 

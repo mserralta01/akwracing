@@ -7,7 +7,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Edit, Trash2 } from "lucide-react"
+import { Edit, Trash2, ImageIcon } from "lucide-react"
 import Image from "next/image"
 import { useToast } from "@/hooks/use-toast"
 import {
@@ -21,17 +21,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { useState } from "react"
-
-type Equipment = {
-  id: string
-  name: string
-  brand: string
-  category: string
-  image: string
-  salePrice?: number
-  forSale: boolean
-  forLease: boolean
-}
+import { Equipment } from "@/types/equipment"
 
 type EquipmentTableProps = {
   equipment: Equipment[]
@@ -54,6 +44,10 @@ export function EquipmentTable({ equipment, onEdit, onDelete }: EquipmentTablePr
     }
   }
 
+  const hasValidImage = (imageUrl?: string) => {
+    return imageUrl && imageUrl.trim() !== "" && !imageUrl.startsWith("undefined")
+  }
+
   return (
     <>
       <Table>
@@ -72,18 +66,32 @@ export function EquipmentTable({ equipment, onEdit, onDelete }: EquipmentTablePr
           {equipment.map((item) => (
             <TableRow key={item.id}>
               <TableCell>
-                <Image
-                  src={item.image}
-                  alt={item.name}
-                  width={50}
-                  height={50}
-                  className="rounded-md object-cover"
-                />
+                <div className="relative w-16 h-16 bg-gray-100 rounded-md overflow-hidden">
+                  {hasValidImage(item.image) ? (
+                    <Image
+                      src={item.image}
+                      alt={item.name}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <ImageIcon className="h-6 w-6 text-gray-400" />
+                    </div>
+                  )}
+                </div>
               </TableCell>
               <TableCell>{item.name}</TableCell>
-              <TableCell>{item.brand}</TableCell>
-              <TableCell>{item.category}</TableCell>
-              <TableCell>{item.salePrice ? `$${item.salePrice}` : '-'}</TableCell>
+              <TableCell>{item.brand?.name}</TableCell>
+              <TableCell>{item.category?.name}</TableCell>
+              <TableCell>
+                {item.salePrice 
+                  ? `$${typeof item.salePrice === 'number' 
+                      ? item.salePrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                      : item.salePrice}`
+                  : '-'
+                }
+              </TableCell>
               <TableCell>
                 {[
                   item.forSale && 'For Sale',

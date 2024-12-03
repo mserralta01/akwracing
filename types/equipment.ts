@@ -15,8 +15,8 @@ export type Brand = {
 export type Equipment = {
   id: string
   name: string
-  brand: string
-  category: string
+  brand: Brand
+  category: Category
   image: string
   salePrice?: number
   forSale: boolean

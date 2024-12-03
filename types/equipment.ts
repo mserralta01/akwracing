@@ -15,23 +15,12 @@ export type Brand = {
 export type Equipment = {
   id: string
   name: string
-  shortDescription: string
-  description: string
-  categoryId: string
-  category: Category
-  brandId: string
-  brand: Brand
-  price: number
-  leasePrice: number
-  hourlyRate: number
-  dailyRate: number
-  weeklyRate: number
-  wholesalePrice: number
-  quantity: number
-  status: 'AVAILABLE' | 'IN_USE' | 'MAINTENANCE' | 'RETIRED'
-  imageUrl?: string
-  createdAt: Date
-  updatedAt: Date
+  brand: string
+  category: string
+  image: string
+  salePrice?: number
+  forSale: boolean
+  forLease: boolean
 }
 
 export type EquipmentRequirement = {
@@ -39,4 +28,8 @@ export type EquipmentRequirement = {
   quantity: number
   required: boolean
   notes?: string
+}
+
+export type EquipmentFormProps = {
+  equipmentId?: string
 } 

@@ -14,7 +14,7 @@ import {
 export function getMenuItems(features: { ecommerce: boolean }) {
   return [
     {
-      title: "Overview",
+      title: "Dashboard",
       href: "/admin",
       icon: LayoutDashboard,
     },

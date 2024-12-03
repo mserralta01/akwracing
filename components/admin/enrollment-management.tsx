@@ -41,11 +41,12 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
+import { useToast } from "@/components/ui/use-toast";
 
 type EnrollmentWithDetails = Enrollment & {
-  student?: StudentProfile;
-  parent?: ParentProfile;
-  course?: Course;
+  student: StudentProfile | null;
+  parent: ParentProfile | null;
+  course: Course | null;
 };
 
 export function EnrollmentManagement() {
@@ -57,6 +58,7 @@ export function EnrollmentManagement() {
     to: new Date(),
   });
   const [status, setStatus] = useState<string>("all");
+  const { toast } = useToast();
 
   const loadEnrollments = async () => {
     try {
@@ -64,24 +66,50 @@ export function EnrollmentManagement() {
       const allEnrollments = await studentService.getAllEnrollments();
       
       // Load details for each enrollment
-      const detailedEnrollments = await Promise.all(
+      const detailedEnrollments = await Promise.allSettled(
         allEnrollments.map(async (enrollment) => {
-          const [student, parent, course] = await Promise.all([
-            studentService.getStudent(enrollment.studentId),
-            studentService.getParent(enrollment.parentId),
-            studentService.getCourse(enrollment.courseId),
-          ]);
-          return {
-            ...enrollment,
-            student,
-            parent,
-            course,
-          };
+          try {
+            const [student, parent, course] = await Promise.all([
+              studentService.getStudent(enrollment.studentId),
+              studentService.getParent(enrollment.parentId),
+              studentService.getCourse(enrollment.courseId),
+            ]);
+
+            if (!student || !parent || !course) {
+              console.warn(`Missing data for enrollment ${enrollment.id}:`, {
+                hasStudent: !!student,
+                hasParent: !!parent,
+                hasCourse: !!course,
+              });
+            }
+
+            return {
+              ...enrollment,
+              student,
+              parent,
+              course,
+            } as EnrollmentWithDetails;
+          } catch (error) {
+            console.error(`Error loading details for enrollment ${enrollment.id}:`, error);
+            return {
+              ...enrollment,
+              student: null,
+              parent: null,
+              course: null,
+            } as EnrollmentWithDetails;
+          }
         })
       );
 
+      // Filter out failed promises and handle successful ones
+      const successfulEnrollments = detailedEnrollments
+        .filter((result): result is PromiseFulfilledResult<EnrollmentWithDetails> => 
+          result.status === 'fulfilled'
+        )
+        .map(result => result.value);
+
       // Filter enrollments based on date and status
-      const filtered = detailedEnrollments.filter((enrollment) => {
+      const filtered = successfulEnrollments.filter((enrollment) => {
         const enrollmentDate = new Date(enrollment.createdAt);
         const inDateRange =
           (!date.from || enrollmentDate >= date.from) &&
@@ -94,6 +122,11 @@ export function EnrollmentManagement() {
       setEnrollments(filtered);
     } catch (error) {
       console.error("Error loading enrollments:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load enrollments. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -211,7 +244,9 @@ export function EnrollmentManagement() {
                             </div>
                           </div>
                         ) : (
-                          "Loading..."
+                          <div className="text-sm text-muted-foreground">
+                            Student data unavailable
+                          </div>
                         )}
                       </TableCell>
                       <TableCell>
@@ -223,7 +258,9 @@ export function EnrollmentManagement() {
                             </div>
                           </div>
                         ) : (
-                          "Loading..."
+                          <div className="text-sm text-muted-foreground">
+                            Course data unavailable
+                          </div>
                         )}
                       </TableCell>
                       <TableCell>

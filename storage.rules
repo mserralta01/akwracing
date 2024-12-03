@@ -1,25 +1,23 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
     function isAdmin() {
-      return request.auth != null && 
-             request.auth.token.email != null &&
-             firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      return isAuthenticated() &&
+        firestore.exists(/databases/(default)/documents/users/$(request.auth.uid)) &&
+        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    match /courses/{fileName} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    match /instructors/{fileName} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    match /{allPaths=**} {
-      allow read: if true;
-      allow write: if isAdmin();
+    // Equipment images
+    match /equipment/{imageId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() && 
+        request.resource.size < 5 * 1024 * 1024 && // 5MB max
+        request.resource.contentType.matches('image/.*'); // Must be an image
     }
   }
 }

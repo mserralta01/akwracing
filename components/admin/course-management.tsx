@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Course, CourseLevel } from "@/types/course";
 import { courseService } from "@/lib/services/course-service";
@@ -10,8 +10,6 @@ import {
   Card,
   CardContent,
   CardHeader,
-  CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
 import {
   DropdownMenu,
@@ -28,7 +26,6 @@ import {
   Trash2, 
   Search,
   Filter,
-  SortAsc,
   Users,
   Calendar,
   MapPin,
@@ -131,13 +128,10 @@ export default function CourseManagement() {
   };
 
   return (
-    <div className="space-y-6">
+    <div>
       <Card className="shadow-lg">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <div>
-            <CardTitle className="text-2xl font-bold">Course Management</CardTitle>
-            <CardDescription>Manage your racing academy courses</CardDescription>
-          </div>
+          <div />
           <Button 
             onClick={() => router.push("/admin/academy/course-management/new")}
             className="bg-racing-red hover:bg-racing-red/90"

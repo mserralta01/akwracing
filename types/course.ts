@@ -1,26 +1,28 @@
+import { EquipmentRequirement } from "./equipment";
+
 export type CourseLevel = "Beginner" | "Intermediate" | "Advanced";
 
-export type CourseFormData = {
+export type Course = {
+  id: string;
   title: string;
+  slug: string;
   shortDescription: string;
   longDescription: string;
-  location: string;
+  description: string;
+  level: CourseLevel;
   price: number;
   duration: number;
-  level: CourseLevel;
   startDate: string;
   endDate: string;
+  maxStudents: number;
   availableSpots: number;
+  imageUrl?: string;
+  instructorId?: string;
+  location: string;
   featured: boolean;
-  imageUrl?: string | null;
-  instructorId: string;
-};
-
-export type Course = CourseFormData & {
-  id: string;
+  equipmentRequirements: EquipmentRequirement[];
   createdAt: string;
   updatedAt: string;
-  slug: string;
 };
 
 export interface Registration {

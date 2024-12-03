@@ -2,17 +2,14 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { CourseForm } from "@/components/admin/course-form";
+import CourseForm from "@/components/admin/course-form";
 import { courseService } from "@/lib/services/course-service";
-import { instructorService } from "@/lib/services/instructor-service";
 import type { Course } from "@/types/course";
-import type { Instructor } from "@/types/instructor";
 
 export default function EditCoursePage() {
   const params = useParams();
   const identifier = params?.courseId as string;
   const [course, setCourse] = useState<Course | null>(null);
-  const [instructors, setInstructors] = useState<Instructor[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -20,15 +17,10 @@ export default function EditCoursePage() {
       if (!identifier) return;
 
       try {
-        const [courseData, instructorsData] = await Promise.all([
-          courseService.getCourse(identifier),
-          instructorService.getInstructors()
-        ]);
-        
+        const courseData = await courseService.getCourseBySlug(identifier);
         setCourse(courseData);
-        setInstructors(instructorsData.instructors);
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error("Error fetching course:", error);
       } finally {
         setLoading(false);
       }
@@ -69,11 +61,7 @@ export default function EditCoursePage() {
           Make changes to your course information
         </p>
       </div>
-      <CourseForm 
-        initialData={course} 
-        mode="edit"
-        instructors={instructors}
-      />
+      <CourseForm initialData={course} />
     </div>
   );
 } 

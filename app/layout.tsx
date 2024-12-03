@@ -6,6 +6,8 @@ import { Navigation } from "@/components/navigation";
 import { Footer } from "@/components/footer";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/contexts/auth-context";
+import { FeaturesProvider } from "@/contexts/features-context";
+import QueryProvider from "@/providers/query-provider";
 
 const inter = Inter({ subsets: ["latin"] });
 const racingSansOne = Racing_Sans_One({ 
@@ -29,12 +31,16 @@ export default function RootLayout({
       <body className={`${inter.className} ${racingSansOne.variable} antialiased bg-background text-foreground`} suppressHydrationWarning>
         <ThemeProvider>
           <AuthProvider>
-            <Navigation />
-            <main className="flex-1">
-              {children}
-            </main>
-            <Footer />
-            <Toaster />
+            <FeaturesProvider>
+              <QueryProvider>
+                <Navigation />
+                <main className="flex-1">
+                  {children}
+                </main>
+                <Footer />
+                <Toaster />
+              </QueryProvider>
+            </FeaturesProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

@@ -5,20 +5,12 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
-  LayoutDashboard,
-  GraduationCap,
-  Users,
-  Settings,
   LogOut,
-  School,
-  ChevronDown,
   Menu,
   X,
+  ChevronDown,
   ChevronRight,
   ChevronLeft,
-  Calendar,
-  CreditCard,
-  BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/firebase";
@@ -26,68 +18,8 @@ import { signOut } from "firebase/auth";
 import { useToast } from "@/components/ui/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
-
-const menuItems = [
-  {
-    title: "Overview",
-    href: "/admin",
-    icon: LayoutDashboard,
-  },
-  {
-    title: "Academy",
-    href: "/admin/academy",
-    icon: School,
-    submenu: [
-      {
-        title: "Courses",
-        href: "/admin/academy/courses",
-        icon: GraduationCap,
-      },
-      {
-        title: "Enrollments",
-        href: "/admin/academy/enrollment-management",
-        icon: Calendar,
-      },
-      {
-        title: "Payments",
-        href: "/admin/academy/payments",
-        icon: CreditCard,
-      },
-    ],
-  },
-  {
-    title: "Team",
-    href: "/admin/team-management",
-    icon: Users,
-  },
-  {
-    title: "Students",
-    href: "/admin/students",
-    icon: Users,
-    submenu: [
-      {
-        title: "All Students",
-        href: "/admin/students/all",
-        icon: Users,
-      },
-      {
-        title: "Parents",
-        href: "/admin/students/parents",
-        icon: Users,
-      },
-      {
-        title: "Reports",
-        href: "/admin/students/reports",
-        icon: BarChart3,
-      },
-    ],
-  },
-  {
-    title: "Settings",
-    href: "/admin/settings",
-    icon: Settings,
-  },
-];
+import { useFeatures } from "@/contexts/features-context";
+import { getMenuItems } from "@/lib/config/menu-items";
 
 const menuItemVariants = {
   hidden: { opacity: 0, x: -20 },
@@ -111,6 +43,7 @@ export function LeftMenu() {
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const { features } = useFeatures();
 
   useEffect(() => {
     document.documentElement.style.setProperty(
@@ -157,6 +90,8 @@ export function LeftMenu() {
       );
     }
   };
+
+  const menuItems = getMenuItems(features);
 
   return (
     <>

@@ -445,22 +445,22 @@ export const studentService = {
     }
   },
 
-  async getCourse(courseId: string): Promise<Course> {
+  async getCourse(courseId: string): Promise<Course | null> {
     try {
       const courseRef = doc(db, 'courses', courseId);
-      const courseDoc = await getDoc(courseRef);
-      
-      if (!courseDoc.exists()) {
-        throw new Error('Course not found');
+      const courseSnap = await getDoc(courseRef);
+
+      if (!courseSnap.exists()) {
+        return null;
       }
 
       return {
-        id: courseDoc.id,
-        ...convertTimestampsToDates(courseDoc.data()),
+        id: courseSnap.id,
+        ...convertTimestampsToDates(courseSnap.data()),
       } as Course;
     } catch (error) {
       console.error('Error fetching course:', error);
-      throw error;
+      return null;
     }
   },
 }; 

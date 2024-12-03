@@ -7,36 +7,59 @@ import { Button } from "@/components/ui/button"
 import { db } from "@/lib/firebase"
 import { doc, getDoc, setDoc, updateDoc, collection } from "firebase/firestore"
 import { Card, CardContent } from "@/components/ui/card"
+import { ImageUpload } from "@/components/ui/image-upload"
+import { Equipment } from "@/types/equipment"
+import { equipmentService } from "@/lib/services/equipment-service"
 
 type FormData = {
   name: string
   brand: string
   category: string
-  image: string
+  imageUrl: string
   salePrice?: number
   leasePrice?: number
   condition?: string
   leaseTerm?: string
   forSale: boolean
   forLease: boolean
+  hourlyRate?: number
+  dailyRate?: number
+  weeklyRate?: number
 }
 
 type EquipmentFormProps = {
   equipmentId?: string
+  initialData?: Equipment
 }
 
-export function EquipmentForm({ equipmentId }: EquipmentFormProps) {
-  const [forSale, setForSale] = useState(false)
-  const [forLease, setForLease] = useState(false)
+export type PreloadedFile = {
+  preview: string;
+  name: string;
+  size: number;
+  type: string;
+}
+
+export function EquipmentForm({ equipmentId, initialData }: EquipmentFormProps) {
+  const [forSale, setForSale] = useState(initialData?.forSale || false)
+  const [forLease, setForLease] = useState(initialData?.forLease || false)
   const [formData, setFormData] = useState<FormData>({
     name: "",
     brand: "",
     category: "",
-    image: "",
+    imageUrl: "",
+    salePrice: 0,
+    leasePrice: 0,
+    hourlyRate: 0,
+    dailyRate: 0,
+    weeklyRate: 0,
+    condition: "",
+    leaseTerm: "",
     forSale: false,
     forLease: false,
   })
-  
+  const [equipment, setEquipment] = useState<Equipment | null>(null);
+  const [preloadedImage, setPreloadedImage] = useState<PreloadedFile | null>(null);
+
   const { toast } = useToast()
   const router = useRouter()
 
@@ -46,10 +69,33 @@ export function EquipmentForm({ equipmentId }: EquipmentFormProps) {
         const docRef = doc(db, "equipment", equipmentId)
         const docSnap = await getDoc(docRef)
         if (docSnap.exists()) {
-          const data = docSnap.data() as FormData
-          setFormData(data)
-          setForSale(data.forSale)
-          setForLease(data.forLease)
+          const equipmentData = docSnap.data() as Equipment
+          setFormData({
+            name: equipmentData.name || "",
+            brand: equipmentData.brand || "",
+            category: equipmentData.category || "",
+            imageUrl: equipmentData.imageUrl || "",
+            salePrice: equipmentData.salePrice || 0,
+            leasePrice: equipmentData.leasePrice || 0,
+            hourlyRate: equipmentData.hourlyRate || 0,
+            dailyRate: equipmentData.dailyRate || 0,
+            weeklyRate: equipmentData.weeklyRate || 0,
+            condition: equipmentData.condition || "",
+            leaseTerm: equipmentData.leaseTerm || "",
+            forSale: equipmentData.forSale || false,
+            forLease: equipmentData.forLease || false,
+          })
+          setForSale(equipmentData.forSale)
+          setForLease(equipmentData.forLease)
+          
+          if (equipmentData.imageUrl) {
+            setPreloadedImage({
+              preview: equipmentData.imageUrl,
+              name: equipmentData.imageUrl.split('/').pop() || 'current-image',
+              size: 0,
+              type: 'image/*'
+            });
+          }
         }
       }
       loadEquipment()
@@ -79,41 +125,29 @@ export function EquipmentForm({ equipmentId }: EquipmentFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (forSale) {
-      const saleValidation = validateSaleSection()
-      if (!saleValidation.isValid) {
-        toast({
-          title: "Validation Error",
-          description: saleValidation.message,
-          variant: "destructive"
-        })
-        return
-      }
-    }
-
-    if (forLease) {
-      const leaseValidation = validateLeaseSection()
-      if (!leaseValidation.isValid) {
-        toast({
-          title: "Validation Error",
-          description: leaseValidation.message,
-          variant: "destructive"
-        })
-        return
-      }
-    }
-    
     try {
-      const finalData = {
-        ...formData,
-        forSale,
-        forLease,
+      const finalData: Partial<Equipment> = {
+        name: formData.name,
+        brand: formData.brand,
+        category: formData.category,
+        imageUrl: formData.imageUrl,
+        forSale: forSale,
+        forLease: forLease,
+        // Sale related fields
+        salePrice: forSale ? formData.salePrice : 0,
+        condition: forSale ? formData.condition : "",
+        // Lease related fields
+        leasePrice: forLease ? formData.leasePrice : 0,
+        leaseTerm: forLease ? formData.leaseTerm : "",
+        hourlyRate: forLease ? formData.hourlyRate : 0,
+        dailyRate: forLease ? formData.dailyRate : 0,
+        weeklyRate: forLease ? formData.weeklyRate : 0,
       }
 
       if (equipmentId) {
-        await updateDoc(doc(db, "equipment", equipmentId), finalData)
+        await equipmentService.updateEquipment(equipmentId, finalData)
       } else {
-        await setDoc(doc(collection(db, "equipment")), finalData)
+        await equipmentService.createEquipment(finalData)
       }
 
       toast({
@@ -121,11 +155,32 @@ export function EquipmentForm({ equipmentId }: EquipmentFormProps) {
         description: `Equipment ${equipmentId ? "updated" : "added"} successfully`
       })
       
-      router.push("/equipment")
+      router.push("/admin/equipment")
     } catch (error) {
+      console.error('Error saving equipment:', error)
       toast({
         title: "Error",
         description: "Failed to save equipment. Please try again.",
+        variant: "destructive"
+      })
+    }
+  }
+
+  const handleImageUpload = async (file: File | null) => {
+    if (!file) {
+      setFormData({ ...formData, imageUrl: "" })
+      return
+    }
+
+    try {
+      // Here you should implement your actual image upload logic
+      // This might involve uploading to Firebase Storage or another service
+      const uploadedUrl = await uploadImageToStorage(file) // You'll need to implement this
+      setFormData({ ...formData, imageUrl: uploadedUrl })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to upload image. Please try again.",
         variant: "destructive"
       })
     }
@@ -157,12 +212,9 @@ export function EquipmentForm({ equipmentId }: EquipmentFormProps) {
               onChange={(e) => setFormData({ ...formData, category: e.target.value })}
               required
             />
-            <FormInput
-              id="image"
-              label="Image URL"
-              value={formData.image}
-              onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-              required
+            <ImageUpload 
+              onChange={handleImageUpload}
+              preloadedImage={preloadedImage}
             />
           </div>
         </CardContent>
@@ -211,6 +263,30 @@ export function EquipmentForm({ equipmentId }: EquipmentFormProps) {
               {forLease && (
                 <div className="mt-4 space-y-4">
                   <FormInput
+                    id="hourlyRate"
+                    label="Hourly Rate"
+                    type="number"
+                    value={formData.hourlyRate}
+                    onChange={(e) => setFormData({ ...formData, hourlyRate: Number(e.target.value) })}
+                    required
+                  />
+                  <FormInput
+                    id="dailyRate"
+                    label="Daily Rate"
+                    type="number"
+                    value={formData.dailyRate}
+                    onChange={(e) => setFormData({ ...formData, dailyRate: Number(e.target.value) })}
+                    required
+                  />
+                  <FormInput
+                    id="weeklyRate"
+                    label="Weekly Rate"
+                    type="number"
+                    value={formData.weeklyRate}
+                    onChange={(e) => setFormData({ ...formData, weeklyRate: Number(e.target.value) })}
+                    required
+                  />
+                  <FormInput
                     id="leasePrice"
                     label="Lease Price"
                     type="number"
@@ -246,4 +322,10 @@ export function EquipmentForm({ equipmentId }: EquipmentFormProps) {
       </div>
     </form>
   )
+}
+
+async function uploadImageToStorage(file: File): Promise<string> {
+  // Implement your image upload logic here
+  // Return the URL of the uploaded image
+  throw new Error("Not implemented")
 } 

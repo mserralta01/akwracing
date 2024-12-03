@@ -13,20 +13,26 @@ export type Brand = {
 }
 
 export type Equipment = {
-  id: string
+  id?: string
   name: string
-  shortDescription: string
-  description: string
-  brand: Brand
-  category: Category
-  image?: string
-  salePrice?: number
-  forSale: boolean
-  forLease: boolean
-  createdAt: Date
-  updatedAt: Date
   brandId?: string
   categoryId?: string
+  brand: { id: string; name: string }
+  category: { id: string; name: string }
+  imageUrl: string
+  image?: string
+  shortDescription?: string
+  description?: string
+  quantity?: number
+  salePrice?: number
+  leasePrice?: number
+  condition?: string
+  leaseTerm?: string
+  forSale: boolean
+  forLease: boolean
+  hourlyRate?: number
+  dailyRate?: number
+  weeklyRate?: number
 }
 
 export type EquipmentRequirement = {

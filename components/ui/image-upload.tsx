@@ -1,77 +1,80 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { ImageIcon, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useDropzone } from "react-dropzone";
+import { PreloadedFile } from "@/components/equipment/equipment-form"
 
-interface ImageUploadProps {
-  value?: string;
+type ImageUploadProps = {
   onChange: (file: File | null) => void;
-  className?: string;
+  preloadedImage?: PreloadedFile | null;
 }
 
-export function ImageUpload({ value, onChange, className }: ImageUploadProps) {
-  const [preview, setPreview] = useState<string>(value || "");
+export function ImageUpload({ onChange, preloadedImage }: ImageUploadProps) {
+  const [files, setFiles] = useState<File[]>([]);
+  const [preview, setPreview] = useState<string | null>(null);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      onChange(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+  useEffect(() => {
+    if (preloadedImage) {
+      setPreview(preloadedImage.preview);
     }
-  };
+  }, [preloadedImage]);
 
-  const handleRemove = () => {
-    onChange(null);
-    setPreview("");
-  };
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    if (acceptedFiles.length > 0) {
+      setFiles(acceptedFiles);
+      onChange(acceptedFiles[0]);
+      
+      // Create preview URL for the new file
+      const previewUrl = URL.createObjectURL(acceptedFiles[0]);
+      setPreview(previewUrl);
+      
+      // Clean up old preview URL
+      return () => URL.revokeObjectURL(previewUrl);
+    }
+  }, [onChange]);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'image/*': ['.png', '.jpg', '.jpeg', '.gif']
+    },
+    maxFiles: 1
+  });
 
   return (
-    <div className={cn("space-y-4", className)}>
-      <div className="relative aspect-video rounded-lg border-2 border-dashed border-muted-foreground/25 hover:border-muted-foreground/50 transition overflow-hidden">
-        {preview ? (
-          <>
-            <Image
-              src={preview}
-              alt="Preview"
-              fill
-              className="object-cover"
-            />
-            <Button
-              variant="destructive"
-              size="icon"
-              className="absolute top-2 right-2"
-              onClick={handleRemove}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </>
-        ) : (
-          <label
-            htmlFor="image-upload"
-            className="flex flex-col items-center justify-center h-full cursor-pointer"
-          >
-            <ImageIcon className="h-10 w-10 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground mt-2">
-              Click to upload image
-            </span>
-          </label>
-        )}
-        <Input
-          id="image-upload"
-          type="file"
-          accept="image/*"
-          onChange={handleImageChange}
-          className="hidden"
-        />
-      </div>
+    <div
+      {...getRootProps()}
+      className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer"
+    >
+      <input {...getInputProps()} />
+      {preview ? (
+        <div className="relative">
+          <img
+            src={preview}
+            alt="Preview"
+            className="max-h-48 mx-auto"
+          />
+          <p className="mt-2 text-sm text-gray-600">
+            {files[0]?.name || preloadedImage?.name}
+          </p>
+          <p className="text-sm text-gray-500">
+            Drop a new image to replace
+          </p>
+        </div>
+      ) : (
+        <div>
+          {isDragActive ? (
+            <p>Drop the image here ...</p>
+          ) : (
+            <p>Drag & drop an image here, or click to select one</p>
+          )}
+        </div>
+      )}
     </div>
   );
 } 

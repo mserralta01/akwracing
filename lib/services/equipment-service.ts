@@ -48,14 +48,24 @@ export const equipmentService = {
         return {
           id: doc.id,
           name: data.name,
+          brandId: data.brandId,
+          categoryId: data.categoryId,
           brand: brand || { id: '', name: 'Unknown Brand' },
           category: category || { id: '', name: 'Unknown Category' },
+          imageUrl: data.image || '',
           image: data.image,
+          shortDescription: data.shortDescription,
+          description: data.description,
+          quantity: data.quantity,
           salePrice: data.salePrice,
-          forSale: data.forSale,
-          forLease: data.forLease,
-          createdAt: data.createdAt?.toDate?.() || new Date(),
-          updatedAt: data.updatedAt?.toDate?.() || new Date(),
+          leasePrice: data.leasePrice,
+          hourlyRate: data.hourlyRate,
+          dailyRate: data.dailyRate,
+          weeklyRate: data.weeklyRate,
+          condition: data.condition || '',
+          leaseTerm: data.leaseTerm || '',
+          forSale: data.forSale || false,
+          forLease: data.forLease || false,
         } as Equipment;
       });
     } catch (error) {
@@ -91,18 +101,24 @@ export const equipmentService = {
       return {
         id: docSnap.id,
         name: data.name,
-        shortDescription: data.shortDescription || '',
-        description: data.description || '',
-        brand: brand || { id: '', name: 'Unknown Brand' },
-        category: category || { id: '', name: 'Unknown Category' },
-        image: data.image,
-        salePrice: data.salePrice,
-        forSale: data.forSale ?? false,
-        forLease: data.forLease ?? false,
         brandId: data.brandId,
         categoryId: data.categoryId,
-        createdAt: data.createdAt?.toDate?.() || new Date(),
-        updatedAt: data.updatedAt?.toDate?.() || new Date(),
+        brand: brand || { id: '', name: 'Unknown Brand' },
+        category: category || { id: '', name: 'Unknown Category' },
+        imageUrl: data.image || '',
+        image: data.image,
+        shortDescription: data.shortDescription,
+        description: data.description,
+        quantity: data.quantity,
+        salePrice: data.salePrice,
+        leasePrice: data.leasePrice,
+        hourlyRate: data.hourlyRate,
+        dailyRate: data.dailyRate,
+        weeklyRate: data.weeklyRate,
+        condition: data.condition || '',
+        leaseTerm: data.leaseTerm || '',
+        forSale: data.forSale || false,
+        forLease: data.forLease || false,
       } as Equipment;
     } catch (error) {
       console.error("Error getting equipment by ID:", error);
@@ -114,7 +130,7 @@ export const equipmentService = {
     try {
       let imageUrl = undefined;
       if (image) {
-        const storageRef = ref(storage, `equipment/${image.name}`);
+        const storageRef = ref(storage, `equipment/${Date.now()}-${image.name}`);
         await uploadBytes(storageRef, image);
         imageUrl = await getDownloadURL(storageRef);
       }
@@ -123,12 +139,19 @@ export const equipmentService = {
         name: data.name,
         shortDescription: data.shortDescription,
         description: data.description,
-        brandId: data.brand?.id || data.brandId,
-        categoryId: data.category?.id || data.categoryId,
-        image: imageUrl,
-        salePrice: data.salePrice,
+        brandId: data.brandId || data.brand?.id,
+        categoryId: data.categoryId || data.category?.id,
+        image: imageUrl || data.imageUrl,
+        quantity: data.quantity || 0,
+        salePrice: data.salePrice || 0,
+        leasePrice: data.leasePrice || 0,
+        hourlyRate: data.hourlyRate || 0,
+        dailyRate: data.dailyRate || 0,
+        weeklyRate: data.weeklyRate || 0,
         forSale: data.forSale ?? false,
         forLease: data.forLease ?? false,
+        condition: data.condition || '',
+        leaseTerm: data.leaseTerm || '',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
@@ -147,12 +170,13 @@ export const equipmentService = {
       const docSnap = await getDoc(docRef);
       if (!docSnap.exists()) throw new Error("Equipment not found");
 
-      let imageUrl = data.image;
+      let imageUrl = data.imageUrl;
       if (image) {
         // Delete old image if it exists
-        if (docSnap.data().image) {
+        const currentData = docSnap.data();
+        if (currentData.image) {
           try {
-            const oldImageRef = ref(storage, docSnap.data().image);
+            const oldImageRef = ref(storage, currentData.image);
             await deleteObject(oldImageRef);
           } catch (error) {
             console.warn("Error deleting old image:", error);
@@ -160,7 +184,7 @@ export const equipmentService = {
         }
 
         // Upload new image
-        const storageRef = ref(storage, `equipment/${image.name}`);
+        const storageRef = ref(storage, `equipment/${Date.now()}-${image.name}`);
         await uploadBytes(storageRef, image);
         imageUrl = await getDownloadURL(storageRef);
       }
@@ -169,16 +193,23 @@ export const equipmentService = {
         name: data.name,
         shortDescription: data.shortDescription,
         description: data.description,
-        brandId: data.brand?.id || data.brandId,
-        categoryId: data.category?.id || data.categoryId,
+        brandId: data.brandId || data.brand?.id,
+        categoryId: data.categoryId || data.category?.id,
         image: imageUrl,
+        quantity: data.quantity,
         salePrice: data.salePrice,
+        leasePrice: data.leasePrice,
+        hourlyRate: data.hourlyRate,
+        dailyRate: data.dailyRate,
+        weeklyRate: data.weeklyRate,
         forSale: data.forSale,
         forLease: data.forLease,
+        condition: data.condition,
+        leaseTerm: data.leaseTerm,
         updatedAt: serverTimestamp(),
       };
 
-      // Remove undefined values to prevent Firestore errors
+      // Remove undefined values
       const cleanedData = Object.fromEntries(
         Object.entries(updateData).filter(([_, value]) => value !== undefined)
       );

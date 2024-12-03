@@ -91,12 +91,16 @@ export const equipmentService = {
       return {
         id: docSnap.id,
         name: data.name,
+        shortDescription: data.shortDescription || '',
+        description: data.description || '',
         brand: brand || { id: '', name: 'Unknown Brand' },
         category: category || { id: '', name: 'Unknown Category' },
         image: data.image,
         salePrice: data.salePrice,
-        forSale: data.forSale,
-        forLease: data.forLease,
+        forSale: data.forSale ?? false,
+        forLease: data.forLease ?? false,
+        brandId: data.brandId,
+        categoryId: data.categoryId,
         createdAt: data.createdAt?.toDate?.() || new Date(),
         updatedAt: data.updatedAt?.toDate?.() || new Date(),
       } as Equipment;
@@ -115,13 +119,21 @@ export const equipmentService = {
         imageUrl = await getDownloadURL(storageRef);
       }
 
-      const docRef = await addDoc(collection(db, EQUIPMENT_COLLECTION), {
-        ...data,
+      const equipmentData = {
+        name: data.name,
+        shortDescription: data.shortDescription,
+        description: data.description,
+        brandId: data.brand?.id || data.brandId,
+        categoryId: data.category?.id || data.categoryId,
         image: imageUrl,
+        salePrice: data.salePrice,
+        forSale: data.forSale ?? false,
+        forLease: data.forLease ?? false,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-      });
+      };
 
+      const docRef = await addDoc(collection(db, EQUIPMENT_COLLECTION), equipmentData);
       return docRef.id;
     } catch (error) {
       console.error("Error creating equipment:", error);
@@ -151,14 +163,18 @@ export const equipmentService = {
         const storageRef = ref(storage, `equipment/${image.name}`);
         await uploadBytes(storageRef, image);
         imageUrl = await getDownloadURL(storageRef);
-      } else if (imageUrl === undefined) {
-        // If no new image and no image in data, preserve the existing image
-        imageUrl = docSnap.data().image;
       }
 
-      const updateData: Record<string, any> = {
-        ...data,
+      const updateData = {
+        name: data.name,
+        shortDescription: data.shortDescription,
+        description: data.description,
+        brandId: data.brand?.id || data.brandId,
+        categoryId: data.category?.id || data.categoryId,
         image: imageUrl,
+        salePrice: data.salePrice,
+        forSale: data.forSale,
+        forLease: data.forLease,
         updatedAt: serverTimestamp(),
       };
 

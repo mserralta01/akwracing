@@ -124,21 +124,35 @@ export const equipmentService = {
       if (image) {
         // Delete old image if it exists
         if (docSnap.data().imageUrl) {
-          const oldImageRef = ref(storage, docSnap.data().imageUrl);
-          await deleteObject(oldImageRef);
+          try {
+            const oldImageRef = ref(storage, docSnap.data().imageUrl);
+            await deleteObject(oldImageRef);
+          } catch (error) {
+            console.warn("Error deleting old image:", error);
+          }
         }
 
         // Upload new image
         const storageRef = ref(storage, `equipment/${image.name}`);
         await uploadBytes(storageRef, image);
         imageUrl = await getDownloadURL(storageRef);
+      } else if (imageUrl === undefined) {
+        // If no new image and no imageUrl in data, preserve the existing imageUrl
+        imageUrl = docSnap.data().imageUrl;
       }
 
-      await updateDoc(docRef, {
+      const updateData: Record<string, any> = {
         ...data,
         imageUrl,
         updatedAt: serverTimestamp(),
-      });
+      };
+
+      // Remove undefined values to prevent Firestore errors
+      const cleanedData = Object.fromEntries(
+        Object.entries(updateData).filter(([_, value]) => value !== undefined)
+      );
+
+      await updateDoc(docRef, cleanedData);
     } catch (error) {
       console.error("Error updating equipment:", error);
       throw new Error("Failed to update equipment");

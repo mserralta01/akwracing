@@ -183,9 +183,10 @@ export default function CourseManagement() {
                       <div className="space-y-3">
                         <div className="space-y-1">
                           <h3 className="text-xl font-semibold">{course.title}</h3>
-                          <p className="text-sm text-muted-foreground line-clamp-2">
-                            {course.shortDescription}
-                          </p>
+                          <p 
+                            className="text-sm text-muted-foreground line-clamp-2"
+                            dangerouslySetInnerHTML={{ __html: course.shortDescription }}
+                          />
                         </div>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <div className="flex items-center gap-1">

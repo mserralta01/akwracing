@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { Plus, Pencil, Trash2, ImageIcon } from 'lucide-react'
+import { Plus, Pencil, Trash2, ImageIcon, Loader2 } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
 import { Button } from '@/components/ui/button'
 import {
@@ -39,6 +39,7 @@ import { CategoryManager } from '@/components/equipment/category-manager'
 import { BrandManager } from '@/components/equipment/brand-manager'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useAuth } from '@/hooks/use-auth'
 
 const statusColors = {
   AVAILABLE: 'bg-green-500',
@@ -53,12 +54,15 @@ export default function EquipmentPage() {
   const [brands, setBrands] = useState<Brand[]>([])
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
   const { toast } = useToast()
+  const { user, loading: authLoading } = useAuth()
 
   const loadData = async () => {
     try {
       setLoading(true)
+      setError(null)
       const [equipmentData, categoriesData, brandsData] = await Promise.all([
         equipmentService.getEquipment(),
         equipmentService.getCategories(),
@@ -68,6 +72,8 @@ export default function EquipmentPage() {
       setCategories(categoriesData)
       setBrands(brandsData)
     } catch (error) {
+      console.error('Error loading data:', error)
+      setError('Failed to load equipment data. Please try refreshing the page.')
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -79,8 +85,15 @@ export default function EquipmentPage() {
   }
 
   useEffect(() => {
+    if (authLoading) return
+
+    if (!user) {
+      router.push('/auth/signin')
+      return
+    }
+
     loadData()
-  }, [])
+  }, [user, router, authLoading])
 
   const handleDelete = async (id: string) => {
     try {
@@ -90,6 +103,7 @@ export default function EquipmentPage() {
         description: 'Equipment deleted successfully'
       })
     } catch (error) {
+      console.error('Error deleting equipment:', error)
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -106,6 +120,7 @@ export default function EquipmentPage() {
         description: 'Category added successfully'
       })
     } catch (error) {
+      console.error('Error adding category:', error)
       toast({
         variant: 'destructive',
         description: 'Failed to add category'
@@ -121,6 +136,7 @@ export default function EquipmentPage() {
         description: 'Category updated successfully'
       })
     } catch (error) {
+      console.error('Error updating category:', error)
       toast({
         variant: 'destructive',
         description: 'Failed to update category'
@@ -136,6 +152,7 @@ export default function EquipmentPage() {
         description: 'Category deleted successfully'
       })
     } catch (error) {
+      console.error('Error deleting category:', error)
       toast({
         variant: 'destructive',
         description: 'Failed to delete category'
@@ -151,6 +168,7 @@ export default function EquipmentPage() {
         description: 'Brand added successfully'
       })
     } catch (error) {
+      console.error('Error adding brand:', error)
       toast({
         variant: 'destructive',
         description: 'Failed to add brand'
@@ -166,6 +184,7 @@ export default function EquipmentPage() {
         description: 'Brand updated successfully'
       })
     } catch (error) {
+      console.error('Error updating brand:', error)
       toast({
         variant: 'destructive',
         description: 'Failed to update brand'
@@ -181,6 +200,7 @@ export default function EquipmentPage() {
         description: 'Brand deleted successfully'
       })
     } catch (error) {
+      console.error('Error deleting brand:', error)
       toast({
         variant: 'destructive',
         description: 'Failed to delete brand'
@@ -207,7 +227,7 @@ export default function EquipmentPage() {
     (item) => selectedCategory === "all" || item.categoryId === selectedCategory
   )
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="p-6 space-y-6">
         <div className="flex items-center justify-between mb-6">
@@ -226,6 +246,15 @@ export default function EquipmentPage() {
             </Card>
           ))}
         </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[50vh] space-y-4">
+        <p className="text-red-500">{error}</p>
+        <Button onClick={loadData}>Try Again</Button>
       </div>
     )
   }
@@ -251,23 +280,19 @@ export default function EquipmentPage() {
               onEdit={handleEditBrand}
               onDelete={handleDeleteBrand}
             />
-            <Link href="/admin/equipment/new">
-              <Button className="bg-racing-red hover:bg-racing-red/90">
-                <Plus className="h-4 w-4 mr-2" />
+            <Button asChild>
+              <Link href="/admin/equipment/new">
+                <Plus className="mr-2 h-4 w-4" />
                 Add Equipment
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </div>
         </CardHeader>
-
         <CardContent>
           <div className="mb-6">
-            <Select
-              value={selectedCategory}
-              onValueChange={setSelectedCategory}
-            >
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
               <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="All Categories" />
+                <SelectValue placeholder="Filter by category" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
@@ -282,56 +307,62 @@ export default function EquipmentPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredEquipment.map((item) => (
-              <Card key={item.id} className="shadow-lg overflow-hidden">
-                <div className="relative aspect-square">
+              <Card key={item.id} className="shadow-lg">
+                <div className="relative h-48 w-full">
                   {item.imageUrl ? (
                     <Image
                       src={item.imageUrl}
                       alt={item.name}
                       fill
-                      className="object-cover"
+                      className="object-cover rounded-t-lg"
                     />
                   ) : (
-                    <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                    <div className="flex items-center justify-center h-full bg-gray-100 rounded-t-lg">
                       <ImageIcon className="h-12 w-12 text-gray-400" />
                     </div>
                   )}
-                  <Badge 
-                    className={`absolute top-2 right-2 ${statusColors[item.status]}`}
-                  >
-                    {item.status}
-                  </Badge>
                 </div>
                 <CardContent className="p-4">
                   <h3 className="font-semibold text-lg mb-2">{item.name}</h3>
-                  <div className="space-y-1 text-sm text-muted-foreground">
-                    <p>Category: {getCategoryName(item.categoryId)}</p>
-                    <p>Brand: {getBrandName(item.brandId)}</p>
-                    <p>Price: {formatPrice(item.price)}</p>
-                    <p>Quantity: {item.quantity}</p>
+                  <p className="text-sm text-gray-500 mb-2">{item.shortDescription}</p>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-500">Category:</span>
+                      <span className="text-sm">{getCategoryName(item.categoryId)}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-500">Brand:</span>
+                      <span className="text-sm">{getBrandName(item.brandId)}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-500">Price:</span>
+                      <span className="text-sm font-medium">{formatPrice(item.price)}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-500">Status:</span>
+                      <Badge className={statusColors[item.status]}>{item.status}</Badge>
+                    </div>
                   </div>
                 </CardContent>
-                <CardFooter className="p-4 pt-0 flex justify-end gap-2">
+                <CardFooter className="p-4 pt-0 flex justify-end space-x-2">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => router.push(`/admin/equipment/${item.id}`)}
                   >
-                    <Pencil className="h-4 w-4 mr-2" />
-                    Edit
+                    <Pencil className="h-4 w-4" />
                   </Button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button variant="destructive" size="sm">
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
                         <AlertDialogTitle>Delete Equipment</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Are you sure you want to delete {item.name}? This action cannot be undone.
+                          Are you sure you want to delete this equipment? This action cannot be undone.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>

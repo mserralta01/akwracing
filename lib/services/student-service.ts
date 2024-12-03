@@ -21,6 +21,7 @@ import { Course } from "@/types/course";
 const STUDENTS_COLLECTION = 'students';
 const PARENTS_COLLECTION = 'parents';
 const ENROLLMENTS_COLLECTION = 'enrollments';
+const COURSES_COLLECTION = 'courses';
 
 const convertTimestampsToDates = (data: DocumentData) => {
   const result = { ...data };
@@ -29,6 +30,12 @@ const convertTimestampsToDates = (data: DocumentData) => {
   }
   if (result.updatedAt && typeof result.updatedAt.toDate === 'function') {
     result.updatedAt = result.updatedAt.toDate().toISOString();
+  }
+  if (result.startDate && typeof result.startDate.toDate === 'function') {
+    result.startDate = result.startDate.toDate().toISOString();
+  }
+  if (result.endDate && typeof result.endDate.toDate === 'function') {
+    result.endDate = result.endDate.toDate().toISOString();
   }
   return result;
 };
@@ -447,9 +454,9 @@ export const studentService = {
 
   async getCourse(courseId: string): Promise<Course | null> {
     try {
-      const courseRef = doc(db, 'courses', courseId);
+      const courseRef = doc(db, COURSES_COLLECTION, courseId);
       const courseSnap = await getDoc(courseRef);
-
+      
       if (!courseSnap.exists()) {
         return null;
       }

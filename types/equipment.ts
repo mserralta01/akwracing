@@ -23,10 +23,20 @@ export type Equipment = {
   brand: Brand
   price: number
   leasePrice: number
+  hourlyRate: number
+  dailyRate: number
+  weeklyRate: number
   wholesalePrice: number
   quantity: number
   status: 'AVAILABLE' | 'IN_USE' | 'MAINTENANCE' | 'RETIRED'
   imageUrl?: string
   createdAt: Date
   updatedAt: Date
+}
+
+export type EquipmentRequirement = {
+  equipmentId: string
+  quantity: number
+  required: boolean
+  notes?: string
 } 

@@ -17,7 +17,14 @@ export default function EditCoursePage() {
       if (!identifier) return;
 
       try {
-        const courseData = await courseService.getCourseBySlug(identifier);
+        // First, try to get the course by ID
+        let courseData = await courseService.getCourse(identifier);
+
+        // If not found by ID, try by slug
+        if (!courseData) {
+          courseData = await courseService.getCourseBySlug(identifier);
+        }
+
         setCourse(courseData);
       } catch (error) {
         console.error("Error fetching course:", error);

@@ -229,28 +229,36 @@ export function RichTextEditor({
   placeholder,
   className,
 }: RichTextEditorProps) {
-  const editor = useEditor({
-    extensions: [
-      StarterKit,
-      TextAlign.configure({
-        types: ['heading', 'paragraph'],
-      }),
-      TextStyle,
-      Color,
-    ],
-    content,
-    editorProps: {
-      attributes: {
-        class: cn(
-          "prose prose-sm dark:prose-invert max-w-none min-h-[150px] p-4 focus:outline-none",
-          className
-        ),
+  const editor = useEditor(
+    {
+      extensions: [
+        StarterKit,
+        TextAlign.configure({
+          types: ['heading', 'paragraph'],
+        }),
+        TextStyle,
+        Color,
+      ],
+      content,
+      editorProps: {
+        attributes: {
+          class: cn(
+            "prose prose-sm dark:prose-invert max-w-none min-h-[150px] p-4 focus:outline-none",
+            className
+          ),
+        },
       },
+      onUpdate: ({ editor }) => {
+        onChange(editor.getHTML());
+      },
+      editable: true,
+      injectCSS: true,
+      parseOptions: {
+        preserveWhitespace: true,
+      }
     },
-    onUpdate: ({ editor }) => {
-      onChange(editor.getHTML());
-    },
-  });
+    []
+  );
 
   return (
     <div className="border rounded-md">

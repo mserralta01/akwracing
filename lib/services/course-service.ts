@@ -10,6 +10,8 @@ import {
   query,
   orderBy,
   where,
+  DocumentData,
+  Timestamp,
 } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
@@ -18,7 +20,46 @@ import { slugify } from "@/lib/utils";
 
 const COLLECTION_NAME = "courses";
 
+const convertTimestampsToDates = (data: DocumentData) => {
+  const result = { ...data };
+  const timestampFields = ['createdAt', 'updatedAt', 'startDate', 'endDate'];
+  
+  for (const field of timestampFields) {
+    if (result[field]) {
+      if (result[field] instanceof Timestamp) {
+        result[field] = result[field].toDate().toISOString();
+      } else if (typeof result[field].toDate === 'function') {
+        result[field] = result[field].toDate().toISOString();
+      } else if (result[field] instanceof Date) {
+        result[field] = result[field].toISOString();
+      } else if (typeof result[field] === 'string' && !isNaN(Date.parse(result[field]))) {
+        result[field] = new Date(result[field]).toISOString();
+      }
+    }
+  }
+  return result;
+};
+
 export const courseService = {
+  async getCourse(id: string): Promise<Course | null> {
+    try {
+      const docRef = doc(db, COLLECTION_NAME, id);
+      const docSnap = await getDoc(docRef);
+      
+      if (!docSnap.exists()) {
+        return null;
+      }
+
+      return {
+        id: docSnap.id,
+        ...convertTimestampsToDates(docSnap.data())
+      } as Course;
+    } catch (error) {
+      console.error("Error fetching course:", error);
+      return null;
+    }
+  },
+
   async getCourses(filters?: {
     level?: string;
     startDate?: Date;
@@ -47,7 +88,7 @@ export const courseService = {
     const snapshot = await getDocs(courseQuery);
     const courses = snapshot.docs.map((doc) => ({
       id: doc.id,
-      ...doc.data(),
+      ...convertTimestampsToDates(doc.data()),
     })) as Course[];
 
     return { courses };
@@ -63,7 +104,7 @@ export const courseService = {
     const doc = snapshot.docs[0];
     return {
       id: doc.id,
-      ...doc.data(),
+      ...convertTimestampsToDates(doc.data()),
     } as Course;
   },
 
@@ -80,22 +121,22 @@ export const courseService = {
     }
 
     const slug = slugify(course.title);
-    const docRef = await addDoc(collection(db, COLLECTION_NAME), {
+    const now = serverTimestamp();
+    const courseData = {
       ...course,
       slug,
       imageUrl,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const docRef = await addDoc(collection(db, COLLECTION_NAME), courseData);
+    const createdCourse = await getDoc(docRef);
 
     return {
       id: docRef.id,
-      ...course,
-      slug,
-      imageUrl,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+      ...convertTimestampsToDates(createdCourse.data() || courseData),
+    } as Course;
   },
 
   async updateCourse(
@@ -112,11 +153,13 @@ export const courseService = {
     }
 
     const docRef = doc(db, COLLECTION_NAME, id);
-    await updateDoc(docRef, {
+    const updateData = {
       ...course,
       ...(imageUrl && { imageUrl }),
       updatedAt: serverTimestamp(),
-    });
+    };
+
+    await updateDoc(docRef, updateData);
   },
 
   async deleteCourse(id: string): Promise<void> {

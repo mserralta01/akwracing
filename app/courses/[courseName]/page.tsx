@@ -8,9 +8,14 @@ type Props = PageProps<{
   courseName: string;
 }>
 
-export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const resolvedParams = await params
-  const course = await courseService.getCourse(resolvedParams.courseName)
+  
+  // Try to get course by ID first, then by slug if not found
+  let course = await courseService.getCourse(resolvedParams.courseName)
+  if (!course) {
+    course = await courseService.getCourseBySlug(resolvedParams.courseName)
+  }
   
   if (!course) {
     return {
@@ -35,13 +40,27 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   }
 }
 
-export default async function CoursePage({ params, searchParams }: Props) {
+export default async function CoursePage({ params }: Props) {
   const resolvedParams = await params
-  const course = await courseService.getCourse(resolvedParams.courseName)
+  
+  // Try to get course by ID first, then by slug if not found
+  let course = await courseService.getCourse(resolvedParams.courseName)
+  if (!course) {
+    course = await courseService.getCourseBySlug(resolvedParams.courseName)
+  }
 
   if (!course) {
     notFound()
   }
 
-  return <CourseDetails initialCourse={course} />
+  // Ensure all dates are properly serialized as ISO strings
+  const serializedCourse = {
+    ...course,
+    startDate: course.startDate,
+    endDate: course.endDate,
+    createdAt: course.createdAt,
+    updatedAt: course.updatedAt,
+  }
+
+  return <CourseDetails initialCourse={serializedCourse} />
 } 

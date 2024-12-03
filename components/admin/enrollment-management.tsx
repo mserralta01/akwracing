@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { studentService } from "@/lib/services/student-service";
+import { courseService } from "@/lib/services/course-service";
 import { paymentService } from "@/lib/services/payment-service";
 import { Enrollment, StudentProfile, ParentProfile } from "@/types/student";
 import { Course } from "@/types/course";
@@ -72,7 +73,7 @@ export function EnrollmentManagement() {
             const [student, parent, course] = await Promise.all([
               studentService.getStudent(enrollment.studentId),
               studentService.getParent(enrollment.parentId),
-              studentService.getCourse(enrollment.courseId),
+              courseService.getCourse(enrollment.courseId),
             ]);
 
             if (!student || !parent || !course) {

@@ -8,83 +8,47 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isAuthenticated() && 
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      return isAuthenticated() && request.auth.token.role == 'admin';
     }
 
-    function isParent() {
-      return isAuthenticated() && 
-        exists(/databases/$(database)/documents/parents) &&
-        exists(/databases/$(database)/documents/parents/$(request.auth.uid));
-    }
-
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
-    }
-
-    // Users collection
-    match /users/{userId} {
-      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
-      allow write: if isAdmin();
-    }
-
-    // Settings collection
-    match /settings/{document=**} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin();
-    }
-
-    // Students collection
-    match /students/{studentId} {
-      allow read: if isAuthenticated() && (isAdmin() || isParent());
-      allow write: if isAdmin();
-    }
-
-    // Parents collection
-    match /parents/{parentId} {
-      allow read: if isAuthenticated() && (isAdmin() || isOwner(parentId));
-      allow write: if isAdmin() || isOwner(parentId);
-    }
-
-    // Enrollments collection
-    match /enrollments/{enrollmentId} {
-      allow read: if isAuthenticated() && (isAdmin() || isParent());
-      allow write: if isAdmin();
-    }
-
-    // Courses collection
+    // FRONT OFFICE - Public Access
     match /courses/{courseId} {
-      allow read: if true;
-      allow write: if isAdmin();
+      allow read, write: if true;  // Anyone can read and write
     }
 
-    // Equipment collections
-    match /equipment/{equipmentId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    match /equipment_categories/{categoryId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    match /equipment_brands/{brandId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    // Roles collection
-    match /roles/{roleId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin();
-    }
-
-    // Instructors collection
     match /instructors/{instructorId} {
+      allow read, write: if true;
+    }
+
+    match /team/{memberId} {
+      allow read, write: if true;
+    }
+
+    match /students/{studentId} {
+      allow read, write: if true;
+    }
+
+    match /enrollments/{enrollmentId} {
+      allow read, write: if true;
+    }
+
+    match /equipment/{equipmentId} {
+      allow read, write: if true;
+    }
+
+    match /settings/{document=**} {
       allow read: if true;
       allow write: if isAdmin();
+    }
+
+    // BACK OFFICE - Admin Only
+    match /admin/{document=**} {
+      allow read, write: if isAdmin();
+    }
+
+    // Default - deny everything else
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 } 

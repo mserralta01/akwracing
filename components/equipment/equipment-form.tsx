@@ -13,10 +13,11 @@ import { equipmentService } from "@/lib/services/equipment-service"
 
 type FormData = {
   name: string
-  brand: string
-  category: string
+  brandId: string
+  categoryId: string
   imageUrl: string
   salePrice?: number
+  wholesalePrice?: number
   leasePrice?: number
   condition?: string
   leaseTerm?: string
@@ -25,6 +26,9 @@ type FormData = {
   hourlyRate?: number
   dailyRate?: number
   weeklyRate?: number
+  shortDescription?: string
+  description?: string
+  quantity?: number
 }
 
 type EquipmentFormProps = {
@@ -44,10 +48,11 @@ export function EquipmentForm({ equipmentId, initialData }: EquipmentFormProps) 
   const [forLease, setForLease] = useState(initialData?.forLease || false)
   const [formData, setFormData] = useState<FormData>({
     name: "",
-    brand: "",
-    category: "",
+    brandId: "",
+    categoryId: "",
     imageUrl: "",
-    salePrice: 0,
+    salePrice: initialData?.salePrice || 0,
+    wholesalePrice: initialData?.wholesalePrice || 0,
     leasePrice: 0,
     hourlyRate: 0,
     dailyRate: 0,
@@ -72,10 +77,11 @@ export function EquipmentForm({ equipmentId, initialData }: EquipmentFormProps) 
           const equipmentData = docSnap.data() as Equipment
           setFormData({
             name: equipmentData.name || "",
-            brand: equipmentData.brand || "",
-            category: equipmentData.category || "",
+            brandId: equipmentData.brandId || "",
+            categoryId: equipmentData.categoryId || "",
             imageUrl: equipmentData.imageUrl || "",
             salePrice: equipmentData.salePrice || 0,
+            wholesalePrice: equipmentData.wholesalePrice || 0,
             leasePrice: equipmentData.leasePrice || 0,
             hourlyRate: equipmentData.hourlyRate || 0,
             dailyRate: equipmentData.dailyRate || 0,
@@ -126,23 +132,33 @@ export function EquipmentForm({ equipmentId, initialData }: EquipmentFormProps) 
     e.preventDefault()
     
     try {
+      console.log('Current form state:', {
+        salePrice: formData.salePrice,
+        wholesalePrice: formData.wholesalePrice,
+        forSale
+      });
+
       const finalData: Partial<Equipment> = {
         name: formData.name,
-        brand: formData.brand,
-        category: formData.category,
+        brandId: formData.brandId,
+        categoryId: formData.categoryId,
         imageUrl: formData.imageUrl,
-        forSale: forSale,
-        forLease: forLease,
-        // Sale related fields
-        salePrice: forSale ? formData.salePrice : 0,
+        salePrice: forSale ? Number(formData.salePrice) : 0,
+        wholesalePrice: forSale ? Number(formData.wholesalePrice) : 0,
         condition: forSale ? formData.condition : "",
-        // Lease related fields
         leasePrice: forLease ? formData.leasePrice : 0,
         leaseTerm: forLease ? formData.leaseTerm : "",
         hourlyRate: forLease ? formData.hourlyRate : 0,
         dailyRate: forLease ? formData.dailyRate : 0,
         weeklyRate: forLease ? formData.weeklyRate : 0,
+        forSale,
+        forLease,
+        ...(formData.shortDescription && { shortDescription: formData.shortDescription }),
+        ...(formData.description && { description: formData.description }),
+        ...(formData.quantity && { quantity: formData.quantity }),
       }
+
+      console.log('Final data being sent:', finalData);
 
       if (equipmentId) {
         await equipmentService.updateEquipment(equipmentId, finalData)
@@ -199,17 +215,17 @@ export function EquipmentForm({ equipmentId, initialData }: EquipmentFormProps) 
               required
             />
             <FormInput
-              id="brand"
+              id="brandId"
               label="Brand"
-              value={formData.brand}
-              onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+              value={formData.brandId}
+              onChange={(e) => setFormData({ ...formData, brandId: e.target.value })}
               required
             />
             <FormInput
-              id="category"
+              id="categoryId"
               label="Category"
-              value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+              value={formData.categoryId}
+              onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
               required
             />
             <ImageUpload 
@@ -235,10 +251,32 @@ export function EquipmentForm({ equipmentId, initialData }: EquipmentFormProps) 
                 <div className="mt-4 space-y-4">
                   <FormInput
                     id="salePrice"
-                    label="Sale Price"
+                    label="Retail Price"
                     type="number"
-                    value={formData.salePrice}
-                    onChange={(e) => setFormData({ ...formData, salePrice: Number(e.target.value) })}
+                    value={formData.salePrice || 0}
+                    onChange={(e) => {
+                      const newValue = Number(e.target.value);
+                      console.log('Setting sale price:', newValue);
+                      setFormData(prev => ({
+                        ...prev,
+                        salePrice: newValue
+                      }));
+                    }}
+                    required
+                  />
+                  <FormInput
+                    id="wholesalePrice"
+                    label="Wholesale Price"
+                    type="number"
+                    value={formData.wholesalePrice || 0}
+                    onChange={(e) => {
+                      const newValue = Number(e.target.value);
+                      console.log('Setting wholesale price:', newValue);
+                      setFormData(prev => ({
+                        ...prev,
+                        wholesalePrice: newValue
+                      }));
+                    }}
                     required
                   />
                   <FormInput

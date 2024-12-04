@@ -25,6 +25,7 @@ export type Equipment = {
   description?: string
   quantity?: number
   salePrice?: number
+  wholesalePrice?: number
   leasePrice?: number
   condition?: string
   leaseTerm?: string

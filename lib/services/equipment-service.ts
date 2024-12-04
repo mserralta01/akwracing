@@ -144,7 +144,7 @@ export const equipmentService = {
         image: imageUrl || data.imageUrl,
         quantity: data.quantity || 0,
         salePrice: data.salePrice || 0,
-        leasePrice: data.leasePrice || 0,
+        wholesalePrice: data.wholesalePrice || 0,
         hourlyRate: data.hourlyRate || 0,
         dailyRate: data.dailyRate || 0,
         weeklyRate: data.weeklyRate || 0,
@@ -156,6 +156,11 @@ export const equipmentService = {
         updatedAt: serverTimestamp(),
       };
 
+      console.log('Creating equipment with prices:', {
+        salePrice: equipmentData.salePrice,
+        wholesalePrice: equipmentData.wholesalePrice
+      });
+
       const docRef = await addDoc(collection(db, EQUIPMENT_COLLECTION), equipmentData);
       return docRef.id;
     } catch (error) {
@@ -166,6 +171,8 @@ export const equipmentService = {
 
   async updateEquipment(id: string, data: Partial<Equipment>, image?: File): Promise<void> {
     try {
+      console.log('Received data in service:', data);
+
       const docRef = doc(db, EQUIPMENT_COLLECTION, id);
       const docSnap = await getDoc(docRef);
       if (!docSnap.exists()) throw new Error("Equipment not found");
@@ -189,30 +196,46 @@ export const equipmentService = {
         imageUrl = await getDownloadURL(storageRef);
       }
 
+      // Create update data with explicit price fields
       const updateData = {
         name: data.name,
-        shortDescription: data.shortDescription,
-        description: data.description,
-        brandId: data.brandId || data.brand?.id,
-        categoryId: data.categoryId || data.category?.id,
-        image: imageUrl,
-        quantity: data.quantity,
-        salePrice: data.salePrice,
-        leasePrice: data.leasePrice,
-        hourlyRate: data.hourlyRate,
-        dailyRate: data.dailyRate,
-        weeklyRate: data.weeklyRate,
+        brandId: data.brandId,
+        categoryId: data.categoryId,
+        image: imageUrl || data.imageUrl,
+        // Explicitly set price fields
+        price: undefined, // Remove old price field
+        salePrice: data.salePrice ?? 0,
+        wholesalePrice: data.wholesalePrice ?? 0,
+        // Other fields
+        leasePrice: data.leasePrice ?? 0,
+        hourlyRate: data.hourlyRate ?? 0,
+        dailyRate: data.dailyRate ?? 0,
+        weeklyRate: data.weeklyRate ?? 0,
         forSale: data.forSale,
         forLease: data.forLease,
         condition: data.condition,
         leaseTerm: data.leaseTerm,
+        shortDescription: data.shortDescription,
+        description: data.description,
+        quantity: data.quantity,
         updatedAt: serverTimestamp(),
       };
 
-      // Remove undefined values
+      console.log('Update data before cleaning:', updateData);
+
+      // Only remove undefined values, keep 0s
       const cleanedData = Object.fromEntries(
-        Object.entries(updateData).filter(([_, value]) => value !== undefined)
+        Object.entries(updateData).filter(([key, value]) => {
+          // Keep all numeric values including 0
+          if (typeof value === 'number') return true;
+          // Keep all boolean values
+          if (typeof value === 'boolean') return true;
+          // For other types, filter out undefined and null
+          return value !== undefined && value !== null;
+        })
       );
+
+      console.log('Final cleaned data being saved:', cleanedData);
 
       await updateDoc(docRef, cleanedData);
     } catch (error) {

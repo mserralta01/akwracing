@@ -8,7 +8,6 @@ export type Course = {
   slug: string;
   shortDescription: string;
   longDescription: string;
-  description: string;
   level: CourseLevel;
   price: number;
   duration: number;

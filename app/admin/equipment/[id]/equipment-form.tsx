@@ -48,6 +48,7 @@ import StarterKit from '@tiptap/starter-kit'
 import Heading from '@tiptap/extension-heading'
 import Link from '@tiptap/extension-link'
 import { Toggle } from '@/components/ui/toggle'
+import { Switch } from '@/components/ui/switch'
 
 const MenuBar = ({ editor }: { editor: any }) => {
   if (!editor) {
@@ -108,14 +109,14 @@ const formSchema = z.object({
   description: z.string().min(1, 'Description is required'),
   categoryId: z.string().min(1, 'Category is required'),
   brandId: z.string().min(1, 'Brand is required'),
-  price: z.coerce.number().min(0, 'Price cannot be negative'),
-  leasePrice: z.coerce.number().min(0, 'Lease price cannot be negative'),
+  salePrice: z.coerce.number().min(0, 'Price cannot be negative'),
+  wholesalePrice: z.coerce.number().min(0, 'Wholesale price cannot be negative'),
   hourlyRate: z.coerce.number().min(0, 'Hourly rate cannot be negative'),
   dailyRate: z.coerce.number().min(0, 'Daily rate cannot be negative'),
   weeklyRate: z.coerce.number().min(0, 'Weekly rate cannot be negative'),
-  wholesalePrice: z.coerce.number().min(0, 'Wholesale price cannot be negative'),
   quantity: z.coerce.number().min(0, 'Quantity cannot be negative'),
-  status: z.enum(['AVAILABLE', 'IN_USE', 'MAINTENANCE', 'RETIRED'])
+  forSale: z.boolean().default(false),
+  forLease: z.boolean().default(false)
 })
 
 type FormData = z.infer<typeof formSchema>
@@ -170,16 +171,19 @@ export default function EquipmentFormClient({ id }: Props) {
       description: '',
       categoryId: '',
       brandId: '',
-      price: 0,
-      leasePrice: 0,
+      salePrice: 0,
+      wholesalePrice: 0,
       hourlyRate: 0,
       dailyRate: 0,
       weeklyRate: 0,
-      wholesalePrice: 0,
       quantity: 0,
-      status: 'AVAILABLE'
+      forSale: false,
+      forLease: false
     }
   })
+
+  const [forSale, setForSale] = useState(false)
+  const [forLease, setForLease] = useState(false)
 
   useEffect(() => {
     if (authLoading) return
@@ -208,14 +212,14 @@ export default function EquipmentFormClient({ id }: Props) {
               description: equipment.description || '',
               categoryId: equipment.categoryId || '',
               brandId: equipment.brandId || '',
-              price: equipment.price || 0,
-              leasePrice: equipment.leasePrice || 0,
+              salePrice: equipment.salePrice || 0,
+              wholesalePrice: equipment.wholesalePrice || 0,
               hourlyRate: equipment.hourlyRate || 0,
               dailyRate: equipment.dailyRate || 0,
               weeklyRate: equipment.weeklyRate || 0,
-              wholesalePrice: equipment.wholesalePrice || 0,
               quantity: equipment.quantity || 0,
-              status: equipment.status || 'AVAILABLE'
+              forSale: equipment.forSale || false,
+              forLease: equipment.forLease || false
             })
             if (equipment.description) {
               editor?.commands.setContent(equipment.description)
@@ -229,14 +233,14 @@ export default function EquipmentFormClient({ id }: Props) {
             description: '',
             categoryId: '',
             brandId: '',
-            price: 0,
-            leasePrice: 0,
+            salePrice: 0,
+            wholesalePrice: 0,
             hourlyRate: 0,
             dailyRate: 0,
             weeklyRate: 0,
-            wholesalePrice: 0,
             quantity: 0,
-            status: 'AVAILABLE'
+            forSale: false,
+            forLease: false
           })
           editor?.commands.setContent('')
           setImagePreview(null)
@@ -257,22 +261,57 @@ export default function EquipmentFormClient({ id }: Props) {
     loadInitialData()
   }, [isEditing, id, form, router, toast, user, authLoading, editor])
 
+  useEffect(() => {
+    if (isEditing && !loading) {
+      const values = form.getValues()
+      setForSale(values.forSale)
+      setForLease(values.forLease)
+    }
+  }, [isEditing, loading, form])
+
   const onSubmit = async (data: FormData) => {
     try {
+      // Validate required fields based on toggles
+      if (forSale && data.salePrice <= 0) {
+        form.setError('salePrice', { message: 'Retail price is required when for sale is enabled' })
+        return
+      }
+
+      if (forLease && data.hourlyRate <= 0 && data.dailyRate <= 0 && data.weeklyRate <= 0) {
+        form.setError('hourlyRate', { message: 'At least one lease rate is required when for lease is enabled' })
+        return
+      }
+
       setSubmitting(true)
+      console.log('Form data before submission:', {
+        ...data,
+        wholesalePrice: data.wholesalePrice,
+        forSale
+      })
+
       const cleanData = {
         ...data,
         description: editor?.getHTML() || data.description,
-        hourlyRate: data.hourlyRate || 0,
-        dailyRate: data.dailyRate || 0,
-        weeklyRate: data.weeklyRate || 0,
+        salePrice: forSale ? data.salePrice : 0,
+        wholesalePrice: forSale ? data.wholesalePrice : 0,
+        hourlyRate: forLease ? data.hourlyRate : 0,
+        dailyRate: forLease ? data.dailyRate : 0,
+        weeklyRate: forLease ? data.weeklyRate : 0,
+        forSale,
+        forLease
       }
+
+      console.log('Clean data before service call:', {
+        ...cleanData,
+        wholesalePrice: cleanData.wholesalePrice
+      })
 
       if (isEditing) {
         await equipmentService.updateEquipment(id, cleanData, selectedImage || undefined)
       } else {
         await equipmentService.createEquipment(cleanData, selectedImage || undefined)
       }
+
       toast({
         description: `Equipment ${isEditing ? 'updated' : 'created'} successfully`
       })
@@ -354,14 +393,44 @@ export default function EquipmentFormClient({ id }: Props) {
             <Tag className="h-5 w-5" />
             Details
           </TabsTrigger>
-          <TabsTrigger value="sell" className="flex items-center gap-2 text-lg">
-            <ShoppingCart className="h-5 w-5" />
-            Sell
-          </TabsTrigger>
-          <TabsTrigger value="lease" className="flex items-center gap-2 text-lg">
-            <Clock className="h-5 w-5" />
-            Lease
-          </TabsTrigger>
+          <div className="relative">
+            <TabsTrigger value="sell" className="flex items-center gap-2 text-lg w-full">
+              <ShoppingCart className="h-5 w-5" />
+              Sell
+            </TabsTrigger>
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 z-10">
+              <Switch
+                checked={forSale}
+                onCheckedChange={(checked) => {
+                  setForSale(checked)
+                  form.setValue('forSale', checked)
+                }}
+                className={cn(
+                  forSale ? "bg-green-500" : "bg-red-500",
+                  "focus-visible:ring-0"
+                )}
+              />
+            </div>
+          </div>
+          <div className="relative">
+            <TabsTrigger value="lease" className="flex items-center gap-2 text-lg w-full">
+              <Clock className="h-5 w-5" />
+              Lease
+            </TabsTrigger>
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 z-10">
+              <Switch
+                checked={forLease}
+                onCheckedChange={(checked) => {
+                  setForLease(checked)
+                  form.setValue('forLease', checked)
+                }}
+                className={cn(
+                  forLease ? "bg-green-500" : "bg-red-500",
+                  "focus-visible:ring-0"
+                )}
+              />
+            </div>
+          </div>
         </TabsList>
 
         <Form {...form}>
@@ -494,30 +563,6 @@ export default function EquipmentFormClient({ id }: Props) {
                             </FormItem>
                           )}
                         />
-
-                        <FormField
-                          control={form.control}
-                          name="status"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Status</FormLabel>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select status" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="AVAILABLE">Available</SelectItem>
-                                  <SelectItem value="IN_USE">In Use</SelectItem>
-                                  <SelectItem value="MAINTENANCE">Maintenance</SelectItem>
-                                  <SelectItem value="RETIRED">Retired</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
                       </div>
                     </div>
 
@@ -570,153 +615,186 @@ export default function EquipmentFormClient({ id }: Props) {
             </TabsContent>
 
             <TabsContent value="sell">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <DollarSign className="h-5 w-5" />
-                    Sales Information
-                  </CardTitle>
-                  <CardDescription>Set the pricing for selling this equipment</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid grid-cols-2 gap-6">
-                    <FormField
-                      control={form.control}
-                      name="price"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Retail Price</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <DollarSign className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                              <Input 
-                                type="number" 
-                                {...field}
-                                value={field.value || 0}
-                                onChange={(e) => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
-                                className="pl-10" 
-                              />
-                            </div>
-                          </FormControl>
-                          <FormDescription>The regular selling price</FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+              {forSale ? (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <DollarSign className="h-5 w-5" />
+                      Sales Information
+                    </CardTitle>
+                    <CardDescription>Set the pricing for selling this equipment</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="grid grid-cols-2 gap-6">
+                      <FormField
+                        control={form.control}
+                        name="salePrice"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Retail Price *</FormLabel>
+                            <FormControl>
+                              <div className="relative">
+                                <DollarSign className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                                <Input 
+                                  type="number" 
+                                  {...field}
+                                  value={field.value || 0}
+                                  onChange={(e) => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
+                                  className="pl-10" 
+                                />
+                              </div>
+                            </FormControl>
+                            <FormDescription>The regular selling price (required)</FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                    <FormField
-                      control={form.control}
-                      name="wholesalePrice"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Wholesale Price</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <DollarSign className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                              <Input 
-                                type="number" 
-                                {...field}
-                                value={field.value || 0}
-                                onChange={(e) => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
-                                className="pl-10" 
-                              />
-                            </div>
-                          </FormControl>
-                          <FormDescription>Price for bulk or dealer purchases</FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
+                      <FormField
+                        control={form.control}
+                        name="wholesalePrice"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Wholesale Price</FormLabel>
+                            <FormControl>
+                              <div className="relative">
+                                <DollarSign className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                                <Input 
+                                  type="number" 
+                                  {...field}
+                                  value={field.value || 0}
+                                  onChange={(e) => {
+                                    const value = e.target.value === '' ? 0 : Number(e.target.value)
+                                    console.log('Setting wholesale price:', value)
+                                    field.onChange(value)
+                                    form.setValue('wholesalePrice', value, {
+                                      shouldValidate: true,
+                                      shouldDirty: true,
+                                      shouldTouch: true
+                                    })
+                                  }}
+                                  className="pl-10" 
+                                />
+                              </div>
+                            </FormControl>
+                            <FormDescription>Price for bulk or dealer purchases</FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-muted-foreground">
+                      <DollarSign className="h-5 w-5" />
+                      Sales Disabled
+                    </CardTitle>
+                    <CardDescription>Enable the sale toggle to set pricing information</CardDescription>
+                  </CardHeader>
+                </Card>
+              )}
             </TabsContent>
 
             <TabsContent value="lease">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Clock className="h-5 w-5" />
-                    Leasing Rates
-                  </CardTitle>
-                  <CardDescription>Set the rates for different leasing periods</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid grid-cols-3 gap-6">
-                    <FormField
-                      control={form.control}
-                      name="hourlyRate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Hourly Rate</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <DollarSign className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                              <Input 
-                                type="number" 
-                                {...field}
-                                value={field.value || 0}
-                                onChange={(e) => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
-                                className="pl-10" 
-                              />
-                            </div>
-                          </FormControl>
-                          <FormDescription>Rate per hour</FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+              {forLease ? (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Clock className="h-5 w-5" />
+                      Leasing Rates
+                    </CardTitle>
+                    <CardDescription>Set the rates for different leasing periods (at least one rate required)</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="grid grid-cols-3 gap-6">
+                      <FormField
+                        control={form.control}
+                        name="hourlyRate"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Hourly Rate</FormLabel>
+                            <FormControl>
+                              <div className="relative">
+                                <DollarSign className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                                <Input 
+                                  type="number" 
+                                  {...field}
+                                  value={field.value || 0}
+                                  onChange={(e) => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
+                                  className="pl-10" 
+                                />
+                              </div>
+                            </FormControl>
+                            <FormDescription>Rate per hour</FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                    <FormField
-                      control={form.control}
-                      name="dailyRate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Daily Rate</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <DollarSign className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                              <Input 
-                                type="number" 
-                                {...field}
-                                value={field.value || 0}
-                                onChange={(e) => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
-                                className="pl-10" 
-                              />
-                            </div>
-                          </FormControl>
-                          <FormDescription>Rate per day</FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                      <FormField
+                        control={form.control}
+                        name="dailyRate"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Daily Rate</FormLabel>
+                            <FormControl>
+                              <div className="relative">
+                                <DollarSign className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                                <Input 
+                                  type="number" 
+                                  {...field}
+                                  value={field.value || 0}
+                                  onChange={(e) => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
+                                  className="pl-10" 
+                                />
+                              </div>
+                            </FormControl>
+                            <FormDescription>Rate per day</FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                    <FormField
-                      control={form.control}
-                      name="weeklyRate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Weekly Rate</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <DollarSign className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                              <Input 
-                                type="number" 
-                                {...field}
-                                value={field.value || 0}
-                                onChange={(e) => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
-                                className="pl-10" 
-                              />
-                            </div>
-                          </FormControl>
-                          <FormDescription>Rate per week</FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
+                      <FormField
+                        control={form.control}
+                        name="weeklyRate"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Weekly Rate</FormLabel>
+                            <FormControl>
+                              <div className="relative">
+                                <DollarSign className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                                <Input 
+                                  type="number" 
+                                  {...field}
+                                  value={field.value || 0}
+                                  onChange={(e) => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
+                                  className="pl-10" 
+                                />
+                              </div>
+                            </FormControl>
+                            <FormDescription>Rate per week</FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-muted-foreground">
+                      <Clock className="h-5 w-5" />
+                      Lease Disabled
+                    </CardTitle>
+                    <CardDescription>Enable the lease toggle to set leasing rates</CardDescription>
+                  </CardHeader>
+                </Card>
+              )}
             </TabsContent>
 
             <div className="flex justify-end space-x-4">

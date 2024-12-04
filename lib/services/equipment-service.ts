@@ -135,6 +135,8 @@ export const equipmentService = {
         imageUrl = await getDownloadURL(storageRef);
       }
 
+      console.log('Received data for creation:', data);
+
       const equipmentData = {
         name: data.name,
         shortDescription: data.shortDescription,
@@ -156,10 +158,7 @@ export const equipmentService = {
         updatedAt: serverTimestamp(),
       };
 
-      console.log('Creating equipment with prices:', {
-        salePrice: equipmentData.salePrice,
-        wholesalePrice: equipmentData.wholesalePrice
-      });
+      console.log('Creating equipment with data:', equipmentData);
 
       const docRef = await addDoc(collection(db, EQUIPMENT_COLLECTION), equipmentData);
       return docRef.id;
@@ -171,7 +170,7 @@ export const equipmentService = {
 
   async updateEquipment(id: string, data: Partial<Equipment>, image?: File): Promise<void> {
     try {
-      console.log('Received data in service:', data);
+      console.log('Received data for update:', data);
 
       const docRef = doc(db, EQUIPMENT_COLLECTION, id);
       const docSnap = await getDoc(docRef);
@@ -196,18 +195,16 @@ export const equipmentService = {
         imageUrl = await getDownloadURL(storageRef);
       }
 
-      // Create update data with explicit price fields
       const updateData = {
         name: data.name,
         brandId: data.brandId,
         categoryId: data.categoryId,
         image: imageUrl || data.imageUrl,
-        // Explicitly set price fields
-        price: undefined, // Remove old price field
+        shortDescription: data.shortDescription,
+        description: data.description,
+        quantity: data.quantity,
         salePrice: data.salePrice ?? 0,
         wholesalePrice: data.wholesalePrice ?? 0,
-        // Other fields
-        leasePrice: data.leasePrice ?? 0,
         hourlyRate: data.hourlyRate ?? 0,
         dailyRate: data.dailyRate ?? 0,
         weeklyRate: data.weeklyRate ?? 0,
@@ -215,24 +212,14 @@ export const equipmentService = {
         forLease: data.forLease,
         condition: data.condition,
         leaseTerm: data.leaseTerm,
-        shortDescription: data.shortDescription,
-        description: data.description,
-        quantity: data.quantity,
         updatedAt: serverTimestamp(),
       };
 
-      console.log('Update data before cleaning:', updateData);
+      console.log('Update data before saving:', updateData);
 
-      // Only remove undefined values, keep 0s
+      // Only remove undefined values, keep 0s and other falsy values
       const cleanedData = Object.fromEntries(
-        Object.entries(updateData).filter(([key, value]) => {
-          // Keep all numeric values including 0
-          if (typeof value === 'number') return true;
-          // Keep all boolean values
-          if (typeof value === 'boolean') return true;
-          // For other types, filter out undefined and null
-          return value !== undefined && value !== null;
-        })
+        Object.entries(updateData).filter(([_, value]) => value !== undefined)
       );
 
       console.log('Final cleaned data being saved:', cleanedData);

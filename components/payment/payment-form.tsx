@@ -64,6 +64,21 @@ export function PaymentForm({
 
   const form = useForm<PaymentFormData>({
     resolver: zodResolver(paymentFormSchema),
+    defaultValues: {
+      cardNumber: "",
+      expiryMonth: "",
+      expiryYear: "",
+      cvv: "",
+      firstName: "",
+      lastName: "",
+      address: {
+        street: "",
+        city: "",
+        state: "",
+        zipCode: "",
+        country: "",
+      },
+    },
   });
 
   const onSubmit = async (data: PaymentFormData) => {

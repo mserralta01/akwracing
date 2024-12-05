@@ -57,21 +57,31 @@ interface StudentFormProps {
 }
 
 export function StudentForm({ onSubmit, loading }: StudentFormProps) {
-  const form = useForm<StudentFormData>({
-    resolver: zodResolver(studentFormSchema),
-    defaultValues: {
-      experience: {
-        yearsOfExperience: 0,
-        skillLevel: "Beginner",
-        previousCourses: [],
-      },
-      medicalInformation: {
-        allergies: [],
-        medications: [],
-        conditions: [],
-        notes: "",
-      },
+  const defaultValues = {
+    firstName: "",
+    lastName: "",
+    dateOfBirth: "",
+    emergencyContact: {
+      name: "",
+      phone: "",
+      relationship: "",
     },
+    medicalInformation: {
+      allergies: [],
+      medications: [],
+      conditions: [],
+      notes: "",
+    },
+    experience: {
+      yearsOfExperience: 0,
+      previousCourses: [],
+      skillLevel: "Beginner" as const,
+    },
+  };
+
+  const form = useForm<z.infer<typeof studentFormSchema>>({
+    resolver: zodResolver(studentFormSchema),
+    defaultValues,
   });
 
   const handleSubmit = (data: StudentFormData) => {

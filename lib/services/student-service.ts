@@ -160,13 +160,37 @@ export const studentService = {
     }
   },
 
-  async updateParentProfile(id: string, data: Partial<Omit<ParentProfile, 'id' | 'createdAt' | 'updatedAt'>>): Promise<void> {
+  async updateParentProfile(
+    id: string,
+    data: Partial<Omit<ParentProfile, 'id' | 'createdAt' | 'updatedAt'>>
+  ): Promise<ParentProfile> {
     try {
       const parentRef = doc(db, PARENTS_COLLECTION, id);
-      await updateDoc(parentRef, {
+      const parentDoc = await getDoc(parentRef);
+      
+      const now = Timestamp.now();
+      const updatedData = {
         ...data,
-        updatedAt: Timestamp.now(),
-      });
+        updatedAt: now,
+      };
+
+      if (!parentDoc.exists()) {
+        // If parent document doesn't exist, create it
+        await setDoc(parentRef, {
+          id,
+          ...updatedData,
+          createdAt: now,
+        });
+      } else {
+        // If it exists, update it
+        await updateDoc(parentRef, updatedData);
+      }
+
+      const updatedDoc = await getDoc(parentRef);
+      return {
+        id: updatedDoc.id,
+        ...convertTimestampsToDates(updatedDoc.data()),
+      } as ParentProfile;
     } catch (error) {
       console.error('Error updating parent profile:', error);
       throw error;

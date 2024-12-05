@@ -36,66 +36,42 @@ export const paymentService = {
     paymentDetails: PaymentDetails
   ): Promise<{ success: boolean; transactionId?: string; error?: string }> {
     try {
-      const nmiApiKey = process.env.NEXT_PUBLIC_NMI_API_KEY;
-      const nmiUsername = process.env.NEXT_PUBLIC_NMI_USERNAME;
-      const nmiPassword = process.env.NEXT_PUBLIC_NMI_PASSWORD;
-
-      if (!nmiApiKey || !nmiUsername || !nmiPassword) {
-        throw new Error('NMI credentials not configured');
-      }
-
-      // Construct the NMI API request
-      const requestData: Record<string, string> = {
-        security_key: nmiApiKey,
-        type: 'sale',
-        ccnumber: paymentDetails.cardNumber,
-        ccexp: `${paymentDetails.expiryMonth}${paymentDetails.expiryYear}`,
-        cvv: paymentDetails.cvv,
-        amount: course.price.toString(),
-        currency: 'USD',
-        first_name: paymentDetails.firstName,
-        last_name: paymentDetails.lastName,
-        address1: paymentDetails.address.street,
-        city: paymentDetails.address.city,
-        state: paymentDetails.address.state,
-        zip: paymentDetails.address.zipCode,
-        country: paymentDetails.address.country,
-        orderid: enrollment.id,
-        customer_receipt: 'true',
-      };
-
-      // Make the API request to NMI
-      const response = await fetch(process.env.NEXT_PUBLIC_NMI_API_URL || '', {
+      const response = await fetch('/api/payment/process', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Authorization': `Basic ${Buffer.from(`${nmiUsername}:${nmiPassword}`).toString('base64')}`,
+          'Content-Type': 'application/json',
         },
-        body: new URLSearchParams(requestData).toString(),
+        body: JSON.stringify({
+          enrollment,
+          course,
+          paymentDetails,
+        }),
       });
 
       if (!response.ok) {
-        throw new Error('Payment gateway error');
-      }
-
-      const result = await response.json() as NMIResponse;
-
-      if (result.response === '1') { // Successful transaction
-        return {
-          success: true,
-          transactionId: result.transactionid,
-        };
-      } else {
+        const errorText = await response.text();
+        console.error('Payment API Error:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText
+        });
         return {
           success: false,
-          error: result.responsetext,
+          error: `Payment API error: ${response.status} ${response.statusText}`
         };
       }
+
+      const result = await response.json();
+      return result;
     } catch (error) {
-      console.error('Payment processing error:', error);
+      console.error('Payment processing error:', {
+        error,
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Payment processing failed',
+        error: error instanceof Error ? error.message : 'Payment processing failed'
       };
     }
   },

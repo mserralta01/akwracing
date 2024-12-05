@@ -19,6 +19,8 @@ import {
 } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { Check, CreditCard, User, Users } from "lucide-react";
+import { doc, setDoc, Timestamp } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 type EnrollmentStep = "student" | "parent" | "payment" | "confirmation";
 
@@ -38,11 +40,31 @@ export function EnrollmentFlow({ course, onComplete }: EnrollmentFlowProps) {
   const handleStudentSubmit = async (studentData: Omit<StudentProfile, "id" | "createdAt" | "updatedAt" | "parentId">) => {
     try {
       setLoading(true);
+      
+      // Ensure we have a valid UUID for the parent
       const tempParentId = crypto.randomUUID();
+      
+      // Create the initial parent document with minimal required data
+      const tempParentRef = doc(db, 'parents', tempParentId);
+      const now = Timestamp.now();
+      
+      await setDoc(tempParentRef, {
+        id: tempParentId,
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        students: [],
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      // Create student with proper parent reference
       const createdStudent = await studentService.createStudent({
         ...studentData,
         parentId: tempParentId,
       });
+      
       setStudent(createdStudent);
       setCurrentStep("parent");
     } catch (error) {
@@ -60,17 +82,21 @@ export function EnrollmentFlow({ course, onComplete }: EnrollmentFlowProps) {
   const handleParentSubmit = async (parentData: Omit<ParentProfile, "id" | "createdAt" | "updatedAt" | "userId" | "students">) => {
     try {
       setLoading(true);
-      const createdParent = await studentService.createParent({
+      if (!student) throw new Error("No student data found");
+
+      // Update the existing parent document instead of creating a new one
+      const updatedParent = await studentService.updateParentProfile(student.parentId, {
         ...parentData,
-        students: [student!.id],
+        students: [student.id],
       });
-      setParent(createdParent);
+      
+      setParent(updatedParent);
 
       // Create enrollment record
       const enrollmentData = {
         courseId: course.id,
-        studentId: student!.id,
-        parentId: createdParent.id,
+        studentId: student.id,
+        parentId: student.parentId,
         status: "pending_payment" as const,
         paymentDetails: {
           amount: course.price,

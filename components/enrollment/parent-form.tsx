@@ -37,9 +37,25 @@ interface ParentFormProps {
   loading?: boolean;
 }
 
+// Add default values for parent form
+const defaultValues = {
+  firstName: "",
+  lastName: "",
+  email: "",
+  phone: "",
+  address: {
+    street: "",
+    city: "",
+    state: "",
+    zipCode: "",
+    country: "",
+  },
+};
+
 export function ParentForm({ onSubmit, loading }: ParentFormProps) {
-  const form = useForm<ParentFormData>({
+  const form = useForm<z.infer<typeof parentFormSchema>>({
     resolver: zodResolver(parentFormSchema),
+    defaultValues,
   });
 
   return (

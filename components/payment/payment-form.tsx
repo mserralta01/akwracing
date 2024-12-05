@@ -79,6 +79,7 @@ export function PaymentForm({
         country: "",
       },
     },
+    mode: "onChange"
   });
 
   const onSubmit = async (data: PaymentFormData) => {
@@ -125,6 +126,7 @@ export function PaymentForm({
                     <Input
                       placeholder="1234 5678 9012 3456"
                       {...field}
+                      value={field.value || ""}
                       maxLength={16}
                     />
                   </FormControl>
@@ -142,7 +144,7 @@ export function PaymentForm({
                     <FormLabel>Month</FormLabel>
                     <Select
                       onValueChange={field.onChange}
-                      defaultValue={field.value}
+                      value={field.value || ""}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -151,7 +153,7 @@ export function PaymentForm({
                       </FormControl>
                       <SelectContent>
                         {Array.from({ length: 12 }, (_, i) => {
-                          const month = (i + 1).toString().padStart(2, '0');
+                          const month = (i + 1).toString().padStart(2, "0");
                           return (
                             <SelectItem key={month} value={month}>
                               {month}
@@ -173,7 +175,7 @@ export function PaymentForm({
                     <FormLabel>Year</FormLabel>
                     <Select
                       onValueChange={field.onChange}
-                      defaultValue={field.value}
+                      value={field.value || ""}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -208,6 +210,7 @@ export function PaymentForm({
                       <Input
                         placeholder="123"
                         {...field}
+                        value={field.value || ""}
                         maxLength={4}
                         type="password"
                       />
@@ -235,7 +238,7 @@ export function PaymentForm({
                   <FormItem>
                     <FormLabel>First Name</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input {...field} value={field.value || ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -249,7 +252,7 @@ export function PaymentForm({
                   <FormItem>
                     <FormLabel>Last Name</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input {...field} value={field.value || ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -264,7 +267,7 @@ export function PaymentForm({
                 <FormItem>
                   <FormLabel>Street Address</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input {...field} value={field.value || ""} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -279,7 +282,7 @@ export function PaymentForm({
                   <FormItem>
                     <FormLabel>City</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input {...field} value={field.value || ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -293,7 +296,7 @@ export function PaymentForm({
                   <FormItem>
                     <FormLabel>State</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input {...field} value={field.value || ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -309,7 +312,7 @@ export function PaymentForm({
                   <FormItem>
                     <FormLabel>ZIP Code</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input {...field} value={field.value || ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -323,7 +326,7 @@ export function PaymentForm({
                   <FormItem>
                     <FormLabel>Country</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input {...field} value={field.value || ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -346,17 +349,13 @@ export function PaymentForm({
           >
             {isProcessing ? (
               <div className="flex items-center gap-2">
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                <span className="loading loading-spinner"></span>
                 Processing...
               </div>
             ) : (
-              <>Pay ${course.price}</>
+              "Pay Now"
             )}
           </Button>
-
-          <p className="text-xs text-center text-muted-foreground">
-            By clicking Pay, you agree to our Terms of Service and Privacy Policy
-          </p>
         </div>
       </form>
     </Form>

@@ -13,27 +13,27 @@ export type Brand = {
 }
 
 export type Equipment = {
-  id?: string
-  name: string
-  brandId?: string
-  categoryId?: string
-  brand: { id: string; name: string }
-  category: { id: string; name: string }
-  imageUrl: string
-  image?: string
-  shortDescription?: string
-  description?: string
-  quantity?: number
-  salePrice?: number
-  wholesalePrice?: number
-  leasePrice?: number
-  condition?: string
-  leaseTerm?: string
-  forSale: boolean
-  forLease: boolean
-  hourlyRate?: number
-  dailyRate?: number
-  weeklyRate?: number
+  id: string;
+  name: string;
+  brandId: string;
+  categoryId: string;
+  brand: { id: string; name: string };
+  category: { id: string; name: string };
+  imageUrl: string;
+  shortDescription?: string;
+  description: string;
+  quantity: number;
+  price: number;
+  salePrice?: number;
+  wholesalePrice?: number;
+  leasePrice: number;
+  hourlyRate?: number;
+  dailyRate?: number;
+  weeklyRate?: number;
+  condition?: string;
+  leaseTerm?: string;
+  forSale: boolean;
+  forLease: boolean;
 }
 
 export type EquipmentRequirement = {
@@ -44,5 +44,15 @@ export type EquipmentRequirement = {
 }
 
 export type EquipmentFormProps = {
-  equipmentId?: string
-} 
+  equipmentId?: string;
+  categories: Category[];
+  brands: Brand[];
+  onSubmit: (data: Partial<Equipment>) => Promise<void>;
+}
+
+export type PreloadedFile = {
+  preview: string;
+  name: string;
+  size: number;
+  type: string;
+}; 

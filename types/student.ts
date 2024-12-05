@@ -7,6 +7,11 @@ export type StudentProfile = {
   parentId: string;
   createdAt: string;
   updatedAt: string;
+  emergencyContact?: {
+    name: string;
+    relationship: string;
+    phone: string;
+  };
   experience?: {
     yearsOfExperience: number;
     previousCourses: string[];

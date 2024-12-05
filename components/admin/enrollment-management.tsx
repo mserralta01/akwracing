@@ -255,7 +255,7 @@ export function EnrollmentManagement() {
                           <div>
                             <div className="font-medium">{enrollment.course.title}</div>
                             <div className="text-sm text-muted-foreground">
-                              ${enrollment.paymentDetails.amount}
+                              ${enrollment.paymentDetails?.amount || 0}
                             </div>
                           </div>
                         ) : (
@@ -274,10 +274,10 @@ export function EnrollmentManagement() {
                       </TableCell>
                       <TableCell>
                         <Badge
-                          className={getPaymentStatusColor(enrollment.paymentDetails.paymentStatus)}
+                          className={getPaymentStatusColor(enrollment.paymentDetails?.paymentStatus || 'pending')}
                           variant="secondary"
                         >
-                          {enrollment.paymentDetails.paymentStatus}
+                          {enrollment.paymentDetails?.paymentStatus || 'pending'}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -320,9 +320,15 @@ export function EnrollmentManagement() {
                                       <div>
                                         <dt className="text-sm font-medium text-muted-foreground">Emergency Contact</dt>
                                         <dd>
-                                          {enrollment.student?.emergencyContact.name} ({enrollment.student?.emergencyContact.relationship})
-                                          <br />
-                                          {enrollment.student?.emergencyContact.phone}
+                                          {enrollment.student?.emergencyContact ? (
+                                            <>
+                                              {enrollment.student.emergencyContact.name} ({enrollment.student.emergencyContact.relationship})
+                                              <br />
+                                              {enrollment.student.emergencyContact.phone}
+                                            </>
+                                          ) : (
+                                            "No emergency contact provided"
+                                          )}
                                         </dd>
                                       </div>
                                       <div>
@@ -339,30 +345,42 @@ export function EnrollmentManagement() {
                                     <CardTitle className="text-lg">Parent Information</CardTitle>
                                   </CardHeader>
                                   <CardContent>
-                                    <dl className="grid grid-cols-2 gap-4">
-                                      <div>
-                                        <dt className="text-sm font-medium text-muted-foreground">Name</dt>
-                                        <dd>
-                                          {enrollment.parent?.firstName} {enrollment.parent?.lastName}
-                                        </dd>
-                                      </div>
-                                      <div>
-                                        <dt className="text-sm font-medium text-muted-foreground">Contact</dt>
-                                        <dd>
-                                          {enrollment.parent?.email}
-                                          <br />
-                                          {enrollment.parent?.phone}
-                                        </dd>
-                                      </div>
-                                      <div className="col-span-2">
-                                        <dt className="text-sm font-medium text-muted-foreground">Address</dt>
-                                        <dd>
-                                          {enrollment.parent?.address.street}
-                                          <br />
-                                          {enrollment.parent?.address.city}, {enrollment.parent?.address.state} {enrollment.parent?.address.zipCode}
-                                        </dd>
-                                      </div>
-                                    </dl>
+                                    {enrollment.parent ? (
+                                      <dl className="grid grid-cols-2 gap-4">
+                                        <div>
+                                          <dt className="text-sm font-medium text-muted-foreground">Name</dt>
+                                          <dd>
+                                            {enrollment.parent.firstName} {enrollment.parent.lastName}
+                                          </dd>
+                                        </div>
+                                        <div>
+                                          <dt className="text-sm font-medium text-muted-foreground">Contact</dt>
+                                          <dd>
+                                            {enrollment.parent.email || "No email provided"}
+                                            <br />
+                                            {enrollment.parent.phone || "No phone provided"}
+                                          </dd>
+                                        </div>
+                                        <div className="col-span-2">
+                                          <dt className="text-sm font-medium text-muted-foreground">Address</dt>
+                                          <dd>
+                                            {enrollment.parent.address ? (
+                                              <>
+                                                {enrollment.parent.address.street}
+                                                <br />
+                                                {enrollment.parent.address.city}, {enrollment.parent.address.state} {enrollment.parent.address.zipCode}
+                                              </>
+                                            ) : (
+                                              "No address provided"
+                                            )}
+                                          </dd>
+                                        </div>
+                                      </dl>
+                                    ) : (
+                                      <p className="text-sm text-muted-foreground">
+                                        Parent information unavailable
+                                      </p>
+                                    )}
                                   </CardContent>
                                 </Card>
 
@@ -375,26 +393,26 @@ export function EnrollmentManagement() {
                                     <dl className="grid grid-cols-2 gap-4">
                                       <div>
                                         <dt className="text-sm font-medium text-muted-foreground">Amount</dt>
-                                        <dd>${enrollment.paymentDetails.amount}</dd>
+                                        <dd>${enrollment.paymentDetails?.amount || 0}</dd>
                                       </div>
                                       <div>
                                         <dt className="text-sm font-medium text-muted-foreground">Status</dt>
                                         <dd>
                                           <Badge
-                                            className={getPaymentStatusColor(enrollment.paymentDetails.paymentStatus)}
+                                            className={getPaymentStatusColor(enrollment.paymentDetails?.paymentStatus || 'pending')}
                                             variant="secondary"
                                           >
-                                            {enrollment.paymentDetails.paymentStatus}
+                                            {enrollment.paymentDetails?.paymentStatus || 'pending'}
                                           </Badge>
                                         </dd>
                                       </div>
                                       <div>
                                         <dt className="text-sm font-medium text-muted-foreground">Transaction ID</dt>
-                                        <dd>{enrollment.paymentDetails.transactionId || "N/A"}</dd>
+                                        <dd>{enrollment.paymentDetails?.transactionId || "N/A"}</dd>
                                       </div>
                                       <div>
                                         <dt className="text-sm font-medium text-muted-foreground">Payment Method</dt>
-                                        <dd>{enrollment.paymentDetails.paymentMethod || "N/A"}</dd>
+                                        <dd>{enrollment.paymentDetails?.paymentMethod || "N/A"}</dd>
                                       </div>
                                     </dl>
                                   </CardContent>

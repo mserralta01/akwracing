@@ -192,7 +192,10 @@ export default function EquipmentPage() {
     {
       accessorKey: 'price',
       header: 'Price',
-      cell: ({ row }) => `$${row.original.price.toFixed(2)}`,
+      cell: ({ row }) => {
+        const price = row.original.price;
+        return price ? `$${price.toFixed(2)}` : 'N/A';
+      },
     },
     {
       accessorKey: 'leasePrice',

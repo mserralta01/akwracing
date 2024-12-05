@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { ImageUpload } from "@/components/ui/image-upload"
 import { Equipment } from "@/types/equipment"
 import { equipmentService } from "@/lib/services/equipment-service"
+import { type EquipmentFormProps } from "@/types/equipment";
 
 type FormData = {
   name: string
@@ -31,28 +32,22 @@ type FormData = {
   quantity?: number
 }
 
-type EquipmentFormProps = {
-  equipmentId?: string
-  initialData?: Equipment
-}
-
-export type PreloadedFile = {
-  preview: string;
-  name: string;
-  size: number;
-  type: string;
-}
-
-export function EquipmentForm({ equipmentId, initialData }: EquipmentFormProps) {
-  const [forSale, setForSale] = useState(initialData?.forSale || false)
-  const [forLease, setForLease] = useState(initialData?.forLease || false)
+export const EquipmentForm = ({ 
+  equipmentId, 
+  categories, 
+  brands, 
+  onSubmit,
+  initialData 
+}: EquipmentFormProps & { initialData?: Equipment }) => {
+  const [forSale, setForSale] = useState(initialData?.forSale ?? false);
+  const [forLease, setForLease] = useState(initialData?.forLease ?? false);
   const [formData, setFormData] = useState<FormData>({
     name: "",
     brandId: "",
     categoryId: "",
     imageUrl: "",
-    salePrice: initialData?.salePrice || 0,
-    wholesalePrice: initialData?.wholesalePrice || 0,
+    salePrice: initialData?.salePrice ?? 0,
+    wholesalePrice: initialData?.wholesalePrice ?? 0,
     leasePrice: 0,
     hourlyRate: 0,
     dailyRate: 0,
@@ -61,7 +56,7 @@ export function EquipmentForm({ equipmentId, initialData }: EquipmentFormProps) 
     leaseTerm: "",
     forSale: false,
     forLease: false,
-  })
+  });
   const [equipment, setEquipment] = useState<Equipment | null>(null);
   const [preloadedImage, setPreloadedImage] = useState<PreloadedFile | null>(null);
 

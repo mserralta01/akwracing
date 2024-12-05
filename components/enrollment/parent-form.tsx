@@ -26,7 +26,6 @@ const parentFormSchema = z.object({
     city: z.string().min(1, "City is required"),
     state: z.string().min(1, "State is required"),
     zipCode: z.string().min(5, "Valid ZIP code is required"),
-    country: z.string().min(1, "Country is required"),
   }),
 });
 
@@ -37,30 +36,59 @@ interface ParentFormProps {
   loading?: boolean;
 }
 
+const formatPhoneNumber = (value: string) => {
+  if (!value) return "+1 ";
+  
+  // Remove all non-digits and any leading "1" if it exists
+  let phoneNumber = value.replace(/[^\d]/g, '');
+  if (phoneNumber.startsWith('1')) {
+    phoneNumber = phoneNumber.slice(1);
+  }
+  
+  // Format the number
+  if (phoneNumber.length === 0) return "+1 ";
+  if (phoneNumber.length <= 3) return `+1 (${phoneNumber}`;
+  if (phoneNumber.length <= 6) return `+1 (${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
+  return `+1 (${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)}`;
+};
+
+const unformatPhoneNumber = (value: string) => {
+  const digits = value.replace(/[^\d]/g, '');
+  return digits.startsWith('1') ? digits.slice(1) : digits;
+};
+
 // Add default values for parent form
 const defaultValues = {
   firstName: "",
   lastName: "",
   email: "",
-  phone: "",
+  phone: "+1 ",
   address: {
     street: "",
     city: "",
     state: "",
     zipCode: "",
-    country: "",
   },
 };
 
 export function ParentForm({ onSubmit, loading }: ParentFormProps) {
-  const form = useForm<z.infer<typeof parentFormSchema>>({
+  const form = useForm<ParentFormData>({
     resolver: zodResolver(parentFormSchema),
     defaultValues,
   });
 
+  const handleSubmit = (data: ParentFormData) => {
+    // Remove formatting from phone number before submitting
+    const formattedData = {
+      ...data,
+      phone: unformatPhoneNumber(data.phone),
+    };
+    onSubmit(formattedData);
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -111,7 +139,37 @@ export function ParentForm({ onSubmit, loading }: ParentFormProps) {
               <FormItem>
                 <FormLabel>Phone</FormLabel>
                 <FormControl>
-                  <Input type="tel" {...field} />
+                  <Input
+                    {...field}
+                    value={formatPhoneNumber(field.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      const digits = value.replace(/[^\d]/g, '');
+                      // Remove leading "1" if present and ensure max length of 10
+                      const cleanDigits = digits.startsWith('1') ? digits.slice(1) : digits;
+                      if (cleanDigits.length <= 10) {
+                        field.onChange(cleanDigits);
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Backspace') {
+                        const input = e.target as HTMLInputElement;
+                        const selectionStart = input.selectionStart || 0;
+                        const value = field.value;
+                        
+                        // Prevent backspace if cursor is at or before "+1 "
+                        if (selectionStart <= 3) {
+                          e.preventDefault();
+                          return;
+                        }
+                        
+                        // Remove last digit
+                        field.onChange(value.slice(0, -1));
+                        e.preventDefault();
+                      }
+                    }}
+                    placeholder="+1 (555) 123-4567"
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -133,7 +191,7 @@ export function ParentForm({ onSubmit, loading }: ParentFormProps) {
           )}
         />
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-3 gap-4">
           <FormField
             control={form.control}
             name="address.city"
@@ -160,28 +218,12 @@ export function ParentForm({ onSubmit, loading }: ParentFormProps) {
               </FormItem>
             )}
           />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="address.zipCode"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>ZIP Code</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="address.country"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Country</FormLabel>
                 <FormControl>
                   <Input {...field} />
                 </FormControl>

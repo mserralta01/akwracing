@@ -14,7 +14,6 @@ interface PaymentDetails {
     city: string;
     state: string;
     zipCode: string;
-    country: string;
   };
 }
 
@@ -29,6 +28,21 @@ interface NMIResponse {
   type: string;
   response_code: string;
 }
+
+const parseNMIResponse = (responseText: string): NMIResponse => {
+  const params = new URLSearchParams(responseText);
+  return {
+    response: params.get('response') || '',
+    responsetext: params.get('responsetext') || '',
+    authcode: params.get('authcode') || '',
+    transactionid: params.get('transactionid') || '',
+    avsresponse: params.get('avsresponse') || '',
+    cvvresponse: params.get('cvvresponse') || '',
+    orderid: params.get('orderid') || '',
+    type: params.get('type') || '',
+    response_code: params.get('response_code') || '',
+  };
+};
 
 export async function POST(request: Request) {
   try {
@@ -64,7 +78,6 @@ export async function POST(request: Request) {
       city: paymentDetails.address.city,
       state: paymentDetails.address.state,
       zip: paymentDetails.address.zipCode,
-      country: paymentDetails.address.country,
       orderid: enrollment.id,
       customer_receipt: "true",
     };
@@ -88,7 +101,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const result = (await response.json()) as NMIResponse;
+    const responseText = await response.text();
+    const result = parseNMIResponse(responseText);
 
     if (result.response === "1") {
       // Payment successful

@@ -1,21 +1,5 @@
-import { Enrollment } from "@/types/student";
+import { Enrollment, PaymentDetails } from "@/types/student";
 import { Course } from "@/types/course";
-
-interface PaymentDetails {
-  cardNumber: string;
-  expiryMonth: string;
-  expiryYear: string;
-  cvv: string;
-  firstName: string;
-  lastName: string;
-  address: {
-    street: string;
-    city: string;
-    state: string;
-    zipCode: string;
-    country: string;
-  };
-}
 
 interface NMIResponse {
   response: string;
@@ -183,5 +167,5 @@ export const paymentService = {
         error: error instanceof Error ? error.message : 'Status query failed',
       };
     }
-  },
+  }
 }; 

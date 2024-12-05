@@ -27,19 +27,7 @@ const studentFormSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   dateOfBirth: z.string().min(1, "Date of birth is required"),
-  emergencyContact: z.object({
-    name: z.string().min(1, "Emergency contact name is required"),
-    phone: z.string().min(10, "Valid phone number is required"),
-    relationship: z.string().min(1, "Relationship is required"),
-  }),
-  medicalInformation: z
-    .object({
-      allergies: z.array(z.string()).default([]),
-      medications: z.array(z.string()).default([]),
-      conditions: z.array(z.string()).default([]),
-      notes: z.string().default(""),
-    })
-    .optional(),
+  phone: z.string().min(10, "Valid phone number is required"),
   experience: z
     .object({
       yearsOfExperience: z.number().min(0),
@@ -54,24 +42,40 @@ type StudentFormData = z.infer<typeof studentFormSchema>;
 interface StudentFormProps {
   onSubmit: (data: Omit<StudentProfile, "id" | "createdAt" | "updatedAt" | "parentId">) => void;
   loading?: boolean;
+  course: {
+    title: string;
+    startDate: string;
+    endDate: string;
+  };
 }
 
-export function StudentForm({ onSubmit, loading }: StudentFormProps) {
+const formatPhoneNumber = (value: string) => {
+  if (!value) return "+1 ";
+  
+  // Remove all non-digits and any leading "1" if it exists
+  let phoneNumber = value.replace(/[^\d]/g, '');
+  if (phoneNumber.startsWith('1')) {
+    phoneNumber = phoneNumber.slice(1);
+  }
+  
+  // Format the number
+  if (phoneNumber.length === 0) return "+1 ";
+  if (phoneNumber.length <= 3) return `+1 (${phoneNumber}`;
+  if (phoneNumber.length <= 6) return `+1 (${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
+  return `+1 (${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)}`;
+};
+
+const unformatPhoneNumber = (value: string) => {
+  const digits = value.replace(/[^\d]/g, '');
+  return digits.startsWith('1') ? digits.slice(1) : digits;
+};
+
+export function StudentForm({ onSubmit, loading, course }: StudentFormProps) {
   const defaultValues = {
     firstName: "",
     lastName: "",
     dateOfBirth: "",
-    emergencyContact: {
-      name: "",
-      phone: "",
-      relationship: "",
-    },
-    medicalInformation: {
-      allergies: [],
-      medications: [],
-      conditions: [],
-      notes: "",
-    },
+    phone: "+1 ",
     experience: {
       yearsOfExperience: 0,
       previousCourses: [],
@@ -79,31 +83,35 @@ export function StudentForm({ onSubmit, loading }: StudentFormProps) {
     },
   };
 
-  const form = useForm<z.infer<typeof studentFormSchema>>({
+  const form = useForm<StudentFormData>({
     resolver: zodResolver(studentFormSchema),
     defaultValues,
   });
 
   const handleSubmit = (data: StudentFormData) => {
-    onSubmit({
+    // Remove formatting from phone number before submitting
+    const formattedData = {
       ...data,
-      medicalInformation: data.medicalInformation || {
-        allergies: [],
-        medications: [],
-        conditions: [],
-        notes: "",
-      },
+      phone: unformatPhoneNumber(data.phone),
       experience: data.experience || {
         yearsOfExperience: 0,
         previousCourses: [],
         skillLevel: "Beginner",
       },
-    });
+    };
+    onSubmit(formattedData);
   };
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold">{course.title}</h2>
+          <p className="text-muted-foreground">
+            {new Date(course.startDate).toLocaleDateString()} - {new Date(course.endDate).toLocaleDateString()}
+          </p>
+        </div>
+
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -147,50 +155,49 @@ export function StudentForm({ onSubmit, loading }: StudentFormProps) {
           )}
         />
 
-        <div className="space-y-4">
-          <h3 className="font-semibold">Emergency Contact</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="emergencyContact.name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Contact Name</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="emergencyContact.phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Contact Phone</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-          <FormField
-            control={form.control}
-            name="emergencyContact.relationship"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Relationship to Student</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+        <FormField
+          control={form.control}
+          name="phone"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Phone Number</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  value={formatPhoneNumber(field.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    const digits = value.replace(/[^\d]/g, '');
+                    // Remove leading "1" if present and ensure max length of 10
+                    const cleanDigits = digits.startsWith('1') ? digits.slice(1) : digits;
+                    if (cleanDigits.length <= 10) {
+                      field.onChange(cleanDigits);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Backspace') {
+                      const input = e.target as HTMLInputElement;
+                      const selectionStart = input.selectionStart || 0;
+                      const value = field.value;
+                      
+                      // Prevent backspace if cursor is at or before "+1 "
+                      if (selectionStart <= 3) {
+                        e.preventDefault();
+                        return;
+                      }
+                      
+                      // Remove last digit
+                      field.onChange(value.slice(0, -1));
+                      e.preventDefault();
+                    }
+                  }}
+                  placeholder="+1 (555) 123-4567"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <div className="space-y-4">
           <h3 className="font-semibold">Experience</h3>

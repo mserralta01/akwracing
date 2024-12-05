@@ -12,15 +12,12 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { Check, CreditCard, User, Users } from "lucide-react";
 import { doc, setDoc, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { cn } from "@/lib/utils";
 
 type EnrollmentStep = "student" | "parent" | "payment" | "confirmation";
 
@@ -28,6 +25,13 @@ interface EnrollmentFlowProps {
   course: Course;
   onComplete: () => void;
 }
+
+const steps = [
+  { id: "student", label: "Student", icon: User },
+  { id: "parent", label: "Parent", icon: Users },
+  { id: "payment", label: "Payment", icon: CreditCard },
+  { id: "confirmation", label: "Complete", icon: Check },
+] as const;
 
 export function EnrollmentFlow({ course, onComplete }: EnrollmentFlowProps) {
   const { toast } = useToast();
@@ -123,7 +127,7 @@ export function EnrollmentFlow({ course, onComplete }: EnrollmentFlowProps) {
   const handlePaymentSuccess = async (transactionId: string) => {
     try {
       setLoading(true);
-      if (!enrollment) return;
+      if (!enrollment || !student || !parent) return;
 
       // Update enrollment status
       await studentService.updateEnrollment(enrollment.id, {
@@ -137,8 +141,8 @@ export function EnrollmentFlow({ course, onComplete }: EnrollmentFlowProps) {
 
       // Send confirmation emails
       await Promise.all([
-        emailService.sendEnrollmentConfirmation(enrollment, course, student!, parent!),
-        emailService.sendPaymentConfirmation(enrollment, course, parent!),
+        emailService.sendEnrollmentConfirmation(enrollment, course, student, parent),
+        emailService.sendPaymentConfirmation(enrollment, course, parent),
       ]);
 
       setCurrentStep("confirmation");
@@ -162,126 +166,94 @@ export function EnrollmentFlow({ course, onComplete }: EnrollmentFlowProps) {
     });
   };
 
-  const renderStep = () => {
-    switch (currentStep) {
-      case "student":
-        return (
-          <StudentForm
-            onSubmit={handleStudentSubmit}
-            loading={loading}
-          />
-        );
-      case "parent":
-        return (
-          <ParentForm
-            onSubmit={handleParentSubmit}
-            loading={loading}
-          />
-        );
-      case "payment":
-        if (!enrollment || !course) return null;
-        return (
-          <PaymentForm
-            course={course}
-            enrollment={enrollment}
-            onSuccess={handlePaymentSuccess}
-            onError={handlePaymentError}
-          />
-        );
-      case "confirmation":
-        return (
-          <Card>
-            <CardHeader>
-              <CardTitle>Enrollment Complete!</CardTitle>
-              <CardDescription>
-                Thank you for enrolling in {course.title}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-2 text-green-600">
-                <Check className="h-5 w-5" />
-                <span>Payment processed successfully</span>
-              </div>
-              <p>
-                We've sent confirmation emails to {parent?.email}. Please check
-                your inbox for further instructions.
+  return (
+    <div className="max-w-3xl mx-auto">
+      <div className="mb-8">
+        <div className="flex flex-col gap-4">
+          <h1 className="text-2xl font-bold">{course.title}</h1>
+          <p className="text-muted-foreground">
+            {new Date(course.startDate).toLocaleDateString()} - {new Date(course.endDate).toLocaleDateString()}
+          </p>
+          
+          <div className="flex justify-between items-center mt-6">
+            {steps.map((step, index) => {
+              const Icon = step.icon;
+              const isActive = currentStep === step.id;
+              const isCompleted = steps.findIndex(s => s.id === currentStep) > index;
+              
+              return (
+                <div key={step.id} className="flex items-center">
+                  {index > 0 && (
+                    <div 
+                      className={cn(
+                        "h-[2px] w-16 -mx-2",
+                        isCompleted ? "bg-primary" : "bg-muted"
+                      )}
+                    />
+                  )}
+                  <div 
+                    className={cn(
+                      "flex flex-col items-center gap-2 relative",
+                      isActive ? "text-primary" : isCompleted ? "text-primary" : "text-muted-foreground"
+                    )}
+                  >
+                    <div 
+                      className={cn(
+                        "w-10 h-10 rounded-full flex items-center justify-center border-2",
+                        isActive ? "border-primary bg-primary/10" : 
+                        isCompleted ? "border-primary bg-primary text-white" : 
+                        "border-muted bg-muted"
+                      )}
+                    >
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <span className="text-sm font-medium whitespace-nowrap">
+                      {step.label}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <Card>
+        <CardContent className="pt-6">
+          {currentStep === "student" && (
+            <StudentForm
+              onSubmit={handleStudentSubmit}
+              loading={loading}
+              course={course}
+            />
+          )}
+          {currentStep === "parent" && (
+            <ParentForm
+              onSubmit={handleParentSubmit}
+              loading={loading}
+            />
+          )}
+          {currentStep === "payment" && enrollment && parent && (
+            <PaymentForm
+              course={course}
+              enrollment={enrollment}
+              parent={parent}
+              onSuccess={handlePaymentSuccess}
+              onError={handlePaymentError}
+            />
+          )}
+          {currentStep === "confirmation" && (
+            <div className="text-center py-8">
+              <Check className="h-12 w-12 text-green-500 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold mb-2">Enrollment Complete!</h2>
+              <p className="text-muted-foreground mb-6">
+                Thank you for enrolling in {course.title}. You will receive a confirmation email shortly.
               </p>
-            </CardContent>
-            <CardFooter>
-              <Button onClick={onComplete}>Done</Button>
-            </CardFooter>
-          </Card>
-        );
-    }
-  };
-
-  return (
-    <div className="space-y-8">
-      <div className="flex justify-center">
-        <nav className="flex gap-4">
-          <StepIndicator
-            icon={User}
-            label="Student"
-            active={currentStep === "student"}
-            completed={currentStep !== "student"}
-          />
-          <StepIndicator
-            icon={Users}
-            label="Parent"
-            active={currentStep === "parent"}
-            completed={currentStep === "payment" || currentStep === "confirmation"}
-          />
-          <StepIndicator
-            icon={CreditCard}
-            label="Payment"
-            active={currentStep === "payment"}
-            completed={currentStep === "confirmation"}
-          />
-          <StepIndicator
-            icon={Check}
-            label="Confirmation"
-            active={currentStep === "confirmation"}
-            completed={false}
-          />
-        </nav>
-      </div>
-
-      <div className="max-w-2xl mx-auto">{renderStep()}</div>
-    </div>
-  );
-}
-
-interface StepIndicatorProps {
-  icon: React.ElementType;
-  label: string;
-  active: boolean;
-  completed: boolean;
-}
-
-function StepIndicator({
-  icon: Icon,
-  label,
-  active,
-  completed,
-}: StepIndicatorProps) {
-  return (
-    <div
-      className={`flex flex-col items-center gap-2 ${
-        active ? "text-primary" : completed ? "text-green-600" : "text-muted-foreground"
-      }`}
-    >
-      <div
-        className={`w-10 h-10 rounded-full flex items-center justify-center ${
-          active
-            ? "bg-primary text-primary-foreground"
-            : completed
-            ? "bg-green-600 text-white"
-            : "bg-muted"
-        }`}
-      >
-        <Icon className="h-5 w-5" />
-      </div>
-      <span className="text-sm font-medium">{label}</span>
+              <Button onClick={onComplete}>Return to Courses</Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 } 

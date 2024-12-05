@@ -3,21 +3,10 @@ export type StudentProfile = {
   firstName: string;
   lastName: string;
   dateOfBirth: string;
+  phone: string;
   parentId: string;
   createdAt: string;
   updatedAt: string;
-  // Additional student-specific fields
-  emergencyContact: {
-    name: string;
-    phone: string;
-    relationship: string;
-  };
-  medicalInformation?: {
-    allergies: string[];
-    medications: string[];
-    conditions: string[];
-    notes: string;
-  };
   experience?: {
     yearsOfExperience: number;
     previousCourses: string[];
@@ -37,11 +26,9 @@ export type ParentProfile = {
     city: string;
     state: string;
     zipCode: string;
-    country: string;
   };
   createdAt: string;
   updatedAt: string;
-  // Billing information will be handled by NMI
   students: string[]; // Array of student IDs
 };
 
@@ -58,6 +45,21 @@ export type PaymentStatus =
   | "completed" 
   | "failed" 
   | "refunded";
+
+export type PaymentDetails = {
+  cardNumber: string;
+  expiryMonth: string;
+  expiryYear: string;
+  cvv: string;
+  firstName: string;
+  lastName: string;
+  address: {
+    street: string;
+    city: string;
+    state: string;
+    zipCode: string;
+  };
+};
 
 export type Enrollment = {
   id: string;

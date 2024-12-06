@@ -171,6 +171,13 @@ export const studentService = {
         throw new Error('Parent profile not found after update');
       }
 
+ Payment-Module
+
+      const updatedDoc = await getDoc(parentRef);
+      if (!updatedDoc.exists()) {
+        throw new Error('Parent profile not found after update');
+      }
+main
       return {
         id: updatedDoc.id,
         ...convertTimestampsToDates(docData),

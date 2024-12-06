@@ -1,9 +1,16 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { User, onAuthStateChanged, signOut as firebaseSignOut } from "firebase/auth";
+import { 
+  User, 
+  onAuthStateChanged, 
+  signOut as firebaseSignOut,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup
+} from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { signInWithGoogle } from "@/lib/auth";
 import { userService, UserDocument } from "@/lib/services/user-service";
 
 interface AuthContextType {
@@ -11,7 +18,9 @@ interface AuthContextType {
   userDoc: UserDocument | null;
   isAdmin: boolean;
   loading: boolean;
-  signInWithGoogle: () => Promise<void>;
+  signIn: (email: string, password: string) => Promise<User>;
+  signUp: (email: string, password: string) => Promise<User>;
+  signInWithGoogle: () => Promise<User>;
   signOut: () => Promise<void>;
 }
 
@@ -20,7 +29,9 @@ const AuthContext = createContext<AuthContextType>({
   userDoc: null,
   isAdmin: false,
   loading: true,
-  signInWithGoogle: async () => {},
+  signIn: async () => { throw new Error("Not implemented") },
+  signUp: async () => { throw new Error("Not implemented") },
+  signInWithGoogle: async () => { throw new Error("Not implemented") },
   signOut: async () => {},
 });
 
@@ -53,32 +64,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => unsubscribe();
   }, []);
 
-  const handleSignInWithGoogle = async () => {
-    try {
-      const user = await signInWithGoogle(auth);
-      if (user) {
-        // Get or create user document
-        let doc = await userService.getUserDocument(user.uid);
-        if (!doc) {
-          doc = await userService.createUserDocument(user);
-        }
-        setUserDoc(doc);
-        setIsAdmin(doc.role === "admin");
-      }
-    } catch (error) {
-      console.error("Error signing in with Google:", error);
-    }
+  const signIn = async (email: string, password: string) => {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    return userCredential.user;
   };
 
-  const handleSignOut = async () => {
-    try {
-      await firebaseSignOut(auth);
-      setUser(null);
-      setUserDoc(null);
-      setIsAdmin(false);
-    } catch (error) {
-      console.error("Error signing out:", error);
-    }
+  const signUp = async (email: string, password: string) => {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    return userCredential.user;
+  };
+
+  const handleSignInWithGoogle = async () => {
+    const provider = new GoogleAuthProvider();
+    const userCredential = await signInWithPopup(auth, provider);
+    return userCredential.user;
+  };
+
+  const signOut = async () => {
+    await firebaseSignOut(auth);
   };
 
   return (
@@ -88,8 +91,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         userDoc,
         isAdmin,
         loading,
+        signIn,
+        signUp,
         signInWithGoogle: handleSignInWithGoogle,
-        signOut: handleSignOut,
+        signOut,
       }}
     >
       {children}

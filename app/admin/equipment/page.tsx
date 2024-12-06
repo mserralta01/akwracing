@@ -51,7 +51,7 @@ export default function EquipmentPage() {
       setLoading(true)
       setError(null)
       const [equipmentData, categoriesData, brandsData] = await Promise.all([
-        equipmentService.getEquipment(),
+        equipmentService.getEquipment() as Promise<Equipment[]>,
         equipmentService.getCategories(),
         equipmentService.getBrands()
       ])

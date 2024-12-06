@@ -32,10 +32,7 @@ export default function EquipmentPage() {
   const [equipment, setEquipment] = useState<Equipment[]>([])
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const { toast } = useToast()
-
-  useEffect(() => {
-    loadData()
-  }, [])
+  const [loading, setLoading] = useState(true)
 
   const loadData = async () => {
     try {
@@ -44,16 +41,22 @@ export default function EquipmentPage() {
         equipmentService.getCategories(),
         equipmentService.getBrands(),
       ])
-      setEquipment(equipmentData)
+      setEquipment(equipmentData as Equipment[])
       setCategories(categoriesData)
       setBrands(brandsData)
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to load data',
-        variant: 'destructive',
-      })
+      console.error('Error loading data:', error)
+    } finally {
+      setLoading(false)
     }
+  }
+
+  useEffect(() => {
+    loadData()
+  }, [])
+
+  if (loading) {
+    return <div>Loading...</div>
   }
 
   const handleAddCategory = async (name: string) => {
@@ -200,7 +203,10 @@ export default function EquipmentPage() {
     {
       accessorKey: 'leasePrice',
       header: 'Lease Price (per day)',
-      cell: ({ row }) => `$${row.original.leasePrice.toFixed(2)}`,
+      cell: ({ row }) => {
+        const leasePrice = row.original.leasePrice;
+        return leasePrice ? `$${leasePrice.toFixed(2)}` : 'N/A';
+      },
     },
     {
       accessorKey: 'quantity',

@@ -1,9 +1,10 @@
 import { Button } from "@/components/ui/button"
-import { Edit, Trash2, ImageIcon } from "lucide-react"
+import { Edit, Trash2, ImageIcon, Loader2 } from "lucide-react"
 import Image from "next/image"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Equipment } from "@/types/equipment"
 import { useState } from "react"
+import { cn } from "@/lib/utils"
 
 type EquipmentGridProps = {
   equipment: Equipment[]
@@ -34,28 +35,27 @@ export function EquipmentGrid({ equipment, onEdit, onDelete }: EquipmentGridProp
         <Card key={item.id} className="overflow-hidden">
           <CardContent className="p-4">
             <div className="aspect-[4/3] relative mb-4 bg-gray-100 rounded-md overflow-hidden">
-              {hasValidImage(item.image) && !imageErrorStates[item.id] ? (
+              {hasValidImage(item.imageUrl) && !imageErrorStates[item.id] ? (
                 <>
                   {imageLoadingStates[item.id] && (
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-8 h-8 border-4 border-gray-200 border-t-gray-400 rounded-full animate-spin" />
+                      <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
                     </div>
                   )}
                   <Image
-                    src={item.image || ''}
-                    alt={item.name || 'Equipment image'}
+                    src={item.imageUrl}
+                    alt={item.name}
                     fill
-                    className={`rounded-md object-cover transition-opacity duration-300 ${
-                      imageLoadingStates[item.id] ? 'opacity-0' : 'opacity-100'
-                    }`}
-                    onLoadingComplete={() => handleImageLoad(item.id)}
+                    className={cn(
+                      "object-cover transition-opacity duration-300",
+                      imageLoadingStates[item.id] ? "opacity-0" : "opacity-100"
+                    )}
+                    onLoad={() => handleImageLoad(item.id)}
                     onError={() => handleImageError(item.id)}
-                    priority={false}
-                    sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
                   />
                 </>
               ) : (
-                <div className="w-full h-full flex items-center justify-center">
+                <div className="absolute inset-0 flex items-center justify-center">
                   <ImageIcon className="h-12 w-12 text-gray-400" />
                 </div>
               )}

@@ -8,7 +8,7 @@ import { db } from "@/lib/firebase"
 import { doc, getDoc, setDoc, updateDoc, collection } from "firebase/firestore"
 import { Card, CardContent } from "@/components/ui/card"
 import { ImageUpload } from "@/components/ui/image-upload"
-import { Equipment } from "@/types/equipment"
+import { Equipment, PreloadedFile } from "@/types/equipment"
 import { equipmentService } from "@/lib/services/equipment-service"
 import { type EquipmentFormProps } from "@/types/equipment";
 
@@ -177,25 +177,24 @@ export const EquipmentForm = ({
     }
   }
 
-  const handleImageUpload = async (file: File | null) => {
-    if (!file) {
-      setFormData({ ...formData, imageUrl: "" })
-      return
+  const handleImageUpload = async (file: File | undefined) => {
+    if (file) {
+      try {
+        const imageUrl = await equipmentService.uploadImage(file);
+        setFormData(prev => ({
+          ...prev,
+          imageUrl
+        }));
+      } catch (error) {
+        console.error('Error uploading image:', error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to upload image"
+        });
+      }
     }
-
-    try {
-      // Here you should implement your actual image upload logic
-      // This might involve uploading to Firebase Storage or another service
-      const uploadedUrl = await uploadImageToStorage(file) // You'll need to implement this
-      setFormData({ ...formData, imageUrl: uploadedUrl })
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to upload image. Please try again.",
-        variant: "destructive"
-      })
-    }
-  }
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">

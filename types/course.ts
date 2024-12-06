@@ -4,8 +4,8 @@ export type CourseLevel = "Beginner" | "Intermediate" | "Advanced";
 
 export type Course = {
   id: string;
-  title: string;
   slug: string;
+  title: string;
   shortDescription: string;
   longDescription: string;
   level: CourseLevel;
@@ -19,10 +19,15 @@ export type Course = {
   instructorId?: string;
   location: string;
   featured: boolean;
-  equipmentRequirements: EquipmentRequirement[];
-  createdAt: string;
-  updatedAt: string;
+  equipmentRequirements: {
+    provided: string[];
+    required: string[];
+  };
+  createdAt: Date;
+  updatedAt: Date;
 };
+
+export type CourseFormData = Omit<Course, 'id' | 'slug' | 'createdAt' | 'updatedAt'>;
 
 export interface Registration {
   id: string;

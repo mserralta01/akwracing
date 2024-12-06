@@ -1,64 +1,34 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { CourseForm } from "@/components/admin/course-form";
 import { useParams } from "next/navigation";
-import CourseForm from "@/components/admin/course-form";
+import { Course } from "@/types/course";
+import { Instructor } from "@/types/instructor";
 import { courseService } from "@/lib/services/course-service";
-import type { Course } from "@/types/course";
+import { instructorService } from "@/lib/services/instructor-service";
 
 export default function EditCoursePage() {
   const params = useParams();
-  const identifier = params?.courseId as string;
-  const [course, setCourse] = useState<Course | null>(null);
-  const [loading, setLoading] = useState(true);
+  const courseId = params?.courseId as string;
+  const [course, setCourse] = useState<Course | undefined>();
+  const [instructors, setInstructors] = useState<Instructor[]>([]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (!identifier) return;
-
+    const loadData = async () => {
       try {
-        // First, try to get the course by ID
-        let courseData = await courseService.getCourse(identifier);
-
-        // If not found by ID, try by slug
-        if (!courseData) {
-          courseData = await courseService.getCourseBySlug(identifier);
-        }
-
-        setCourse(courseData);
+        const [courseData, instructorsData] = await Promise.all([
+          courseService.getCourse(courseId),
+          instructorService.getInstructors()
+        ]);
+        setCourse(courseData || undefined);
+        setInstructors(instructorsData.instructors || []);
       } catch (error) {
-        console.error("Error fetching course:", error);
-      } finally {
-        setLoading(false);
+        console.error("Error loading data:", error);
       }
     };
-
-    fetchData();
-  }, [identifier]);
-
-  if (loading) {
-    return (
-      <div className="container mx-auto py-8">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-muted rounded w-1/2" />
-          <div className="h-4 bg-muted rounded w-1/4" />
-          <div className="h-[600px] bg-muted rounded" />
-        </div>
-      </div>
-    );
-  }
-
-  if (!course) {
-    return (
-      <div className="container mx-auto py-8">
-        <div className="text-center">
-          <p className="text-muted-foreground">
-            Course not found or has been removed.
-          </p>
-        </div>
-      </div>
-    );
-  }
+    loadData();
+  }, [courseId]);
 
   return (
     <div className="container mx-auto py-8">
@@ -68,7 +38,7 @@ export default function EditCoursePage() {
           Make changes to your course information
         </p>
       </div>
-      <CourseForm initialData={course} />
+      <CourseForm initialData={course} instructors={instructors} />
     </div>
   );
 } 

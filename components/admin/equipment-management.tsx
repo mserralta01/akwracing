@@ -143,14 +143,14 @@ export default function EquipmentManagement() {
     try {
       setLoading(true);
       const data = await equipmentService.getEquipment();
-      setEquipment(data);
+      setEquipment(Array.isArray(data) ? data : []);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to load equipment";
       console.error("Error loading equipment:", error);
       toast({
+        variant: "destructive",
         title: "Error",
         description: message,
-        variant: "destructive",
       });
     } finally {
       setLoading(false);

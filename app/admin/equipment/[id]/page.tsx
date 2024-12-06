@@ -3,6 +3,7 @@
 import { Suspense } from 'react'
 import { useParams } from 'next/navigation'
 import EquipmentFormClient from './equipment-form'
+import { Loader2 } from 'lucide-react'
 
 export default function EquipmentPage() {
   const params = useParams()
@@ -10,7 +11,11 @@ export default function EquipmentPage() {
 
   return (
     <div className="h-full">
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={
+        <div className="flex items-center justify-center h-full">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      }>
         <EquipmentFormClient id={id} />
       </Suspense>
     </div>

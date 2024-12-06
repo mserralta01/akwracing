@@ -200,11 +200,12 @@ export function ParentList() {
                                 <div>
                                   <Label>Address</Label>
                                   <div className="mt-1 space-y-1">
-                                    <div>{selectedParent.address.street}</div>
+                                    <div>
+                                      {selectedParent.address.street}
+                                    </div>
                                     <div>
                                       {selectedParent.address.city}, {selectedParent.address.state} {selectedParent.address.zipCode}
                                     </div>
-                                    <div>{selectedParent.address.country}</div>
                                   </div>
                                 </div>
 

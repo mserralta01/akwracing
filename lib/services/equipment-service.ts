@@ -20,19 +20,85 @@ const BRAND_COLLECTION = "equipment_brands";
 
 export const equipmentService = {
   // Equipment functions
-  async getEquipment(): Promise<Equipment[]> {
+  async getEquipment(id?: string): Promise<Equipment | Equipment[]> {
     try {
+      if (id) {
+        const docRef = doc(db, EQUIPMENT_COLLECTION, id);
+        const docSnap = await getDoc(docRef);
+        if (!docSnap.exists()) {
+          throw new Error("Equipment not found");
+        }
+        
+        const data = docSnap.data();
+        
+        // Get category and brand
+        let category = null;
+        let brand = null;
+        if (data.categoryId) {
+          const categoryDoc = await getDoc(doc(db, CATEGORY_COLLECTION, data.categoryId));
+          if (categoryDoc.exists()) {
+            category = { 
+              id: categoryDoc.id, 
+              name: categoryDoc.data().name,
+              createdAt: categoryDoc.data().createdAt?.toDate() || new Date(),
+              updatedAt: categoryDoc.data().updatedAt?.toDate() || new Date()
+            } as Category;
+          }
+        }
+        if (data.brandId) {
+          const brandDoc = await getDoc(doc(db, BRAND_COLLECTION, data.brandId));
+          if (brandDoc.exists()) {
+            brand = { 
+              id: brandDoc.id, 
+              name: brandDoc.data().name,
+              createdAt: brandDoc.data().createdAt?.toDate() || new Date(),
+              updatedAt: brandDoc.data().updatedAt?.toDate() || new Date()
+            } as Brand;
+          }
+        }
+
+        return {
+          id: docSnap.id,
+          name: data.name,
+          type: data.type || "Other",
+          status: data.status || "AVAILABLE",
+          brandId: data.brandId,
+          categoryId: data.categoryId,
+          brand: brand || { id: '', name: 'Unknown Brand' },
+          category: category || { id: '', name: 'Unknown Category' },
+          imageUrl: data.imageUrl || '',
+          image: data.image,
+          shortDescription: data.shortDescription,
+          description: data.description,
+          inStock: data.inStock || 0,
+          quantity: data.quantity || 0,
+          price: data.price || data.salePrice || 0,
+          salePrice: data.salePrice || 0,
+          purchasePrice: data.purchasePrice,
+          sellingPrice: data.sellingPrice,
+          wholesalePrice: data.wholesalePrice,
+          leasePrice: data.leasePrice || 0,
+          hourlyRate: data.hourlyRate || 0,
+          dailyRate: data.dailyRate || 0,
+          weeklyRate: data.weeklyRate || 0,
+          condition: data.condition || '',
+          leaseTerm: data.leaseTerm || '',
+          forSale: data.forSale || false,
+          forLease: data.forLease || false,
+        } as Equipment;
+      }
+
       const equipmentQuery = query(
         collection(db, EQUIPMENT_COLLECTION),
         orderBy("createdAt", "desc")
       );
       const snapshot = await getDocs(equipmentQuery);
-      
+        
       // Get all categories and brands first
       const categories = await this.getCategories();
       const brands = await this.getBrands();
-      
-      // Create lookup maps
+          
+      // Create lookup maps for better performance
       const categoryMap = new Map(categories.map(c => [c.id, c]));
       const brandMap = new Map(brands.map(b => [b.id, b]));
 
@@ -41,27 +107,30 @@ export const equipmentService = {
         const category = categoryMap.get(data.categoryId);
         const brand = brandMap.get(data.brandId);
         
-        if (!category || !brand) {
-          console.warn(`Missing category or brand for equipment ${doc.id}`);
-        }
-
         return {
           id: doc.id,
           name: data.name,
+          type: data.type || "Other",
+          status: data.status || "AVAILABLE",
           brandId: data.brandId,
           categoryId: data.categoryId,
           brand: brand || { id: '', name: 'Unknown Brand' },
           category: category || { id: '', name: 'Unknown Category' },
-          imageUrl: data.image || '',
+          imageUrl: data.imageUrl || '',
           image: data.image,
           shortDescription: data.shortDescription,
           description: data.description,
-          quantity: data.quantity,
-          salePrice: data.salePrice,
-          leasePrice: data.leasePrice,
-          hourlyRate: data.hourlyRate,
-          dailyRate: data.dailyRate,
-          weeklyRate: data.weeklyRate,
+          inStock: data.inStock || 0,
+          quantity: data.quantity || 0,
+          price: data.price || data.salePrice || 0,
+          salePrice: data.salePrice || 0,
+          purchasePrice: data.purchasePrice,
+          sellingPrice: data.sellingPrice,
+          wholesalePrice: data.wholesalePrice,
+          leasePrice: data.leasePrice || 0,
+          hourlyRate: data.hourlyRate || 0,
+          dailyRate: data.dailyRate || 0,
+          weeklyRate: data.weeklyRate || 0,
           condition: data.condition || '',
           leaseTerm: data.leaseTerm || '',
           forSale: data.forSale || false,
@@ -71,58 +140,6 @@ export const equipmentService = {
     } catch (error) {
       console.error("Error getting equipment:", error);
       throw new Error("Failed to fetch equipment");
-    }
-  },
-
-  async getEquipmentById(id: string): Promise<Equipment | null> {
-    try {
-      const docRef = doc(db, EQUIPMENT_COLLECTION, id);
-      const docSnap = await getDoc(docRef);
-      if (!docSnap.exists()) return null;
-      
-      const data = docSnap.data();
-      
-      // Get category and brand
-      let category = null;
-      let brand = null;
-      if (data.categoryId) {
-        const categoryDoc = await getDoc(doc(db, CATEGORY_COLLECTION, data.categoryId));
-        if (categoryDoc.exists()) {
-          category = { id: categoryDoc.id, ...categoryDoc.data() } as Category;
-        }
-      }
-      if (data.brandId) {
-        const brandDoc = await getDoc(doc(db, BRAND_COLLECTION, data.brandId));
-        if (brandDoc.exists()) {
-          brand = { id: brandDoc.id, ...brandDoc.data() } as Brand;
-        }
-      }
-
-      return {
-        id: docSnap.id,
-        name: data.name,
-        brandId: data.brandId,
-        categoryId: data.categoryId,
-        brand: brand || { id: '', name: 'Unknown Brand' },
-        category: category || { id: '', name: 'Unknown Category' },
-        imageUrl: data.image || '',
-        image: data.image,
-        shortDescription: data.shortDescription,
-        description: data.description,
-        quantity: data.quantity,
-        salePrice: data.salePrice,
-        leasePrice: data.leasePrice,
-        hourlyRate: data.hourlyRate,
-        dailyRate: data.dailyRate,
-        weeklyRate: data.weeklyRate,
-        condition: data.condition || '',
-        leaseTerm: data.leaseTerm || '',
-        forSale: data.forSale || false,
-        forLease: data.forLease || false,
-      } as Equipment;
-    } catch (error) {
-      console.error("Error getting equipment by ID:", error);
-      throw new Error("Failed to fetch equipment by ID");
     }
   },
 
@@ -365,6 +382,18 @@ export const equipmentService = {
     } catch (error) {
       console.error("Error deleting brand:", error);
       throw new Error("Failed to delete brand");
+    }
+  },
+
+  async uploadImage(file: File): Promise<string> {
+    try {
+      const storageRef = ref(storage, `equipment/${Date.now()}_${file.name}`);
+      const snapshot = await uploadBytes(storageRef, file);
+      const downloadUrl = await getDownloadURL(snapshot.ref);
+      return downloadUrl;
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      throw new Error("Failed to upload image");
     }
   },
 }; 

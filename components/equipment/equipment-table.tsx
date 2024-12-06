@@ -67,15 +67,15 @@ export function EquipmentTable({ equipment, onEdit, onDelete }: EquipmentTablePr
             <TableRow key={item.id}>
               <TableCell>
                 <div className="relative w-16 h-16 bg-gray-100 rounded-md overflow-hidden">
-                  {hasValidImage(item.image) ? (
+                  {hasValidImage(item.imageUrl) ? (
                     <Image
-                      src={item.image}
+                      src={item.imageUrl}
                       alt={item.name}
                       fill
                       className="object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center">
+                    <div className="absolute inset-0 flex items-center justify-center">
                       <ImageIcon className="h-6 w-6 text-gray-400" />
                     </div>
                   )}

@@ -10,18 +10,21 @@ import {
   query,
   where,
   DocumentData,
+  arrayUnion,
+  Timestamp,
 } from 'firebase/firestore'
+import { Enrollment } from '@/types/user'
 
-export type Enrollment = {
-  id?: string
-  userId: string
-  courseId: string
-  status: 'active' | 'completed' | 'cancelled'
-  enrollmentDate: Date
-  completionDate?: Date
-  progress?: number
-  lastAccessedDate?: Date
-}
+export type GetEnrollmentsResult = {
+  success: boolean;
+  enrollments?: Enrollment[];
+  error?: string;
+};
+
+export type AddNoteResult = {
+  success: boolean;
+  error?: string;
+};
 
 export class EnrollmentService {
   private collectionName = 'enrollments'
@@ -58,6 +61,40 @@ export class EnrollmentService {
       id: doc.id,
       ...doc.data(),
     })) as Enrollment[]
+  }
+
+  async getEnrollmentsForCourse(courseId: string): Promise<GetEnrollmentsResult> {
+    try {
+      const q = query(
+        collection(db, this.collectionName),
+        where('courseId', '==', courseId)
+      )
+      const querySnapshot = await getDocs(q)
+      const enrollments = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Enrollment[]
+      return { success: true, enrollments }
+    } catch (error) {
+      console.error('Error getting enrollments for course:', error)
+      return { success: false, error: 'Failed to fetch enrollments' }
+    }
+  }
+
+  async addNoteToEnrollment(enrollmentId: string, note: string): Promise<AddNoteResult> {
+    try {
+      const docRef = doc(db, this.collectionName, enrollmentId)
+      await updateDoc(docRef, {
+        notes: arrayUnion({
+          content: note,
+          createdAt: Timestamp.now(),
+        }),
+      })
+      return { success: true }
+    } catch (error) {
+      console.error('Error adding note to enrollment:', error)
+      return { success: false, error: 'Failed to add note' }
+    }
   }
 
   async createEnrollment(enrollment: Omit<Enrollment, 'id'>): Promise<string> {

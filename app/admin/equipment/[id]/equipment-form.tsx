@@ -8,7 +8,7 @@ import * as z from 'zod'
 import { useToast } from '@/components/ui/use-toast'
 import { equipmentService } from '@/lib/services/equipment-service'
 import { Equipment, Category, Brand } from '@/types/equipment'
-import { Loader2, ImageIcon, Upload, DollarSign, Clock, CalendarDays, Package, Tag, Truck, ShoppingCart, Bold, Italic, List, ListOrdered, Heading2, Quote } from 'lucide-react'
+import { Loader2, ImageIcon, Upload, DollarSign, Clock, CalendarDays, Package, Tag, Truck, ShoppingCart } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
 import {
   Form,
@@ -36,72 +36,14 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Heading from '@tiptap/extension-heading'
 import Link from '@tiptap/extension-link'
-import { Toggle } from '@/components/ui/toggle'
 import { Switch } from '@/components/ui/switch'
-
-const MenuBar = ({ editor }: { editor: any }) => {
-  if (!editor) {
-    return null
-  }
-
-  return (
-    <div className="border border-input bg-transparent rounded-t-md p-1 flex flex-wrap gap-1">
-      <Toggle
-        size="sm"
-        pressed={editor.isActive('bold')}
-        onPressedChange={() => editor.chain().focus().toggleBold().run()}
-      >
-        <Bold className="h-4 w-4" />
-      </Toggle>
-      <Toggle
-        size="sm"
-        pressed={editor.isActive('italic')}
-        onPressedChange={() => editor.chain().focus().toggleItalic().run()}
-      >
-        <Italic className="h-4 w-4" />
-      </Toggle>
-      <Toggle
-        size="sm"
-        pressed={editor.isActive('heading', { level: 2 })}
-        onPressedChange={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-      >
-        <Heading2 className="h-4 w-4" />
-      </Toggle>
-      <Toggle
-        size="sm"
-        pressed={editor.isActive('bulletList')}
-        onPressedChange={() => editor.chain().focus().toggleBulletList().run()}
-      >
-        <List className="h-4 w-4" />
-      </Toggle>
-      <Toggle
-        size="sm"
-        pressed={editor.isActive('orderedList')}
-        onPressedChange={() => editor.chain().focus().toggleOrderedList().run()}
-      >
-        <ListOrdered className="h-4 w-4" />
-      </Toggle>
-      <Toggle
-        size="sm"
-        pressed={editor.isActive('blockquote')}
-        onPressedChange={() => editor.chain().focus().toggleBlockquote().run()}
-      >
-        <Quote className="h-4 w-4" />
-      </Toggle>
-    </div>
-  )
-}
+import { MenuBar } from '@/components/ui/menu-bar'
+import { ImageUpload } from '@/components/ui/image-upload'
 
 const formSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -116,7 +58,8 @@ const formSchema = z.object({
   weeklyRate: z.coerce.number().min(0, 'Weekly rate cannot be negative'),
   quantity: z.coerce.number().min(0, 'Quantity cannot be negative'),
   forSale: z.boolean().default(false),
-  forLease: z.boolean().default(false)
+  forLease: z.boolean().default(false),
+  imageUrl: z.string().optional()
 })
 
 type FormData = z.infer<typeof formSchema>
@@ -125,15 +68,22 @@ type Props = {
   id: string
 }
 
+export type PreloadedFile = {
+  name: string;
+  preview: string;
+};
+
 export default function EquipmentFormClient({ id }: Props) {
   const isEditing = id !== 'new'
   const [categories, setCategories] = useState<Category[]>([])
   const [brands, setBrands] = useState<Brand[]>([])
-  const [selectedImage, setSelectedImage] = useState<File | null>(null)
-  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [selectedImage, setSelectedImage] = useState<File | undefined>(undefined)
+  const [imagePreview, setImagePreview] = useState<string | undefined>(undefined)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [dragActive, setDragActive] = useState(false)
+  const [forSale, setForSale] = useState(false)
+  const [forLease, setForLease] = useState(false)
   const router = useRouter()
   const { toast } = useToast()
   const { user, loading: authLoading } = useAuth()
@@ -159,8 +109,7 @@ export default function EquipmentFormClient({ id }: Props) {
       attributes: {
         class: 'prose prose-sm max-w-none focus:outline-none'
       }
-    },
-    immediatelyRender: false
+    }
   })
 
   const form = useForm<FormData>({
@@ -178,198 +127,118 @@ export default function EquipmentFormClient({ id }: Props) {
       weeklyRate: 0,
       quantity: 0,
       forSale: false,
-      forLease: false
+      forLease: false,
+      imageUrl: ''
     }
   })
 
-  const [forSale, setForSale] = useState(false)
-  const [forLease, setForLease] = useState(false)
-
   useEffect(() => {
-    if (authLoading) return
-
-    if (!user) {
-      router.push('/auth/signin')
-      return
-    }
-
-    const loadInitialData = async () => {
+    const loadData = async () => {
       try {
         setLoading(true)
         const [categoriesData, brandsData] = await Promise.all([
           equipmentService.getCategories(),
           equipmentService.getBrands()
         ])
+        
         setCategories(categoriesData)
         setBrands(brandsData)
 
         if (isEditing) {
-          const equipment = await equipmentService.getEquipmentById(id)
-          if (equipment) {
-            form.reset({
-              name: equipment.name || '',
-              shortDescription: equipment.shortDescription || '',
-              description: equipment.description || '',
-              categoryId: equipment.categoryId || '',
-              brandId: equipment.brandId || '',
-              salePrice: equipment.salePrice || 0,
-              wholesalePrice: equipment.wholesalePrice || 0,
-              hourlyRate: equipment.hourlyRate || 0,
-              dailyRate: equipment.dailyRate || 0,
-              weeklyRate: equipment.weeklyRate || 0,
-              quantity: equipment.quantity || 0,
-              forSale: equipment.forSale || false,
-              forLease: equipment.forLease || false
-            })
-            if (equipment.description) {
+          try {
+            const result = await equipmentService.getEquipment(id)
+            const equipment = Array.isArray(result) ? result[0] : result
+            
+            if (equipment) {
+              form.reset({
+                name: equipment.name,
+                shortDescription: equipment.shortDescription || '',
+                description: equipment.description,
+                categoryId: equipment.categoryId,
+                brandId: equipment.brandId,
+                salePrice: equipment.salePrice || 0,
+                wholesalePrice: equipment.wholesalePrice || 0,
+                hourlyRate: equipment.hourlyRate || 0,
+                dailyRate: equipment.dailyRate || 0,
+                weeklyRate: equipment.weeklyRate || 0,
+                quantity: equipment.quantity,
+                forSale: equipment.forSale,
+                forLease: equipment.forLease,
+                imageUrl: equipment.imageUrl
+              })
               editor?.commands.setContent(equipment.description)
+              setForSale(equipment.forSale)
+              setForLease(equipment.forLease)
+              if (equipment.imageUrl) {
+                setImagePreview(equipment.imageUrl)
+              }
             }
-            setImagePreview(equipment.imageUrl || null)
+          } catch (error) {
+            console.error('Error loading equipment:', error)
+            toast({
+              title: 'Error',
+              description: 'Failed to load equipment. Please try again.',
+              variant: 'destructive'
+            })
+            router.push('/admin/equipment')
           }
-        } else {
-          form.reset({
-            name: '',
-            shortDescription: '',
-            description: '',
-            categoryId: '',
-            brandId: '',
-            salePrice: 0,
-            wholesalePrice: 0,
-            hourlyRate: 0,
-            dailyRate: 0,
-            weeklyRate: 0,
-            quantity: 0,
-            forSale: false,
-            forLease: false
-          })
-          editor?.commands.setContent('')
-          setImagePreview(null)
         }
       } catch (error) {
         console.error('Error loading data:', error)
         toast({
-          variant: 'destructive',
           title: 'Error',
-          description: 'Failed to load data. Please try again.'
+          description: 'Failed to load data. Please try again.',
+          variant: 'destructive'
         })
-        router.push('/admin/equipment')
       } finally {
         setLoading(false)
       }
     }
 
-    loadInitialData()
-  }, [isEditing, id, form, router, toast, user, authLoading, editor])
-
-  useEffect(() => {
-    if (isEditing && !loading) {
-      const values = form.getValues()
-      setForSale(values.forSale)
-      setForLease(values.forLease)
-    }
-  }, [isEditing, loading, form])
+    loadData()
+  }, [id, isEditing, form, editor, router])
 
   const onSubmit = async (data: FormData) => {
     try {
-      // Validate required fields based on toggles
-      if (forSale && data.salePrice <= 0) {
-        form.setError('salePrice', { message: 'Retail price is required when for sale is enabled' })
-        return
-      }
-
-      if (forLease && data.hourlyRate <= 0 && data.dailyRate <= 0 && data.weeklyRate <= 0) {
-        form.setError('hourlyRate', { message: 'At least one lease rate is required when for lease is enabled' })
-        return
-      }
-
       setSubmitting(true)
-      console.log('Form data before submission:', {
+      
+      const formData = {
         ...data,
-        wholesalePrice: data.wholesalePrice,
-        forSale
-      })
-
-      const cleanData = {
-        ...data,
-        description: editor?.getHTML() || data.description,
-        salePrice: forSale ? data.salePrice : 0,
-        wholesalePrice: forSale ? data.wholesalePrice : 0,
-        hourlyRate: forLease ? data.hourlyRate : 0,
-        dailyRate: forLease ? data.dailyRate : 0,
-        weeklyRate: forLease ? data.weeklyRate : 0,
-        forSale,
-        forLease
+        imageUrl: imagePreview || undefined,
+        updatedBy: user?.uid,
+        createdBy: user?.uid
       }
-
-      console.log('Clean data before service call:', {
-        ...cleanData,
-        wholesalePrice: cleanData.wholesalePrice
-      })
-
+      
       if (isEditing) {
-        await equipmentService.updateEquipment(id, cleanData, selectedImage || undefined)
+        await equipmentService.updateEquipment(id, formData, selectedImage)
+        toast({
+          title: 'Success',
+          description: 'Equipment updated successfully'
+        })
       } else {
-        await equipmentService.createEquipment(cleanData, selectedImage || undefined)
+        await equipmentService.createEquipment(formData, selectedImage)
+        toast({
+          title: 'Success',
+          description: 'Equipment created successfully'
+        })
       }
-
-      toast({
-        description: `Equipment ${isEditing ? 'updated' : 'created'} successfully`
-      })
+      
       router.push('/admin/equipment')
-      router.refresh()
     } catch (error) {
-      console.error('Error submitting form:', error)
+      console.error('Error saving equipment:', error)
       toast({
-        variant: 'destructive',
         title: 'Error',
-        description: `Failed to ${isEditing ? 'update' : 'create'} equipment`
+        description: error instanceof Error ? error.message : 'Failed to save equipment. Please try again.',
+        variant: 'destructive'
       })
     } finally {
       setSubmitting(false)
     }
   }
 
-  const handleDrag = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    if (e.type === 'dragenter' || e.type === 'dragover') {
-      setDragActive(true)
-    } else if (e.type === 'dragleave') {
-      setDragActive(false)
-    }
-  }, [])
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setDragActive(false)
-
-    const file = e.dataTransfer.files?.[0]
-    if (file && file.type.startsWith('image/')) {
-      setSelectedImage(file)
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string)
-      }
-      reader.readAsDataURL(file)
-    }
-  }, [])
-
-  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file) {
-      setSelectedImage(file)
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string)
-      }
-      reader.readAsDataURL(file)
-    }
-  }
-
-  if (authLoading || loading) {
+  if (loading || authLoading) {
     return (
-      <div className="flex h-[50vh] items-center justify-center">
+      <div className="flex items-center justify-center h-full">
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     )
@@ -387,264 +256,190 @@ export default function EquipmentFormClient({ id }: Props) {
         </p>
       </div>
 
-      <Tabs defaultValue="details" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3 h-14">
-          <TabsTrigger value="details" className="flex items-center gap-2 text-lg">
-            <Tag className="h-5 w-5" />
-            Details
-          </TabsTrigger>
-          <div className="relative">
-            <TabsTrigger value="sell" className="flex items-center gap-2 text-lg w-full">
-              <ShoppingCart className="h-5 w-5" />
-              Sell
-            </TabsTrigger>
-            <div className="absolute right-2 top-1/2 -translate-y-1/2 z-10">
-              <Switch
-                checked={forSale}
-                onCheckedChange={(checked) => {
-                  setForSale(checked)
-                  form.setValue('forSale', checked)
-                }}
-                className={cn(
-                  forSale ? "bg-green-500" : "bg-red-500",
-                  "focus-visible:ring-0"
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Tag className="h-5 w-5" />
+                Equipment Details
+              </CardTitle>
+              <CardDescription>Basic information about the equipment</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="categoryId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Category</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a category" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {categories.map((category) => (
+                            <SelectItem key={category.id} value={category.id}>
+                              {category.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="brandId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Brand</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a brand" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {brands.map((brand) => (
+                            <SelectItem key={brand.id} value={brand.id}>
+                              {brand.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="quantity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Quantity</FormLabel>
+                      <FormControl>
+                        <Input type="number" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="shortDescription"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Short Description</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Brief description of the equipment"
+                        className="resize-none"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
               />
-            </div>
-          </div>
-          <div className="relative">
-            <TabsTrigger value="lease" className="flex items-center gap-2 text-lg w-full">
-              <Clock className="h-5 w-5" />
-              Lease
-            </TabsTrigger>
-            <div className="absolute right-2 top-1/2 -translate-y-1/2 z-10">
-              <Switch
-                checked={forLease}
-                onCheckedChange={(checked) => {
-                  setForLease(checked)
-                  form.setValue('forLease', checked)
+
+              <div>
+                <FormLabel>Full Description</FormLabel>
+                <MenuBar editor={editor} />
+                <EditorContent editor={editor} className="min-h-[200px] border rounded-md p-4" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ImageIcon className="h-5 w-5" />
+                Equipment Image
+              </CardTitle>
+              <CardDescription>Upload an image of the equipment</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ImageUpload
+                onChange={(file) => {
+                  setSelectedImage(file || undefined);
+                  if (file) {
+                    setImagePreview(URL.createObjectURL(file));
+                  }
                 }}
-                className={cn(
-                  forLease ? "bg-green-500" : "bg-red-500",
-                  "focus-visible:ring-0"
-                )}
+                preloadedImage={imagePreview ? { name: 'Current Image', preview: imagePreview } : null}
               />
-            </div>
-          </div>
-        </TabsList>
+            </CardContent>
+          </Card>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <TabsContent value="details">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Tag className="h-5 w-5" />
-                    Equipment Details
-                  </CardTitle>
-                  <CardDescription>Basic information about the equipment</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-6">
-                      <FormField
-                        control={form.control}
-                        name="name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Name</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5" />
+                Pricing
+              </CardTitle>
+              <CardDescription>Set the pricing options for this equipment</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="forSale"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">For Sale</FormLabel>
+                          <FormDescription>
+                            Make this equipment available for purchase
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={(checked) => {
+                              field.onChange(checked)
+                              setForSale(checked)
+                            }}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
 
-                      <FormField
-                        control={form.control}
-                        name="shortDescription"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Short Description</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="description"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Description</FormLabel>
-                            <FormControl>
-                              <div className="border rounded-md">
-                                <MenuBar editor={editor} />
-                                <div className="p-4 min-h-[200px]">
-                                  <EditorContent editor={editor} className="prose prose-sm max-w-none" />
-                                </div>
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="categoryId"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Category</FormLabel>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select a category" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {categories.map((category) => (
-                                    <SelectItem key={category.id} value={category.id}>
-                                      {category.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={form.control}
-                          name="brandId"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Brand</FormLabel>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select a brand" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {brands.map((brand) => (
-                                    <SelectItem key={brand.id} value={brand.id}>
-                                      {brand.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="quantity"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Quantity</FormLabel>
-                              <FormControl>
-                                <div className="relative">
-                                  <Truck className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                                  <Input type="number" {...field} className="pl-10" />
-                                </div>
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-6">
-                      <FormLabel>Equipment Image</FormLabel>
-                      <div 
-                        className={cn(
-                          "border-2 border-dashed rounded-lg p-4 h-[300px] flex flex-col items-center justify-center cursor-pointer transition-colors",
-                          dragActive ? "border-primary bg-primary/10" : "border-gray-300 hover:border-primary/50",
-                          "relative"
-                        )}
-                        onDragEnter={handleDrag}
-                        onDragLeave={handleDrag}
-                        onDragOver={handleDrag}
-                        onDrop={handleDrop}
-                        onClick={() => document.getElementById('imageInput')?.click()}
-                      >
-                        <input
-                          id="imageInput"
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageChange}
-                          className="hidden"
-                        />
-                        {imagePreview ? (
-                          <div className="relative w-full h-full">
-                            <img
-                              src={imagePreview}
-                              alt="Preview"
-                              className="w-full h-full object-contain"
-                            />
-                          </div>
-                        ) : (
-                          <div className="text-center">
-                            <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                            <div className="mt-4 flex text-sm leading-6 text-gray-600">
-                              <span className="relative cursor-pointer rounded-md font-semibold text-primary focus-within:outline-none focus-within:ring-2 focus-within:ring-primary">
-                                Upload an image
-                              </span>
-                              <p className="pl-1">or drag and drop</p>
-                            </div>
-                            <p className="text-xs leading-5 text-gray-600">PNG, JPG, GIF up to 5MB</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="sell">
-              {forSale ? (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <DollarSign className="h-5 w-5" />
-                      Sales Information
-                    </CardTitle>
-                    <CardDescription>Set the pricing for selling this equipment</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="grid grid-cols-2 gap-6">
+                  {forSale && (
+                    <>
                       <FormField
                         control={form.control}
                         name="salePrice"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Retail Price *</FormLabel>
+                            <FormLabel>Sale Price</FormLabel>
                             <FormControl>
-                              <div className="relative">
-                                <DollarSign className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                                <Input 
-                                  type="number" 
-                                  {...field}
-                                  value={field.value || 0}
-                                  onChange={(e) => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
-                                  className="pl-10" 
-                                />
-                              </div>
+                              <Input type="number" {...field} />
                             </FormControl>
-                            <FormDescription>The regular selling price (required)</FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -657,59 +452,43 @@ export default function EquipmentFormClient({ id }: Props) {
                           <FormItem>
                             <FormLabel>Wholesale Price</FormLabel>
                             <FormControl>
-                              <div className="relative">
-                                <DollarSign className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                                <Input 
-                                  type="number" 
-                                  {...field}
-                                  value={field.value || 0}
-                                  onChange={(e) => {
-                                    const value = e.target.value === '' ? 0 : Number(e.target.value)
-                                    console.log('Setting wholesale price:', value)
-                                    field.onChange(value)
-                                    form.setValue('wholesalePrice', value, {
-                                      shouldValidate: true,
-                                      shouldDirty: true,
-                                      shouldTouch: true
-                                    })
-                                  }}
-                                  className="pl-10" 
-                                />
-                              </div>
+                              <Input type="number" {...field} />
                             </FormControl>
-                            <FormDescription>Price for bulk or dealer purchases</FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
-                    </div>
-                  </CardContent>
-                </Card>
-              ) : (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-muted-foreground">
-                      <DollarSign className="h-5 w-5" />
-                      Sales Disabled
-                    </CardTitle>
-                    <CardDescription>Enable the sale toggle to set pricing information</CardDescription>
-                  </CardHeader>
-                </Card>
-              )}
-            </TabsContent>
+                    </>
+                  )}
+                </div>
 
-            <TabsContent value="lease">
-              {forLease ? (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Clock className="h-5 w-5" />
-                      Leasing Rates
-                    </CardTitle>
-                    <CardDescription>Set the rates for different leasing periods (at least one rate required)</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="grid grid-cols-3 gap-6">
+                <div className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="forLease"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">For Lease</FormLabel>
+                          <FormDescription>
+                            Make this equipment available for lease
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={(checked) => {
+                              field.onChange(checked)
+                              setForLease(checked)
+                            }}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  {forLease && (
+                    <>
                       <FormField
                         control={form.control}
                         name="hourlyRate"
@@ -717,18 +496,8 @@ export default function EquipmentFormClient({ id }: Props) {
                           <FormItem>
                             <FormLabel>Hourly Rate</FormLabel>
                             <FormControl>
-                              <div className="relative">
-                                <DollarSign className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                                <Input 
-                                  type="number" 
-                                  {...field}
-                                  value={field.value || 0}
-                                  onChange={(e) => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
-                                  className="pl-10" 
-                                />
-                              </div>
+                              <Input type="number" {...field} />
                             </FormControl>
-                            <FormDescription>Rate per hour</FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -741,18 +510,8 @@ export default function EquipmentFormClient({ id }: Props) {
                           <FormItem>
                             <FormLabel>Daily Rate</FormLabel>
                             <FormControl>
-                              <div className="relative">
-                                <DollarSign className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                                <Input 
-                                  type="number" 
-                                  {...field}
-                                  value={field.value || 0}
-                                  onChange={(e) => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
-                                  className="pl-10" 
-                                />
-                              </div>
+                              <Input type="number" {...field} />
                             </FormControl>
-                            <FormDescription>Rate per day</FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -765,54 +524,34 @@ export default function EquipmentFormClient({ id }: Props) {
                           <FormItem>
                             <FormLabel>Weekly Rate</FormLabel>
                             <FormControl>
-                              <div className="relative">
-                                <DollarSign className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                                <Input 
-                                  type="number" 
-                                  {...field}
-                                  value={field.value || 0}
-                                  onChange={(e) => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
-                                  className="pl-10" 
-                                />
-                              </div>
+                              <Input type="number" {...field} />
                             </FormControl>
-                            <FormDescription>Rate per week</FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
-                    </div>
-                  </CardContent>
-                </Card>
-              ) : (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-muted-foreground">
-                      <Clock className="h-5 w-5" />
-                      Lease Disabled
-                    </CardTitle>
-                    <CardDescription>Enable the lease toggle to set leasing rates</CardDescription>
-                  </CardHeader>
-                </Card>
-              )}
-            </TabsContent>
+                    </>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-            <div className="flex justify-end space-x-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.push('/admin/equipment')}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={submitting} className="bg-red-600 hover:bg-red-700">
-                {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isEditing ? 'Update' : 'Create'} Equipment
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </Tabs>
+          <div className="flex justify-end gap-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.push('/admin/equipment')}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={submitting}>
+              {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isEditing ? 'Update Equipment' : 'Create Equipment'}
+            </Button>
+          </div>
+        </form>
+      </Form>
     </div>
   )
 } 

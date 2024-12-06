@@ -187,6 +187,9 @@ export const studentService = {
       }
 
       const updatedDoc = await getDoc(parentRef);
+      if (!updatedDoc.exists()) {
+        throw new Error('Parent profile not found after update');
+      }
       return {
         id: updatedDoc.id,
         ...convertTimestampsToDates(updatedDoc.data()),

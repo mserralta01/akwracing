@@ -142,10 +142,16 @@ export function StudentList() {
                     </TableCell>
                     <TableCell>
                       <div className="text-sm">
-                        <div>{student.emergencyContact.name}</div>
-                        <div className="text-muted-foreground">
-                          {student.emergencyContact.phone}
-                        </div>
+                        {student.emergencyContact ? (
+                          <>
+                            <div>{student.emergencyContact.name}</div>
+                            <div className="text-muted-foreground">
+                              {student.emergencyContact.phone}
+                            </div>
+                          </>
+                        ) : (
+                          <div className="text-muted-foreground">No emergency contact</div>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -194,64 +200,40 @@ export function StudentList() {
                                 <div>
                                   <Label>Emergency Contact</Label>
                                   <div className="mt-1 space-y-1">
-                                    <div>{selectedStudent.emergencyContact.name}</div>
-                                    <div>{selectedStudent.emergencyContact.phone}</div>
-                                    <div className="text-sm text-muted-foreground">
-                                      {selectedStudent.emergencyContact.relationship}
-                                    </div>
+                                    {selectedStudent.emergencyContact ? (
+                                      <>
+                                        <div>{selectedStudent.emergencyContact.name}</div>
+                                        <div>{selectedStudent.emergencyContact.phone}</div>
+                                        <div className="text-sm text-muted-foreground">
+                                          {selectedStudent.emergencyContact.relationship}
+                                        </div>
+                                      </>
+                                    ) : (
+                                      <div className="text-muted-foreground">No emergency contact</div>
+                                    )}
                                   </div>
                                 </div>
 
-                                {selectedStudent.medicalInformation && (
-                                  <div>
-                                    <Label>Medical Information</Label>
-                                    <div className="mt-1 space-y-2">
-                                      {selectedStudent.medicalInformation.allergies.length > 0 && (
-                                        <div>
-                                          <span className="font-medium">Allergies: </span>
-                                          {selectedStudent.medicalInformation.allergies.join(", ")}
-                                        </div>
-                                      )}
-                                      {selectedStudent.medicalInformation.medications.length > 0 && (
-                                        <div>
-                                          <span className="font-medium">Medications: </span>
-                                          {selectedStudent.medicalInformation.medications.join(", ")}
-                                        </div>
-                                      )}
-                                      {selectedStudent.medicalInformation.conditions.length > 0 && (
-                                        <div>
-                                          <span className="font-medium">Conditions: </span>
-                                          {selectedStudent.medicalInformation.conditions.join(", ")}
-                                        </div>
-                                      )}
-                                      {selectedStudent.medicalInformation.notes && (
-                                        <div>
-                                          <span className="font-medium">Notes: </span>
-                                          {selectedStudent.medicalInformation.notes}
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-
                                 {selectedStudent.experience && (
                                   <div>
-                                    <Label>Racing Experience</Label>
+                                    <Label>Experience</Label>
                                     <div className="mt-1 space-y-2">
                                       <div>
-                                        <span className="font-medium">Years of Experience: </span>
-                                        {selectedStudent.experience.yearsOfExperience}
+                                        Years of Experience: {selectedStudent.experience.yearsOfExperience}
+                                      </div>
+                                      <div>
+                                        Skill Level: {selectedStudent.experience.skillLevel}
                                       </div>
                                       {selectedStudent.experience.previousCourses.length > 0 && (
                                         <div>
-                                          <span className="font-medium">Previous Courses: </span>
-                                          {selectedStudent.experience.previousCourses.join(", ")}
+                                          <div>Previous Courses:</div>
+                                          <ul className="list-disc list-inside">
+                                            {selectedStudent.experience.previousCourses.map((course, index) => (
+                                              <li key={index}>{course}</li>
+                                            ))}
+                                          </ul>
                                         </div>
                                       )}
-                                      <div>
-                                        <span className="font-medium">Skill Level: </span>
-                                        <Badge>{selectedStudent.experience.skillLevel}</Badge>
-                                      </div>
                                     </div>
                                   </div>
                                 )}

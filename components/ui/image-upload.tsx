@@ -7,22 +7,31 @@ import { ImageIcon, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useDropzone } from "react-dropzone";
-import { PreloadedFile } from "@/components/equipment/equipment-form"
+
+type PreloadedFile = {
+  name: string;
+  preview: string;
+}
 
 type ImageUploadProps = {
-  onChange: (file: File | null) => void;
+  onChange: (file: File | undefined) => void;
+  value?: string;
   preloadedImage?: PreloadedFile | null;
 }
 
-export function ImageUpload({ onChange, preloadedImage }: ImageUploadProps) {
+export function ImageUpload({ onChange, value, preloadedImage }: ImageUploadProps) {
   const [files, setFiles] = useState<File[]>([]);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [preview, setPreview] = useState<string | null>(value || null);
 
   useEffect(() => {
     if (preloadedImage) {
       setPreview(preloadedImage.preview);
     }
   }, [preloadedImage]);
+
+  useEffect(() => {
+    setPreview(value || null);
+  }, [value]);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {

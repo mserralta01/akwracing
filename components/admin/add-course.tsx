@@ -15,12 +15,13 @@ import {
 import { FileUpload } from "@/components/ui/file-upload";
 import { courseService } from "@/lib/services/course-service";
 import { useToast } from "@/components/ui/use-toast";
-import { CourseFormData, CourseLevel } from "@/types/course";
+import { Course, CourseLevel } from "@/types/course";
 import { instructorService } from "@/lib/services/instructor-service";
 import { Instructor } from "@/types/instructor";
 
+type CourseFormData = Omit<Course, 'id' | 'slug' | 'createdAt' | 'updatedAt'>;
 type NewCourse = Omit<CourseFormData, 'imageUrl'> & {
-  photo: File | null;
+  photo?: File;
 };
 
 export function AddCourse() {
@@ -37,10 +38,15 @@ export function AddCourse() {
     level: "Beginner",
     startDate: "",
     endDate: "",
-    photo: null,
+    photo: undefined,
+    maxStudents: 0,
     availableSpots: 0,
     featured: false,
     instructorId: "",
+    equipmentRequirements: {
+      provided: [],
+      required: []
+    }
   });
   const [instructors, setInstructors] = useState<Instructor[]>([]);
 
@@ -64,29 +70,29 @@ export function AddCourse() {
     try {
       const courseFormData: CourseFormData = {
         ...newCourse,
-        imageUrl: null,
+        imageUrl: undefined,
+        equipmentRequirements: {
+          provided: [],
+          required: []
+        }
       };
 
       delete (courseFormData as any).photo;
 
-      const result = await courseService.createCourse(courseFormData, newCourse.photo);
-
-      if (!result.success) {
+      try {
+        const result = await courseService.createCourse(courseFormData, newCourse.photo || undefined);
         toast({
-          title: "Error",
-          description: result.error?.message || "Failed to create course",
-          variant: "destructive",
+          description: "Course created successfully"
         });
-        return;
+        router.push("/admin/courses");
+      } catch (error) {
+        console.error("Error creating course:", error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to create course"
+        });
       }
-
-      toast({
-        title: "Success",
-        description: "Course created successfully",
-      });
-
-      router.push("/admin/academy/course-management");
-      router.refresh();
     } catch (error) {
       console.error("Error adding course: ", error);
       toast({
@@ -171,7 +177,7 @@ export function AddCourse() {
           </SelectContent>
         </Select>
         <FileUpload
-          onFileSelect={(file: File | null) => setNewCourse({ ...newCourse, photo: file })}
+          onFileSelect={(file: File | undefined) => setNewCourse({ ...newCourse, photo: file })}
         />
         <Input
           type="number"

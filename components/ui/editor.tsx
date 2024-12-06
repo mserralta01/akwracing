@@ -155,45 +155,54 @@ const FontFamily = Extension.create({
 });
 
 export function Editor({ content, onChange }: EditorProps) {
-  const editor = useEditor({
-    extensions: [
-      StarterKit.configure({
-        heading: false,
-        bulletList: {
-          keepMarks: true,
-          keepAttributes: true,
-          HTMLAttributes: {
-            class: 'list-disc pl-4'
-          }
+  const editor = useEditor(
+    {
+      extensions: [
+        StarterKit.configure({
+          heading: false,
+          bulletList: {
+            keepMarks: true,
+            keepAttributes: true,
+            HTMLAttributes: {
+              class: 'list-disc pl-4'
+            }
+          },
+          orderedList: {
+            keepMarks: true,
+            keepAttributes: true,
+            HTMLAttributes: {
+              class: 'list-decimal pl-4'
+            }
+          },
+        }),
+        TextStyle,
+        Color,
+        FontSize.configure(),
+        FontFamily.configure(),
+        TextAlign.configure({
+          types: ['paragraph', 'bulletList', 'orderedList'],
+          alignments: ['left', 'center', 'right', 'justify'],
+          defaultAlignment: 'left',
+        }),
+      ],
+      content,
+      editorProps: {
+        attributes: {
+          class: "prose prose-sm max-w-none p-4 focus:outline-none min-h-[100px]",
         },
-        orderedList: {
-          keepMarks: true,
-          keepAttributes: true,
-          HTMLAttributes: {
-            class: 'list-decimal pl-4'
-          }
-        },
-      }),
-      TextStyle,
-      Color,
-      FontSize.configure(),
-      FontFamily.configure(),
-      TextAlign.configure({
-        types: ['paragraph', 'bulletList', 'orderedList'],
-        alignments: ['left', 'center', 'right', 'justify'],
-        defaultAlignment: 'left',
-      }),
-    ],
-    content,
-    editorProps: {
-      attributes: {
-        class: "prose prose-sm max-w-none p-4 focus:outline-none min-h-[100px]",
       },
+      onUpdate: ({ editor }) => {
+        onChange(editor.getHTML());
+      },
+      editable: true,
+      injectCSS: true,
+      parseOptions: {
+        preserveWhitespace: true,
+      },
+      immediatelyRender: false,
     },
-    onUpdate: ({ editor }) => {
-      onChange(editor.getHTML());
-    },
-  });
+    []
+  );
 
   const setStyle = useCallback((property: string, value: string) => {
     if (!editor) return;

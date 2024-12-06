@@ -18,16 +18,17 @@ function LoadingFallback() {
 
 export default function CourseManagementPage() {
   return (
-    <AdminGuard>
-      <div className="container mx-auto py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold">Course Management</h1>
-          <p className="text-muted-foreground">Manage your racing courses</p>
-        </div>
-        <Suspense fallback={<LoadingFallback />}>
-          <CourseManagement />
-        </Suspense>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-4xl font-bold">Course Management</h1>
+        <p className="text-muted-foreground">Manage your racing courses</p>
       </div>
-    </AdminGuard>
+      
+      <div className="rounded-lg border bg-card">
+        <div className="p-6">
+          <CourseManagement />
+        </div>
+      </div>
+    </div>
   );
 } 

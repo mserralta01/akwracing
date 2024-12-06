@@ -1,47 +1,52 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper function to check if user is admin
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
     function isAdmin() {
-      return request.auth != null && 
-             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      return isAuthenticated() && request.auth.token.role == 'admin';
     }
 
-    // Courses collection - public read, admin write
-    match /courses/{document=**} {
-      allow read: if true;  // Anyone can view courses
-      allow write: if isAdmin();  // Only admins can modify courses
+    // FRONT OFFICE - Public Access
+    match /courses/{courseId} {
+      allow read, write: if true;  // Anyone can read and write
     }
 
-    // Instructors collection - public read, admin write
-    match /instructors/{document=**} {
-      allow read: if true;  // Anyone can view instructors
-      allow write: if isAdmin();  // Only admins can modify instructors
+    match /instructors/{instructorId} {
+      allow read, write: if true;
     }
 
-    // Users collection - protected
-    match /users/{userId} {
-      allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
-      allow write: if request.auth != null && request.auth.uid == userId;
+    match /team/{memberId} {
+      allow read, write: if true;
     }
 
-    // Registrations collection - authenticated access
-    match /registrations/{registrationId} {
-      allow read: if request.auth != null && (
-        request.auth.uid == resource.data.userId || isAdmin()
-      );
-      allow create: if request.auth != null;
-      allow update, delete: if isAdmin();
+    match /students/{studentId} {
+      allow read, write: if true;
     }
 
-    // Roles collection
-    match /roles/{roleId} {
-      allow read: if true;  // Anyone can read roles
-      allow create, update, delete: if isAdmin();
+    match /enrollments/{enrollmentId} {
+      allow read, write: if true;
     }
 
-    // Default deny
+    match /equipment/{equipmentId} {
+      allow read, write: if true;
+    }
+
+    match /settings/{document=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // BACK OFFICE - Admin Only
+    match /admin/{document=**} {
+      allow read, write: if isAdmin();
+    }
+
+    // Default - deny everything else
     match /{document=**} {
       allow read, write: if false;
     }

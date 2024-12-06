@@ -1,25 +1,58 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
     function isAdmin() {
-      return request.auth != null && 
-             request.auth.token.email != null &&
-             firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      return isAuthenticated() && request.auth.token.role == 'admin';
     }
 
-    match /courses/{fileName} {
+    // FRONT OFFICE - Public Access
+    match /public/{allPaths=**} {
+      allow read, write: if true;  // Anyone can read and write public content
+    }
+
+    match /courses/{allPaths=**} {
+      allow read, write: if true;
+    }
+
+    match /team/{allPaths=**} {
+      allow read, write: if true;
+    }
+
+    match /instructors/{allPaths=**} {
+      allow read, write: if true;
+    }
+
+    match /students/{allPaths=**} {
+      allow read, write: if true;
+    }
+
+    match /equipment/{allPaths=**} {
+      allow read, write: if true;
+    }
+
+    match /enrollments/{allPaths=**} {
+      allow read, write: if true;
+    }
+
+    // BACK OFFICE - Admin Only
+    match /admin/{allPaths=**} {
+      allow read, write: if isAdmin();
+    }
+
+    match /settings/{allPaths=**} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
-    match /instructors/{fileName} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
+    // Default - allow read but deny write
     match /{allPaths=**} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if false;
     }
   }
 }

@@ -5,15 +5,10 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
-  LayoutDashboard,
-  GraduationCap,
-  Users,
-  Settings,
   LogOut,
-  School,
-  ChevronDown,
   Menu,
   X,
+  ChevronDown,
   ChevronRight,
   ChevronLeft,
 } from "lucide-react";
@@ -23,48 +18,8 @@ import { signOut } from "firebase/auth";
 import { useToast } from "@/components/ui/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
-
-const menuItems = [
-  {
-    title: "Dashboard",
-    href: "/admin",
-    icon: LayoutDashboard,
-  },
-  {
-    title: "Academy",
-    href: "/admin/academy",
-    icon: School,
-    submenu: [
-      {
-        title: "Courses",
-        href: "/admin/academy/course-management",
-        icon: GraduationCap,
-      }
-    ],
-  },
-  {
-    title: "Team",
-    href: "/admin/team-management",
-    icon: Users,
-  },
-  {
-    title: "Students",
-    href: "/admin/students",
-    icon: Users,
-  },
-  {
-    title: "Settings",
-    href: "/admin/settings",
-    icon: Settings,
-    submenu: [
-      {
-        title: "Roles",
-        href: "/admin/settings/roles",
-        icon: Users,
-      },
-    ],
-  },
-];
+import { useFeatures } from "@/contexts/features-context";
+import { getMenuItems } from "@/lib/config/menu-items";
 
 const menuItemVariants = {
   hidden: { opacity: 0, x: -20 },
@@ -88,8 +43,8 @@ export function LeftMenu() {
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const { features } = useFeatures();
 
-  // Update document style when collapsed state changes
   useEffect(() => {
     document.documentElement.style.setProperty(
       '--sidebar-width',
@@ -136,9 +91,10 @@ export function LeftMenu() {
     }
   };
 
+  const menuItems = getMenuItems(features);
+
   return (
     <>
-      {/* Burger Menu Button - Only visible on mobile */}
       <button
         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
         className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-navy-900 text-white hover:bg-navy-800 lg:hidden"
@@ -150,7 +106,6 @@ export function LeftMenu() {
         )}
       </button>
 
-      {/* Sidebar */}
       <motion.div
         initial="hidden"
         animate={isSidebarOpen ? "visible" : "hidden"}
@@ -191,7 +146,6 @@ export function LeftMenu() {
             </h2>
           )}
           
-          {/* Collapse Toggle Button - Inside the header */}
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
             className={cn(
@@ -224,7 +178,7 @@ export function LeftMenu() {
               },
             }}
           >
-            {menuItems.map((item, index) => {
+            {menuItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);
               const isExpanded = expandedItems.includes(item.title);
@@ -277,7 +231,6 @@ export function LeftMenu() {
                       />
                     </button>
 
-                    {/* Tooltip for collapsed state */}
                     {isCollapsed && (
                       <div className="absolute left-full top-0 ml-2 p-2 bg-navy-900 rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity invisible group-hover:visible z-50 whitespace-nowrap">
                         <span className="text-white text-sm">{item.title}</span>
@@ -361,7 +314,6 @@ export function LeftMenu() {
         </div>
       </motion.div>
 
-      {/* Overlay for mobile */}
       {isSidebarOpen && (
         <motion.div
           initial={{ opacity: 0 }}

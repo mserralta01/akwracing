@@ -24,18 +24,16 @@ export function ProgramsSection() {
         setError(null);
         console.log('Fetching featured courses...');
         
-        const result = await courseService.getCourses(
-          { featured: true },
-          "startDate"
-        );
+        const result = await courseService.getCourses();
+        const featuredCourses = result.courses.filter(course => course.featured);
         
-        console.log('Featured courses result:', result);
+        console.log('Featured courses result:', featuredCourses);
         
-        if (!result || !result.courses) {
+        if (!featuredCourses) {
           throw new Error('No courses data received');
         }
         
-        setFeaturedCourses(result.courses);
+        setFeaturedCourses(featuredCourses);
       } catch (error) {
         console.error("Error fetching featured courses:", error);
         setError(error instanceof Error ? error.message : 'Failed to load courses');

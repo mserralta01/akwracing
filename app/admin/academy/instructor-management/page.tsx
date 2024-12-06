@@ -2,14 +2,19 @@
 
 import InstructorManagement from "@/components/admin/instructor-management";
 
-export default function InstructorManagementPage() {
+export default async function InstructorManagementPage() {
   return (
-    <div className="container mx-auto py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Instructor Management</h1>
-        <p className="text-muted-foreground">Manage your racing instructors</p>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-4xl font-bold">Team Management</h1>
+        <p className="text-muted-foreground">Manage your racing team members</p>
       </div>
-      <InstructorManagement />
+
+      <div className="rounded-lg border bg-card">
+        <div className="p-6">
+          <InstructorManagement />
+        </div>
+      </div>
     </div>
   );
 } 

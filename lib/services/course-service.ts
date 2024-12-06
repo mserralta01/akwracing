@@ -1,403 +1,169 @@
-import { 
+import {
   collection,
   doc,
-  getDocs,
   getDoc,
+  getDocs,
   addDoc,
   updateDoc,
   deleteDoc,
+  serverTimestamp,
   query,
-  where,
   orderBy,
-  limit as firestoreLimit,
-  QueryConstraint,
+  where,
+  DocumentData,
   Timestamp,
-  increment,
-  setDoc,
-  DocumentData
-} from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import { db, storage, auth } from '../firebase';
-import { Course, CourseFormData, CourseLevel } from '@/types/course';
-import { generateCourseSlug } from '@/lib/utils/slug'
+} from "firebase/firestore";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { db, storage } from "@/lib/firebase";
+import { Course } from "@/types/course";
+import { slugify } from "@/lib/utils";
 
-const COURSES_COLLECTION = 'courses';
-const REGISTRATIONS_COLLECTION = 'registrations';
+const COLLECTION_NAME = "courses";
 
-interface CourseFilters {
-  level?: CourseLevel;
-  location?: string;
-  startDate?: Date;
-  minPrice?: number;
-  maxPrice?: number;
-  featured?: boolean;
-}
-
-type CourseError = {
-  code: 'UNAUTHORIZED' | 'IMAGE_ERROR' | 'VALIDATION_ERROR' | 'UNKNOWN_ERROR';
-  message: string;
-  details?: string;
-};
-
-// Helper function to strip HTML tags
-const stripHtmlTags = (html: string): string => {
-  return html?.replace(/<[^>]*>/g, '') ?? '';
-};
-
-// Helper function to handle image upload
-const handleImageUpload = async (imageFile: File, userId: string): Promise<string> => {
-  if (imageFile.size > 5 * 1024 * 1024) {
-    throw new Error('Image file is too large. Maximum file size is 5MB');
-  }
-
-  if (!imageFile.type.startsWith('image/')) {
-    throw new Error('Invalid file type. Only image files are allowed');
-  }
-
-  const cleanFileName = imageFile.name.replace(/[^a-zA-Z0-9.]/g, '_');
-  const timestamp = Date.now();
-  const imageRef = ref(storage, `courses/${timestamp}_${cleanFileName}`);
-
-  const metadata = {
-    contentType: imageFile.type,
-    customMetadata: {
-      uploadedBy: userId,
-      uploadedAt: new Date().toISOString()
-    }
-  };
-
-  const uploadResult = await uploadBytes(imageRef, imageFile, metadata);
-  return getDownloadURL(uploadResult.ref);
-};
-
-interface CourseData extends DocumentData {
-  title: string;
-  location: string;
-  slug?: string;
-  imageUrl?: string;
-  shortDescription?: string;
-  longDescription?: string;
-  price: number;
-  duration: number;
-  level: CourseLevel;
-  startDate: string;
-  endDate: string;
-  availableSpots: number;
-  featured: boolean;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-  instructorId: string;
-}
-
-// Add this helper function at the top with other helpers
-const convertTimestampsToDates = (data: any) => {
+const convertTimestampsToDates = (data: DocumentData) => {
   const result = { ...data };
-  if (result.createdAt && typeof result.createdAt.toDate === 'function') {
-    result.createdAt = result.createdAt.toDate().toISOString();
-  }
-  if (result.updatedAt && typeof result.updatedAt.toDate === 'function') {
-    result.updatedAt = result.updatedAt.toDate().toISOString();
-  }
-  if (result.startDate && typeof result.startDate.toDate === 'function') {
-    result.startDate = result.startDate.toDate().toISOString();
-  }
-  if (result.endDate && typeof result.endDate.toDate === 'function') {
-    result.endDate = result.endDate.toDate().toISOString();
+  const timestampFields = ['createdAt', 'updatedAt', 'startDate', 'endDate'];
+  
+  for (const field of timestampFields) {
+    if (result[field]) {
+      if (result[field] instanceof Timestamp) {
+        result[field] = result[field].toDate().toISOString();
+      } else if (typeof result[field].toDate === 'function') {
+        result[field] = result[field].toDate().toISOString();
+      } else if (result[field] instanceof Date) {
+        result[field] = result[field].toISOString();
+      } else if (typeof result[field] === 'string' && !isNaN(Date.parse(result[field]))) {
+        result[field] = new Date(result[field]).toISOString();
+      }
+    }
   }
   return result;
 };
 
 export const courseService = {
-  async createCourse(courseData: CourseFormData, imageFile: File | null = null): Promise<{ success: boolean; error?: CourseError }> {
+  async getCourse(id: string): Promise<Course | null> {
     try {
-      if (!auth.currentUser) {
-        return {
-          success: false,
-          error: {
-            code: 'UNAUTHORIZED',
-            message: 'You must be logged in to create a course',
-          },
-        };
-      }
-
-      const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
+      const docRef = doc(db, COLLECTION_NAME, id);
+      const docSnap = await getDoc(docRef);
       
-      if (!userDoc.exists() || userDoc.data()?.role !== 'admin') {
-        return {
-          success: false,
-          error: {
-            code: 'UNAUTHORIZED',
-            message: 'Only administrators can create courses',
-          },
-        };
+      if (!docSnap.exists()) {
+        return null;
       }
 
-      const slug = generateCourseSlug(courseData.title, courseData.location);
-      
-      // Check if slug exists
-      const existingCourse = await this.getCourseBySlug(slug);
-      
-      // If exists, add unique identifier
-      const finalSlug = existingCourse 
-        ? generateCourseSlug(courseData.title, courseData.location, crypto.randomUUID())
-        : slug;
-
-      const courseRef = doc(collection(db, COURSES_COLLECTION));
-      const createData = {
-        ...courseData,
-        id: courseRef.id,
-        createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now(),
-        startDate: courseData.startDate ? Timestamp.fromDate(new Date(courseData.startDate)) : null,
-        endDate: courseData.endDate ? Timestamp.fromDate(new Date(courseData.endDate)) : null,
-        availableSpots: Number(courseData.availableSpots),
-        price: Number(courseData.price),
-        duration: Number(courseData.duration),
-        featured: Boolean(courseData.featured),
-        slug: finalSlug,
-      };
-
-      if (imageFile) {
-        try {
-          createData.imageUrl = await handleImageUpload(imageFile, auth.currentUser.uid);
-        } catch (uploadError) {
-          return {
-            success: false,
-            error: {
-              code: 'IMAGE_ERROR',
-              message: 'Failed to upload image',
-              details: uploadError instanceof Error ? uploadError.message : 'Unknown error occurred while uploading',
-            },
-          };
-        }
-      }
-
-      await setDoc(courseRef, createData);
-      return { success: true };
-
-    } catch (error) {
-      console.error('Error creating course:', error);
-      return {
-        success: false,
-        error: {
-          code: 'UNKNOWN_ERROR',
-          message: 'Failed to create course',
-          details: error instanceof Error ? error.message : 'An unexpected error occurred',
-        },
-      };
-    }
-  },
-
-  async updateCourse(courseName: string, courseData: Partial<CourseFormData>, imageFile: File | null = null): Promise<{ success: boolean; error?: CourseError }> {
-    try {
-      const course = await this.getCourseBySlug(courseName);
-      if (!course) {
-        return {
-          success: false,
-          error: {
-            code: 'VALIDATION_ERROR',
-            message: 'Course not found',
-          },
-        };
-      }
-
-      if (!auth.currentUser) {
-        return {
-          success: false,
-          error: {
-            code: 'UNAUTHORIZED',
-            message: 'You must be logged in to update a course',
-          },
-        };
-      }
-
-      const courseRef = doc(db, COURSES_COLLECTION, course.id);
-      const updateData = { ...courseData, updatedAt: Timestamp.now() };
-
-      if (imageFile) {
-        const oldCourse = await getDoc(courseRef);
-        if (oldCourse.exists() && oldCourse.data().imageUrl) {
-          const oldImageRef = ref(storage, oldCourse.data().imageUrl);
-          await deleteObject(oldImageRef).catch(console.error);
-        }
-
-        updateData.imageUrl = await handleImageUpload(imageFile, auth.currentUser.uid);
-      }
-
-      await updateDoc(courseRef, updateData);
-      return { success: true };
-    } catch (error) {
-      console.error('Error updating course:', error);
-      return {
-        success: false,
-        error: {
-          code: 'UNKNOWN_ERROR',
-          message: 'Failed to update course',
-          details: error instanceof Error ? error.message : 'An unexpected error occurred',
-        },
-      };
-    }
-  },
-
-  async deleteCourse(courseId: string): Promise<void> {
-    try {
-      const courseRef = doc(db, COURSES_COLLECTION, courseId);
-      const courseDoc = await getDoc(courseRef);
-
-      if (!courseDoc.exists()) {
-        throw new Error('Course not found');
-      }
-
-      // Delete the image from storage if it exists
-      const courseData = courseDoc.data();
-      if (courseData?.imageUrl) {
-        try {
-          // Extract the path from the full URL
-          const imageUrl = new URL(courseData.imageUrl);
-          const imagePath = decodeURIComponent(imageUrl.pathname.split('/o/')[1]);
-          const imageRef = ref(storage, imagePath);
-          await deleteObject(imageRef);
-        } catch (storageError) {
-          // Log the error but continue with course deletion
-          console.error('Error deleting course image:', storageError);
-        }
-      }
-
-      // Delete the course document
-      await deleteDoc(courseRef);
-    } catch (error) {
-      console.error('Error in deleteCourse:', error);
-      throw error;
-    }
-  },
-
-  async getCourse(identifier: string): Promise<Course | null> {
-    try {
-      // First try to get by ID
-      const courseRef = doc(db, COURSES_COLLECTION, identifier);
-      const courseSnap = await getDoc(courseRef);
-
-      if (courseSnap.exists()) {
-        const data = courseSnap.data() as CourseData;
-        // Ensure slug exists
-        if (!data.slug) {
-          data.slug = generateCourseSlug(data.title, data.location, courseSnap.id);
-        }
-        return {
-          id: courseSnap.id,
-          ...convertTimestampsToDates(data)
-        } as Course;
-      }
-
-      // If not found by ID, try to get by slug
-      const q = query(collection(db, COURSES_COLLECTION), where('slug', '==', identifier));
-      const querySnapshot = await getDocs(q);
-      
-      if (querySnapshot.empty) return null;
-      
-      const docSnap = querySnapshot.docs[0];
-      const data = docSnap.data() as CourseData;
-      // Ensure slug exists
-      if (!data.slug) {
-        data.slug = generateCourseSlug(data.title, data.location, docSnap.id);
-      }
       return {
         id: docSnap.id,
-        ...convertTimestampsToDates(data)
+        ...convertTimestampsToDates(docSnap.data())
       } as Course;
     } catch (error) {
-      console.error('Error getting course:', error);
+      console.error("Error fetching course:", error);
       return null;
     }
   },
 
-  async getCourses(filters: CourseFilters = {}, orderByField?: string, limit?: number) {
-    try {
-      const queryConstraints: QueryConstraint[] = [];
-      
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined) {
-          queryConstraints.push(where(key, '==', value));
-        }
-      });
+  async getCourses(filters?: {
+    level?: string;
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<{ courses: Course[] }> {
+    let courseQuery = query(collection(db, COLLECTION_NAME));
 
-      if (orderByField) {
-        queryConstraints.push(orderBy(orderByField));
-      }
-
-      if (limit) {
-        queryConstraints.push(firestoreLimit(limit));
-      }
-
-      const q = query(collection(db, COURSES_COLLECTION), ...queryConstraints);
-      const snapshot = await getDocs(q);
-      
-      const courses = snapshot.docs.map(doc => {
-        const data = doc.data() as CourseData;
-        // If slug doesn't exist, generate it
-        if (!data.slug) {
-          data.slug = generateCourseSlug(data.title, data.location, doc.id);
-        }
-        return {
-          id: doc.id,
-          ...convertTimestampsToDates(data),
-          shortDescription: data.shortDescription ? stripHtmlTags(data.shortDescription) : '',
-        } as Course;
-      });
-
-      return { courses };
-    } catch (error) {
-      console.error('Error fetching courses:', error);
-      throw error;
+    if (filters?.level) {
+      courseQuery = query(courseQuery, where("level", "==", filters.level));
     }
-  },
 
-  async registerForCourse(courseName: string, userId: string, userDetails: { name: string; email: string; phone?: string; }): Promise<string> {
-    try {
-      const course = await this.getCourseBySlug(courseName);
-      if (!course) throw new Error('Course not found');
-
-      const registrationData = {
-        courseName,
-        userId,
-        userDetails,
-        status: 'pending',
-        paymentStatus: 'pending',
-        registrationDate: Timestamp.now(),
-      };
-      
-      const registrationRef = await addDoc(collection(db, REGISTRATIONS_COLLECTION), registrationData);
-
-      // Update available spots
-      const courseRef = doc(db, COURSES_COLLECTION, course.id);
-      await updateDoc(courseRef, {
-        availableSpots: increment(-1),
-      });
-
-      return registrationRef.id;
-    } catch (error) {
-      console.error('Error registering for course:', error);
-      throw error;
+    if (filters?.startDate) {
+      courseQuery = query(
+        courseQuery,
+        where("startDate", ">=", filters.startDate.toISOString())
+      );
     }
+
+    if (filters?.endDate) {
+      courseQuery = query(
+        courseQuery,
+        where("endDate", "<=", filters.endDate.toISOString())
+      );
+    }
+
+    const snapshot = await getDocs(courseQuery);
+    const courses = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...convertTimestampsToDates(doc.data()),
+    })) as Course[];
+
+    return { courses };
   },
 
   async getCourseBySlug(slug: string): Promise<Course | null> {
-    try {
-      const q = query(collection(db, COURSES_COLLECTION), where('slug', '==', slug));
-      const snapshot = await getDocs(q);
-      
-      if (snapshot.empty) return null;
-      
-      const doc = snapshot.docs[0];
-      return {
-        id: doc.id,
-        ...doc.data()
-      } as Course;
-    } catch (error) {
-      console.error('Error getting course by slug:', error);
-      return null;
+    const courseQuery = query(
+      collection(db, COLLECTION_NAME),
+      where("slug", "==", slug)
+    );
+    const snapshot = await getDocs(courseQuery);
+    if (snapshot.empty) return null;
+    const doc = snapshot.docs[0];
+    return {
+      id: doc.id,
+      ...convertTimestampsToDates(doc.data()),
+    } as Course;
+  },
+
+  async createCourse(
+    course: Omit<Course, "id" | "slug" | "createdAt" | "updatedAt">,
+    imageFile?: File
+  ): Promise<Course> {
+    let imageUrl: string | undefined;
+
+    if (imageFile) {
+      const storageRef = ref(storage, `courses/${Date.now()}_${imageFile.name}`);
+      const snapshot = await uploadBytes(storageRef, imageFile);
+      imageUrl = await getDownloadURL(snapshot.ref);
     }
+
+    const slug = slugify(course.title);
+    const now = serverTimestamp();
+    const courseData = {
+      ...course,
+      slug,
+      imageUrl,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const docRef = await addDoc(collection(db, COLLECTION_NAME), courseData);
+    const createdCourse = await getDoc(docRef);
+
+    return {
+      id: docRef.id,
+      ...convertTimestampsToDates(createdCourse.data() || courseData),
+    } as Course;
+  },
+
+  async updateCourse(
+    id: string,
+    course: Partial<Omit<Course, "id" | "slug" | "createdAt" | "updatedAt">>,
+    imageFile?: File
+  ): Promise<void> {
+    let imageUrl: string | undefined;
+
+    if (imageFile) {
+      const storageRef = ref(storage, `courses/${Date.now()}_${imageFile.name}`);
+      const snapshot = await uploadBytes(storageRef, imageFile);
+      imageUrl = await getDownloadURL(snapshot.ref);
+    }
+
+    const docRef = doc(db, COLLECTION_NAME, id);
+    const updateData = {
+      ...course,
+      ...(imageUrl && { imageUrl }),
+      updatedAt: serverTimestamp(),
+    };
+
+    await updateDoc(docRef, updateData);
+  },
+
+  async deleteCourse(id: string): Promise<void> {
+    const docRef = doc(db, COLLECTION_NAME, id);
+    await deleteDoc(docRef);
   },
 };
-
-export const { getCourseBySlug } = courseService;

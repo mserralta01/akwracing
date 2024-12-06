@@ -23,21 +23,18 @@ const PARENTS_COLLECTION = 'parents';
 const ENROLLMENTS_COLLECTION = 'enrollments';
 const COURSES_COLLECTION = 'courses';
 
-const convertTimestampsToDates = (data: DocumentData) => {
-  const result = { ...data };
-  if (result.createdAt && typeof result.createdAt.toDate === 'function') {
-    result.createdAt = result.createdAt.toDate().toISOString();
+const convertTimestampsToDates = (data: DocumentData): DocumentData => {
+  if (!data) return {};
+  
+  const converted = { ...data };
+  for (const [key, value] of Object.entries(converted)) {
+    if (value instanceof Timestamp) {
+      converted[key] = value.toDate().toISOString();
+    } else if (typeof value === 'object' && value !== null) {
+      converted[key] = convertTimestampsToDates(value);
+    }
   }
-  if (result.updatedAt && typeof result.updatedAt.toDate === 'function') {
-    result.updatedAt = result.updatedAt.toDate().toISOString();
-  }
-  if (result.startDate && typeof result.startDate.toDate === 'function') {
-    result.startDate = result.startDate.toDate().toISOString();
-  }
-  if (result.endDate && typeof result.endDate.toDate === 'function') {
-    result.endDate = result.endDate.toDate().toISOString();
-  }
-  return result;
+  return converted;
 };
 
 export const studentService = {
@@ -161,38 +158,29 @@ export const studentService = {
   },
 
   async updateParentProfile(
-    id: string,
-    data: Partial<Omit<ParentProfile, 'id' | 'createdAt' | 'updatedAt'>>
+    parentId: string,
+    data: Partial<ParentProfile>
   ): Promise<ParentProfile> {
     try {
-      const parentRef = doc(db, PARENTS_COLLECTION, id);
-      const parentDoc = await getDoc(parentRef);
+      const parentRef = doc(db, "parents", parentId);
+      await updateDoc(parentRef, data);
+      const updatedDoc = await getDoc(parentRef);
+      const docData = updatedDoc.data();
       
-      const now = Timestamp.now();
-      const updatedData = {
-        ...data,
-        updatedAt: now,
-      };
-
-      if (!parentDoc.exists()) {
-        // If parent document doesn't exist, create it
-        await setDoc(parentRef, {
-          id,
-          ...updatedData,
-          createdAt: now,
-        });
-      } else {
-        // If it exists, update it
-        await updateDoc(parentRef, updatedData);
+      if (!docData) {
+        throw new Error('Parent profile not found after update');
       }
+
+ Payment-Module
 
       const updatedDoc = await getDoc(parentRef);
       if (!updatedDoc.exists()) {
         throw new Error('Parent profile not found after update');
       }
+main
       return {
         id: updatedDoc.id,
-        ...convertTimestampsToDates(updatedDoc.data()),
+        ...convertTimestampsToDates(docData),
       } as ParentProfile;
     } catch (error) {
       console.error('Error updating parent profile:', error);
@@ -495,6 +483,16 @@ export const studentService = {
     } catch (error) {
       console.error('Error fetching course:', error);
       return null;
+    }
+  },
+
+  async deleteEnrollment(enrollmentId: string): Promise<void> {
+    try {
+      const enrollmentRef = doc(db, 'enrollments', enrollmentId);
+      await deleteDoc(enrollmentRef);
+    } catch (error) {
+      console.error('Error deleting enrollment:', error);
+      throw new Error('Failed to delete enrollment');
     }
   },
 }; 

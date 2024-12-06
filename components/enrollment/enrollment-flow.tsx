@@ -158,12 +158,38 @@ export function EnrollmentFlow({ course, onComplete }: EnrollmentFlowProps) {
     }
   };
 
-  const handlePaymentError = (error: string) => {
-    toast({
-      title: "Payment Failed",
-      description: error,
-      variant: "destructive",
-    });
+  const handlePaymentError = async (error: string) => {
+    try {
+      if (!enrollment) return;
+
+      // Update enrollment status to failed
+      await studentService.updateEnrollment(enrollment.id, {
+        status: "payment_failed",
+        paymentDetails: {
+          ...enrollment.paymentDetails,
+          paymentStatus: "failed",
+          errorMessage: error
+        },
+      });
+
+      // Send payment failed email
+      if (parent && student) {
+        await emailService.sendPaymentFailed(enrollment, course, parent);
+      }
+
+      toast({
+        title: "Payment Failed",
+        description: error,
+        variant: "destructive",
+      });
+    } catch (updateError) {
+      console.error("Error updating enrollment status:", updateError);
+      toast({
+        title: "Error",
+        description: "Failed to update enrollment status",
+        variant: "destructive",
+      });
+    }
   };
 
   return (

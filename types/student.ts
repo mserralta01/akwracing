@@ -81,6 +81,7 @@ export type Enrollment = {
     paymentStatus: PaymentStatus;
     paymentMethod?: string;
     transactionId?: string;
+    errorMessage?: string;
   };
   // For CRM tracking
   leadSource?: string;

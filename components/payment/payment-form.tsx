@@ -7,6 +7,7 @@ import * as z from "zod";
 import { Course } from "@/types/course";
 import { Enrollment, ParentProfile, PaymentDetails } from "@/types/student";
 import { paymentService } from "@/lib/services/payment-service";
+import { studentService } from "@/lib/services/student-service";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -193,6 +194,15 @@ export function PaymentForm({
       if (result.success && result.transactionId) {
         onSuccess(result.transactionId);
       } else {
+        await studentService.updateEnrollment(enrollment.id, {
+          status: "payment_failed",
+          paymentDetails: {
+            ...enrollment.paymentDetails,
+            paymentStatus: "failed",
+            errorMessage: result.error || "Payment processing failed"
+          },
+        });
+
         const errorInfo = getPaymentErrorMessage(result.error || "Payment processing failed");
         setErrorDetails(errorInfo);
         setShowErrorDialog(true);
@@ -201,6 +211,16 @@ export function PaymentForm({
     } catch (error) {
       console.error("Payment error:", error);
       const errorMessage = error instanceof Error ? error.message : "Payment processing failed";
+
+      await studentService.updateEnrollment(enrollment.id, {
+        status: "payment_failed",
+        paymentDetails: {
+          ...enrollment.paymentDetails,
+          paymentStatus: "failed",
+          errorMessage: errorMessage
+        },
+      });
+
       const errorInfo = getPaymentErrorMessage(errorMessage);
       setErrorDetails(errorInfo);
       setShowErrorDialog(true);

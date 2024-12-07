@@ -1,3 +1,5 @@
+export type EnrollmentStatus = "pending" | "confirmed" | "cancelled" | "completed";
+
 export type StudentProfile = {
   id: string;
   firstName: string;
@@ -76,5 +78,25 @@ export type Enrollment = {
     currency: string;
     status: string;
     transactionId?: string;
+  };
+};
+
+export type PaymentDetails = {
+  id?: string;
+  status?: string;
+  amount?: number;
+  method?: string;
+  cardNumber?: string;
+  expiryMonth?: string | number;
+  expiryYear?: string | number;
+  cvv?: string;
+  firstName?: string;
+  lastName?: string;
+  address?: {
+    street?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+    country?: string;
   };
 }; 

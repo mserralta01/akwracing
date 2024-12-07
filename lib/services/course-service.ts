@@ -64,6 +64,7 @@ export const courseService = {
     level?: string;
     startDate?: Date;
     endDate?: Date;
+    featured?: boolean;
   }): Promise<{ courses: Course[] }> {
     let courseQuery = query(collection(db, COLLECTION_NAME));
 
@@ -83,6 +84,10 @@ export const courseService = {
         courseQuery,
         where("endDate", "<=", filters.endDate.toISOString())
       );
+    }
+
+    if (filters?.featured !== undefined) {
+      courseQuery = query(courseQuery, where("featured", "==", filters.featured));
     }
 
     const snapshot = await getDocs(courseQuery);

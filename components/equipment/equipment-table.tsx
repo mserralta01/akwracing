@@ -69,7 +69,7 @@ export function EquipmentTable({ equipment, onEdit, onDelete }: EquipmentTablePr
                 <div className="relative w-16 h-16 bg-gray-100 rounded-md overflow-hidden">
                   {hasValidImage(item.imageUrl) ? (
                     <Image
-                      src={item.imageUrl}
+                      src={item.imageUrl as string}
                       alt={item.name}
                       fill
                       className="object-cover"

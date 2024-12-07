@@ -25,8 +25,7 @@ export function ProgramsSection() {
         console.log('Fetching featured courses...');
         
         const result = await courseService.getCourses(
-          { featured: true },
-          "startDate"
+          { featured: true }
         );
         
         console.log('Featured courses result:', result);

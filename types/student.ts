@@ -13,83 +13,68 @@ export type StudentProfile = {
     phone: string;
   };
   experience?: {
-    yearsOfExperience: number;
-    previousCourses: string[];
-    skillLevel: "Beginner" | "Intermediate" | "Advanced";
+    skillLevel: string;
+    yearsRiding: number;
+    previousTraining?: string;
+  };
+  medicalInformation?: {
+    conditions?: string[];
+    allergies?: string[];
+    medications?: string[];
+    notes?: string;
   };
 };
 
 export type ParentProfile = {
   id: string;
-  userId: string; // Firebase Auth User ID
   firstName: string;
   lastName: string;
-  email: string;
   phone: string;
+  email: string;
+  relationship: string;
   address: {
     street: string;
     city: string;
     state: string;
     zipCode: string;
+    country: string;
   };
-  createdAt: string;
-  updatedAt: string;
-  students: string[]; // Array of student IDs
-};
-
-export type EnrollmentStatus = 
-  | "pending_registration" 
-  | "pending_payment" 
-  | "payment_failed"
-  | "confirmed"
-  | "cancelled"
-  | "completed";
-
-export type PaymentStatus = 
-  | "pending" 
-  | "completed" 
-  | "failed" 
-  | "refunded";
-
-export type PaymentDetails = {
-  cardNumber: string;
-  expiryMonth: string;
-  expiryYear: string;
-  cvv: string;
-  firstName: string;
-  lastName: string;
-  address: {
-    street: string;
-    city: string;
-    state: string;
-    zipCode: string;
-  };
+  students: string[];
 };
 
 export type Enrollment = {
   id: string;
-  courseId: string;
   studentId: string;
   parentId: string;
-  status: EnrollmentStatus;
+  courseId: string;
+  status: "pending" | "confirmed" | "cancelled" | "completed";
   createdAt: string;
   updatedAt: string;
   paymentDetails: {
     amount: number;
     currency: string;
-    paymentId?: string;
-    paymentStatus: PaymentStatus;
-    paymentMethod?: string;
+    paymentStatus: "pending" | "completed" | "failed";
+  };
+  notes: string[];
+  communicationHistory: {
+    date: string;
+    type: "email" | "phone" | "sms";
+    message: string;
+  }[];
+  student?: {
+    name: string;
+    email: string;
+    phone: string;
+  };
+  course?: {
+    title: string;
+    startDate: string;
+    endDate: string;
+  };
+  payment?: {
+    amount: number;
+    currency: string;
+    status: string;
     transactionId?: string;
   };
-  // For CRM tracking
-  leadSource?: string;
-  notes?: string[];
-  communicationHistory?: {
-    id: string;
-    type: "email" | "phone" | "sms" | "other";
-    timestamp: string;
-    content: string;
-    direction: "inbound" | "outbound";
-  }[];
 }; 

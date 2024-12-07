@@ -12,7 +12,7 @@ import {
 } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes, deleteObject } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
-import { Equipment, Category, Brand } from "@/types/equipment";
+import { Equipment, Category, Brand, EquipmentType } from "@/types/equipment";
 
 const EQUIPMENT_COLLECTION = "equipment";
 const CATEGORY_COLLECTION = "equipment_categories";
@@ -48,25 +48,26 @@ export const equipmentService = {
         return {
           id: doc.id,
           name: data.name,
+          type: data.type as EquipmentType,
+          description: data.description || "",
+          inStock: data.inStock || 0,
           brandId: data.brandId,
           categoryId: data.categoryId,
           brand: brand || { id: '', name: 'Unknown Brand' },
           category: category || { id: '', name: 'Unknown Category' },
-          imageUrl: data.image || '',
-          image: data.image,
+          imageUrl: data.imageUrl || '',
           shortDescription: data.shortDescription,
-          description: data.description,
-          quantity: data.quantity,
-          salePrice: data.salePrice,
+          purchasePrice: data.purchasePrice,
+          sellingPrice: data.sellingPrice,
           leasePrice: data.leasePrice,
           hourlyRate: data.hourlyRate,
           dailyRate: data.dailyRate,
           weeklyRate: data.weeklyRate,
-          condition: data.condition || '',
-          leaseTerm: data.leaseTerm || '',
-          forSale: data.forSale || false,
-          forLease: data.forLease || false,
-        } as Equipment;
+          condition: data.condition,
+          leaseTerm: data.leaseTerm,
+          forSale: data.forSale,
+          forLease: data.forLease,
+        };
       });
     } catch (error) {
       console.error("Error getting equipment:", error);
@@ -101,25 +102,26 @@ export const equipmentService = {
       return {
         id: docSnap.id,
         name: data.name,
+        type: data.type as EquipmentType,
+        description: data.description || "",
+        inStock: data.inStock || 0,
         brandId: data.brandId,
         categoryId: data.categoryId,
         brand: brand || { id: '', name: 'Unknown Brand' },
         category: category || { id: '', name: 'Unknown Category' },
-        imageUrl: data.image || '',
-        image: data.image,
+        imageUrl: data.imageUrl || '',
         shortDescription: data.shortDescription,
-        description: data.description,
-        quantity: data.quantity,
-        salePrice: data.salePrice,
+        purchasePrice: data.purchasePrice,
+        sellingPrice: data.sellingPrice,
         leasePrice: data.leasePrice,
         hourlyRate: data.hourlyRate,
         dailyRate: data.dailyRate,
         weeklyRate: data.weeklyRate,
-        condition: data.condition || '',
-        leaseTerm: data.leaseTerm || '',
-        forSale: data.forSale || false,
-        forLease: data.forLease || false,
-      } as Equipment;
+        condition: data.condition,
+        leaseTerm: data.leaseTerm,
+        forSale: data.forSale,
+        forLease: data.forLease,
+      };
     } catch (error) {
       console.error("Error getting equipment by ID:", error);
       throw new Error("Failed to fetch equipment by ID");
@@ -138,22 +140,24 @@ export const equipmentService = {
       console.log('Received data for creation:', data);
 
       const equipmentData = {
-        name: data.name,
+        name: data.name || "",
+        type: data.type || "Other",
+        description: data.description || "",
+        inStock: data.inStock || 0,
         shortDescription: data.shortDescription,
-        description: data.description,
         brandId: data.brandId || data.brand?.id,
         categoryId: data.categoryId || data.category?.id,
-        image: imageUrl || data.imageUrl,
-        quantity: data.quantity || 0,
-        salePrice: data.salePrice || 0,
-        wholesalePrice: data.wholesalePrice || 0,
-        hourlyRate: data.hourlyRate || 0,
-        dailyRate: data.dailyRate || 0,
-        weeklyRate: data.weeklyRate || 0,
+        imageUrl: imageUrl || data.imageUrl,
+        purchasePrice: data.purchasePrice,
+        sellingPrice: data.sellingPrice,
+        leasePrice: data.leasePrice,
+        hourlyRate: data.hourlyRate,
+        dailyRate: data.dailyRate,
+        weeklyRate: data.weeklyRate,
         forSale: data.forSale ?? false,
         forLease: data.forLease ?? false,
-        condition: data.condition || '',
-        leaseTerm: data.leaseTerm || '',
+        condition: data.condition,
+        leaseTerm: data.leaseTerm,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
@@ -180,9 +184,9 @@ export const equipmentService = {
       if (image) {
         // Delete old image if it exists
         const currentData = docSnap.data();
-        if (currentData.image) {
+        if (currentData.imageUrl) {
           try {
-            const oldImageRef = ref(storage, currentData.image);
+            const oldImageRef = ref(storage, currentData.imageUrl);
             await deleteObject(oldImageRef);
           } catch (error) {
             console.warn("Error deleting old image:", error);
@@ -196,35 +200,30 @@ export const equipmentService = {
       }
 
       const updateData = {
-        name: data.name,
-        brandId: data.brandId,
-        categoryId: data.categoryId,
-        image: imageUrl || data.imageUrl,
-        shortDescription: data.shortDescription,
-        description: data.description,
-        quantity: data.quantity,
-        salePrice: data.salePrice ?? 0,
-        wholesalePrice: data.wholesalePrice ?? 0,
-        hourlyRate: data.hourlyRate ?? 0,
-        dailyRate: data.dailyRate ?? 0,
-        weeklyRate: data.weeklyRate ?? 0,
-        forSale: data.forSale,
-        forLease: data.forLease,
-        condition: data.condition,
-        leaseTerm: data.leaseTerm,
+        ...(data.name && { name: data.name }),
+        ...(data.type && { type: data.type }),
+        ...(data.description !== undefined && { description: data.description }),
+        ...(data.inStock !== undefined && { inStock: data.inStock }),
+        ...(data.brandId && { brandId: data.brandId }),
+        ...(data.categoryId && { categoryId: data.categoryId }),
+        ...(imageUrl && { imageUrl }),
+        ...(data.shortDescription !== undefined && { shortDescription: data.shortDescription }),
+        ...(data.purchasePrice !== undefined && { purchasePrice: data.purchasePrice }),
+        ...(data.sellingPrice !== undefined && { sellingPrice: data.sellingPrice }),
+        ...(data.leasePrice !== undefined && { leasePrice: data.leasePrice }),
+        ...(data.hourlyRate !== undefined && { hourlyRate: data.hourlyRate }),
+        ...(data.dailyRate !== undefined && { dailyRate: data.dailyRate }),
+        ...(data.weeklyRate !== undefined && { weeklyRate: data.weeklyRate }),
+        ...(data.condition !== undefined && { condition: data.condition }),
+        ...(data.leaseTerm !== undefined && { leaseTerm: data.leaseTerm }),
+        ...(data.forSale !== undefined && { forSale: data.forSale }),
+        ...(data.forLease !== undefined && { forLease: data.forLease }),
         updatedAt: serverTimestamp(),
       };
 
       console.log('Update data before saving:', updateData);
 
-      // Only remove undefined values, keep 0s and other falsy values
-      const cleanedData = Object.fromEntries(
-        Object.entries(updateData).filter(([_, value]) => value !== undefined)
-      );
-
-      console.log('Final cleaned data being saved:', cleanedData);
-
-      await updateDoc(docRef, cleanedData);
+      await updateDoc(docRef, updateData);
     } catch (error) {
       console.error("Error updating equipment:", error);
       throw new Error("Failed to update equipment");
@@ -238,8 +237,8 @@ export const equipmentService = {
       if (!docSnap.exists()) throw new Error("Equipment not found");
 
       // Delete image if it exists
-      if (docSnap.data().image) {
-        const imageRef = ref(storage, docSnap.data().image);
+      if (docSnap.data().imageUrl) {
+        const imageRef = ref(storage, docSnap.data().imageUrl);
         await deleteObject(imageRef);
       }
 

@@ -67,9 +67,9 @@ export function EquipmentTable({ equipment, onEdit, onDelete }: EquipmentTablePr
             <TableRow key={item.id}>
               <TableCell>
                 <div className="relative w-16 h-16 bg-gray-100 rounded-md overflow-hidden">
-                  {hasValidImage(item.image) ? (
+                  {hasValidImage(item.imageUrl) ? (
                     <Image
-                      src={item.image}
+                      src={item.imageUrl}
                       alt={item.name}
                       fill
                       className="object-cover"
@@ -85,10 +85,10 @@ export function EquipmentTable({ equipment, onEdit, onDelete }: EquipmentTablePr
               <TableCell>{item.brand?.name}</TableCell>
               <TableCell>{item.category?.name}</TableCell>
               <TableCell>
-                {item.salePrice 
-                  ? `$${typeof item.salePrice === 'number' 
-                      ? item.salePrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                      : item.salePrice}`
+                {item.sellingPrice 
+                  ? `$${typeof item.sellingPrice === 'number' 
+                      ? item.sellingPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                      : item.sellingPrice}`
                   : '-'
                 }
               </TableCell>

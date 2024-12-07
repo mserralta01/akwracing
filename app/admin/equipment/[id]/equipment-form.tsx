@@ -8,7 +8,7 @@ import * as z from 'zod'
 import { useToast } from '@/components/ui/use-toast'
 import { equipmentService } from '@/lib/services/equipment-service'
 import { Equipment, Category, Brand } from '@/types/equipment'
-import { Loader2, ImageIcon, Upload, DollarSign, Clock, CalendarDays, Package, Tag, Truck, ShoppingCart, Bold, Italic, List, ListOrdered, Heading2, Quote } from 'lucide-react'
+import { Loader2, ImageIcon, DollarSign, Clock, CalendarDays, Package, Tag, Truck, ShoppingCart } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
 import {
   Form,
@@ -42,66 +42,10 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs'
-import { cn } from '@/lib/utils'
-import { useEditor, EditorContent } from '@tiptap/react'
-import StarterKit from '@tiptap/starter-kit'
-import Heading from '@tiptap/extension-heading'
-import Link from '@tiptap/extension-link'
-import { Toggle } from '@/components/ui/toggle'
 import { Switch } from '@/components/ui/switch'
-
-const MenuBar = ({ editor }: { editor: any }) => {
-  if (!editor) {
-    return null
-  }
-
-  return (
-    <div className="border border-input bg-transparent rounded-t-md p-1 flex flex-wrap gap-1">
-      <Toggle
-        size="sm"
-        pressed={editor.isActive('bold')}
-        onPressedChange={() => editor.chain().focus().toggleBold().run()}
-      >
-        <Bold className="h-4 w-4" />
-      </Toggle>
-      <Toggle
-        size="sm"
-        pressed={editor.isActive('italic')}
-        onPressedChange={() => editor.chain().focus().toggleItalic().run()}
-      >
-        <Italic className="h-4 w-4" />
-      </Toggle>
-      <Toggle
-        size="sm"
-        pressed={editor.isActive('heading', { level: 2 })}
-        onPressedChange={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-      >
-        <Heading2 className="h-4 w-4" />
-      </Toggle>
-      <Toggle
-        size="sm"
-        pressed={editor.isActive('bulletList')}
-        onPressedChange={() => editor.chain().focus().toggleBulletList().run()}
-      >
-        <List className="h-4 w-4" />
-      </Toggle>
-      <Toggle
-        size="sm"
-        pressed={editor.isActive('orderedList')}
-        onPressedChange={() => editor.chain().focus().toggleOrderedList().run()}
-      >
-        <ListOrdered className="h-4 w-4" />
-      </Toggle>
-      <Toggle
-        size="sm"
-        pressed={editor.isActive('blockquote')}
-        onPressedChange={() => editor.chain().focus().toggleBlockquote().run()}
-      >
-        <Quote className="h-4 w-4" />
-      </Toggle>
-    </div>
-  )
-}
+import { cn } from '@/lib/utils'
+import { ImageUpload, type PreloadedFile } from '@/components/ui/image-upload'
+import { Label } from '@/components/ui/label'
 
 const formSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -125,43 +69,19 @@ type Props = {
   id: string
 }
 
-export default function EquipmentFormClient({ id }: Props) {
+export default function EquipmentForm({ id }: Props) {
   const isEditing = id !== 'new'
   const [categories, setCategories] = useState<Category[]>([])
   const [brands, setBrands] = useState<Brand[]>([])
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
-  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [imagePreview, setImagePreview] = useState<PreloadedFile | null>(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
-  const [dragActive, setDragActive] = useState(false)
+  const [forSale, setForSale] = useState(false)
+  const [forLease, setForLease] = useState(false)
   const router = useRouter()
   const { toast } = useToast()
   const { user, loading: authLoading } = useAuth()
-
-  const editor = useEditor({
-    extensions: [
-      StarterKit.configure({
-        heading: false
-      }),
-      Heading.configure({
-        levels: [2],
-      }),
-      Link.configure({
-        openOnClick: false,
-      }),
-    ],
-    content: '',
-    onUpdate: ({ editor }) => {
-      const html = editor.getHTML()
-      form.setValue('description', html)
-    },
-    editorProps: {
-      attributes: {
-        class: 'prose prose-sm max-w-none focus:outline-none'
-      }
-    },
-    immediatelyRender: false
-  })
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -181,9 +101,6 @@ export default function EquipmentFormClient({ id }: Props) {
       forLease: false
     }
   })
-
-  const [forSale, setForSale] = useState(false)
-  const [forLease, setForLease] = useState(false)
 
   useEffect(() => {
     if (authLoading) return
@@ -221,53 +138,58 @@ export default function EquipmentFormClient({ id }: Props) {
               forSale: equipment.forSale || false,
               forLease: equipment.forLease || false
             })
-            if (equipment.description) {
-              editor?.commands.setContent(equipment.description)
+            setForSale(equipment.forSale || false)
+            setForLease(equipment.forLease || false)
+            
+            if (equipment.imageUrl) {
+              setImagePreview({
+                preview: equipment.imageUrl,
+                name: equipment.imageUrl.split('/').pop() || 'Current Image',
+                size: 0,
+                type: 'image/*'
+              })
             }
-            setImagePreview(equipment.imageUrl || null)
           }
-        } else {
-          form.reset({
-            name: '',
-            shortDescription: '',
-            description: '',
-            categoryId: '',
-            brandId: '',
-            sellingPrice: 0,
-            purchasePrice: 0,
-            hourlyRate: 0,
-            dailyRate: 0,
-            weeklyRate: 0,
-            inStock: 0,
-            forSale: false,
-            forLease: false
-          })
-          editor?.commands.setContent('')
-          setImagePreview(null)
         }
       } catch (error) {
         console.error('Error loading data:', error)
         toast({
-          variant: 'destructive',
           title: 'Error',
-          description: 'Failed to load data. Please try again.'
+          description: 'Failed to load equipment data',
+          variant: 'destructive'
         })
-        router.push('/admin/equipment')
       } finally {
         setLoading(false)
       }
     }
 
     loadInitialData()
-  }, [isEditing, id, form, router, toast, user, authLoading, editor])
+  }, [authLoading, user, router, isEditing, id, form])
 
-  useEffect(() => {
-    if (isEditing && !loading) {
-      const values = form.getValues()
-      setForSale(values.forSale)
-      setForLease(values.forLease)
+  const handleImageChange = useCallback(async (file: File | null) => {
+    setSelectedImage(file)
+    if (file) {
+      try {
+        // Create a temporary preview URL for the UI
+        const previewUrl = URL.createObjectURL(file)
+        setImagePreview({
+          preview: previewUrl,
+          name: file.name,
+          size: file.size,
+          type: file.type
+        })
+      } catch (error) {
+        console.error('Error handling image:', error)
+        toast({
+          title: 'Error',
+          description: 'Failed to preview image',
+          variant: 'destructive'
+        })
+      }
+    } else {
+      setImagePreview(null)
     }
-  }, [isEditing, loading, form])
+  }, [toast])
 
   const onSubmit = async (data: FormData) => {
     try {
@@ -283,15 +205,9 @@ export default function EquipmentFormClient({ id }: Props) {
       }
 
       setSubmitting(true)
-      console.log('Form data before submission:', {
-        ...data,
-        purchasePrice: data.purchasePrice,
-        forSale
-      })
 
-      const cleanData = {
+      const cleanData: Partial<Equipment> = {
         ...data,
-        description: editor?.getHTML() || data.description,
         sellingPrice: forSale ? data.sellingPrice : 0,
         purchasePrice: forSale ? data.purchasePrice : 0,
         hourlyRate: forLease ? data.hourlyRate : 0,
@@ -301,11 +217,6 @@ export default function EquipmentFormClient({ id }: Props) {
         forLease
       }
 
-      console.log('Clean data before service call:', {
-        ...cleanData,
-        purchasePrice: cleanData.purchasePrice
-      })
-
       if (isEditing) {
         await equipmentService.updateEquipment(id, cleanData, selectedImage || undefined)
       } else {
@@ -313,63 +224,27 @@ export default function EquipmentFormClient({ id }: Props) {
       }
 
       toast({
+        title: 'Success',
         description: `Equipment ${isEditing ? 'updated' : 'created'} successfully`
       })
+      
       router.push('/admin/equipment')
       router.refresh()
     } catch (error) {
-      console.error('Error submitting form:', error)
+      console.error('Error saving equipment:', error)
       toast({
-        variant: 'destructive',
         title: 'Error',
-        description: `Failed to ${isEditing ? 'update' : 'create'} equipment`
+        description: 'Failed to save equipment',
+        variant: 'destructive'
       })
     } finally {
       setSubmitting(false)
     }
   }
 
-  const handleDrag = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    if (e.type === 'dragenter' || e.type === 'dragover') {
-      setDragActive(true)
-    } else if (e.type === 'dragleave') {
-      setDragActive(false)
-    }
-  }, [])
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setDragActive(false)
-
-    const file = e.dataTransfer.files?.[0]
-    if (file && file.type.startsWith('image/')) {
-      setSelectedImage(file)
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string)
-      }
-      reader.readAsDataURL(file)
-    }
-  }, [])
-
-  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file) {
-      setSelectedImage(file)
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string)
-      }
-      reader.readAsDataURL(file)
-    }
-  }
-
-  if (authLoading || loading) {
+  if (loading) {
     return (
-      <div className="flex h-[50vh] items-center justify-center">
+      <div className="flex items-center justify-center h-full">
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     )
@@ -482,12 +357,7 @@ export default function EquipmentFormClient({ id }: Props) {
                           <FormItem>
                             <FormLabel>Description</FormLabel>
                             <FormControl>
-                              <div className="border rounded-md">
-                                <MenuBar editor={editor} />
-                                <div className="p-4 min-h-[200px]">
-                                  <EditorContent editor={editor} className="prose prose-sm max-w-none" />
-                                </div>
-                              </div>
+                              <Textarea {...field} className="min-h-[120px]" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -546,67 +416,31 @@ export default function EquipmentFormClient({ id }: Props) {
                         />
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="inStock"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Stock</FormLabel>
-                              <FormControl>
-                                <div className="relative">
-                                  <Truck className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                                  <Input type="number" {...field} className="pl-10" />
-                                </div>
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
+                      <FormField
+                        control={form.control}
+                        name="inStock"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Stock</FormLabel>
+                            <FormControl>
+                              <div className="relative">
+                                <Truck className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                                <Input type="number" {...field} className="pl-10" />
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     </div>
 
                     <div className="space-y-6">
-                      <FormLabel>Equipment Image</FormLabel>
-                      <div 
-                        className={cn(
-                          "border-2 border-dashed rounded-lg p-4 h-[300px] flex flex-col items-center justify-center cursor-pointer transition-colors",
-                          dragActive ? "border-primary bg-primary/10" : "border-gray-300 hover:border-primary/50",
-                          "relative"
-                        )}
-                        onDragEnter={handleDrag}
-                        onDragLeave={handleDrag}
-                        onDragOver={handleDrag}
-                        onDrop={handleDrop}
-                        onClick={() => document.getElementById('imageInput')?.click()}
-                      >
-                        <input
-                          id="imageInput"
-                          type="file"
-                          accept="image/*"
+                      <div className="space-y-2">
+                        <Label>Equipment Image</Label>
+                        <ImageUpload
                           onChange={handleImageChange}
-                          className="hidden"
+                          preloadedImage={imagePreview}
                         />
-                        {imagePreview ? (
-                          <div className="relative w-full h-full">
-                            <img
-                              src={imagePreview}
-                              alt="Preview"
-                              className="w-full h-full object-contain"
-                            />
-                          </div>
-                        ) : (
-                          <div className="text-center">
-                            <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                            <div className="mt-4 flex text-sm leading-6 text-gray-600">
-                              <span className="relative cursor-pointer rounded-md font-semibold text-primary focus-within:outline-none focus-within:ring-2 focus-within:ring-primary">
-                                Upload an image
-                              </span>
-                              <p className="pl-1">or drag and drop</p>
-                            </div>
-                            <p className="text-xs leading-5 text-gray-600">PNG, JPG, GIF up to 5MB</p>
-                          </div>
-                        )}
                       </div>
                     </div>
                   </div>
@@ -638,8 +472,6 @@ export default function EquipmentFormClient({ id }: Props) {
                                 <Input 
                                   type="number" 
                                   {...field}
-                                  value={field.value || 0}
-                                  onChange={(e) => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
                                   className="pl-10" 
                                 />
                               </div>
@@ -662,17 +494,6 @@ export default function EquipmentFormClient({ id }: Props) {
                                 <Input 
                                   type="number" 
                                   {...field}
-                                  value={field.value || 0}
-                                  onChange={(e) => {
-                                    const value = e.target.value === '' ? 0 : Number(e.target.value)
-                                    console.log('Setting purchase price:', value)
-                                    field.onChange(value)
-                                    form.setValue('purchasePrice', value, {
-                                      shouldValidate: true,
-                                      shouldDirty: true,
-                                      shouldTouch: true
-                                    })
-                                  }}
                                   className="pl-10" 
                                 />
                               </div>
@@ -722,8 +543,6 @@ export default function EquipmentFormClient({ id }: Props) {
                                 <Input 
                                   type="number" 
                                   {...field}
-                                  value={field.value || 0}
-                                  onChange={(e) => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
                                   className="pl-10" 
                                 />
                               </div>
@@ -746,8 +565,6 @@ export default function EquipmentFormClient({ id }: Props) {
                                 <Input 
                                   type="number" 
                                   {...field}
-                                  value={field.value || 0}
-                                  onChange={(e) => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
                                   className="pl-10" 
                                 />
                               </div>
@@ -770,8 +587,6 @@ export default function EquipmentFormClient({ id }: Props) {
                                 <Input 
                                   type="number" 
                                   {...field}
-                                  value={field.value || 0}
-                                  onChange={(e) => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
                                   className="pl-10" 
                                 />
                               </div>
@@ -797,15 +612,16 @@ export default function EquipmentFormClient({ id }: Props) {
               )}
             </TabsContent>
 
-            <div className="flex justify-end space-x-4">
+            <div className="flex justify-end gap-4">
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => router.push('/admin/equipment')}
+                onClick={() => router.back()}
+                disabled={submitting}
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={submitting} className="bg-red-600 hover:bg-red-700">
+              <Button type="submit" disabled={submitting}>
                 {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isEditing ? 'Update' : 'Create'} Equipment
               </Button>

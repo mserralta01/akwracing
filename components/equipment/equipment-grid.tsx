@@ -34,7 +34,7 @@ export function EquipmentGrid({ equipment, onEdit, onDelete }: EquipmentGridProp
         <Card key={item.id} className="overflow-hidden">
           <CardContent className="p-4">
             <div className="aspect-[4/3] relative mb-4 bg-gray-100 rounded-md overflow-hidden">
-              {hasValidImage(item.image) && !imageErrorStates[item.id] ? (
+              {hasValidImage(item.imageUrl) && !imageErrorStates[item.id] ? (
                 <>
                   {imageLoadingStates[item.id] && (
                     <div className="absolute inset-0 flex items-center justify-center">
@@ -42,7 +42,7 @@ export function EquipmentGrid({ equipment, onEdit, onDelete }: EquipmentGridProp
                     </div>
                   )}
                   <Image
-                    src={item.image || ''}
+                    src={item.imageUrl || ''}
                     alt={item.name || 'Equipment image'}
                     fill
                     className={`rounded-md object-cover transition-opacity duration-300 ${
@@ -68,11 +68,11 @@ export function EquipmentGrid({ equipment, onEdit, onDelete }: EquipmentGridProp
                   item.category?.name
                 ].filter(Boolean).join(' - ')}
               </p>
-              {item.salePrice && (
+              {item.sellingPrice && item.forSale && (
                 <p className="font-medium text-lg">
-                  ${typeof item.salePrice === 'number' 
-                    ? item.salePrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                    : item.salePrice}
+                  ${typeof item.sellingPrice === 'number' 
+                    ? item.sellingPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                    : item.sellingPrice}
                 </p>
               )}
               <p className="text-sm text-gray-600">

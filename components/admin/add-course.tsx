@@ -20,7 +20,7 @@ import { instructorService } from "@/lib/services/instructor-service";
 import { Instructor } from "@/types/instructor";
 
 type NewCourse = Omit<CourseFormData, 'imageUrl'> & {
-  photo: File | null;
+  photo: File | undefined;
 };
 
 export function AddCourse() {
@@ -37,7 +37,8 @@ export function AddCourse() {
     level: "Beginner",
     startDate: "",
     endDate: "",
-    photo: null,
+    photo: undefined,
+    maxStudents: 0,
     availableSpots: 0,
     featured: false,
     instructorId: "",
@@ -71,10 +72,10 @@ export function AddCourse() {
 
       const result = await courseService.createCourse(courseFormData, newCourse.photo);
 
-      if (!result.success) {
+      if (!result.id) {
         toast({
           title: "Error",
-          description: result.error?.message || "Failed to create course",
+          description: "Failed to create course",
           variant: "destructive",
         });
         return;
@@ -171,7 +172,15 @@ export function AddCourse() {
           </SelectContent>
         </Select>
         <FileUpload
-          onFileSelect={(file: File | null) => setNewCourse({ ...newCourse, photo: file })}
+          onFileSelect={(file: File | undefined) => setNewCourse({ ...newCourse, photo: file })}
+        />
+        <Input
+          type="number"
+          placeholder="Maximum Students"
+          value={newCourse.maxStudents.toString()}
+          onChange={(e) => setNewCourse({ ...newCourse, maxStudents: Number(e.target.value) || 0 })}
+          required
+          min="0"
         />
         <Input
           type="number"

@@ -190,17 +190,20 @@ export default function EquipmentPage() {
       header: 'Brand',
     },
     {
-      accessorKey: 'price',
+      accessorKey: 'sellingPrice',
       header: 'Price',
       cell: ({ row }) => {
-        const price = row.original.price;
+        const price = row.original.sellingPrice;
         return price ? `$${price.toFixed(2)}` : 'N/A';
       },
     },
     {
       accessorKey: 'leasePrice',
       header: 'Lease Price (per day)',
-      cell: ({ row }) => `$${row.original.leasePrice.toFixed(2)}`,
+      cell: ({ row }) => {
+        const price = row.original.leasePrice;
+        return price ? `$${price.toFixed(2)}` : 'N/A';
+      },
     },
     {
       accessorKey: 'quantity',

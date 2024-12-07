@@ -1,11 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { studentService } from "@/lib/services/student-service";
-import { courseService } from "@/lib/services/course-service";
-import { paymentService } from "@/lib/services/payment-service";
-import { Enrollment, StudentProfile, ParentProfile } from "@/types/student";
-import { Course } from "@/types/course";
+import { useRouter } from "next/navigation";
+import { Enrollment } from "@/types/student";
+import { enrollmentService } from "@/lib/services/enrollment-service";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -22,110 +20,80 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { DatePickerWithRange } from "@/components/ui/date-range-picker";
-import { DateRange } from "@/types/course";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { format } from "date-fns";
 import { useToast } from "@/components/ui/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
+import {
+  Search,
+  Filter,
+  Plus,
+  Calendar,
+  User,
+  Phone,
+  Mail,
+  DollarSign,
+  Tag,
+  MessageSquare,
+} from "lucide-react";
 
-type EnrollmentWithDetails = Enrollment & {
-  student: StudentProfile | null;
-  parent: ParentProfile | null;
-  course: Course | null;
-};
+type ServiceEnrollment = Awaited<ReturnType<typeof enrollmentService.getAllEnrollments>>[number];
 
-export function EnrollmentManagement() {
-  const [enrollments, setEnrollments] = useState<EnrollmentWithDetails[]>([]);
+const convertServiceEnrollmentToEnrollment = (serviceEnrollment: ServiceEnrollment): Enrollment => ({
+  id: serviceEnrollment.id || crypto.randomUUID(),
+  studentId: serviceEnrollment.userId || crypto.randomUUID(),
+  parentId: "",
+  courseId: serviceEnrollment.courseId || crypto.randomUUID(),
+  status: serviceEnrollment.status === "active" ? "confirmed" : 
+          serviceEnrollment.status === "completed" ? "completed" : "cancelled",
+  createdAt: serviceEnrollment.enrollmentDate?.toISOString() || new Date().toISOString(),
+  updatedAt: serviceEnrollment.lastAccessedDate?.toISOString() || serviceEnrollment.enrollmentDate?.toISOString() || new Date().toISOString(),
+  paymentDetails: {
+    amount: 0,
+    currency: "USD",
+    paymentStatus: "pending",
+  },
+  notes: [],
+  communicationHistory: [],
+  student: {
+    name: "Unknown Student",
+    email: "",
+    phone: "",
+  },
+  course: {
+    title: "Unknown Course",
+    startDate: new Date().toISOString(),
+    endDate: new Date().toISOString(),
+  },
+  payment: {
+    amount: 0,
+    currency: "USD",
+    status: "pending",
+    transactionId: undefined,
+  },
+});
+
+export default function EnrollmentManagement() {
+  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedEnrollment, setSelectedEnrollment] = useState<EnrollmentWithDetails | null>(null);
-  const [date, setDate] = useState<DateRange>({
-    from: new Date(new Date().setMonth(new Date().getMonth() - 1)),
-    to: new Date(),
-  });
-  const [status, setStatus] = useState<string>("all");
+  const [selectedEnrollment, setSelectedEnrollment] = useState<Enrollment | null>(null);
   const { toast } = useToast();
+  const router = useRouter();
+
+  useEffect(() => {
+    loadEnrollments();
+  }, []);
 
   const loadEnrollments = async () => {
     try {
       setLoading(true);
-      const allEnrollments = await studentService.getAllEnrollments();
-      
-      // Load details for each enrollment
-      const detailedEnrollments = await Promise.allSettled(
-        allEnrollments.map(async (enrollment) => {
-          try {
-            const [student, parent, course] = await Promise.all([
-              studentService.getStudent(enrollment.studentId),
-              studentService.getParent(enrollment.parentId),
-              courseService.getCourse(enrollment.courseId),
-            ]);
-
-            if (!student || !parent || !course) {
-              console.warn(`Missing data for enrollment ${enrollment.id}:`, {
-                hasStudent: !!student,
-                hasParent: !!parent,
-                hasCourse: !!course,
-              });
-            }
-
-            return {
-              ...enrollment,
-              student,
-              parent,
-              course,
-            } as EnrollmentWithDetails;
-          } catch (error) {
-            console.error(`Error loading details for enrollment ${enrollment.id}:`, error);
-            return {
-              ...enrollment,
-              student: null,
-              parent: null,
-              course: null,
-            } as EnrollmentWithDetails;
-          }
-        })
-      );
-
-      // Filter out failed promises and handle successful ones
-      const successfulEnrollments = detailedEnrollments
-        .filter((result): result is PromiseFulfilledResult<EnrollmentWithDetails> => 
-          result.status === 'fulfilled'
-        )
-        .map(result => result.value);
-
-      // Filter enrollments based on date and status
-      const filtered = successfulEnrollments.filter((enrollment) => {
-        const enrollmentDate = new Date(enrollment.createdAt);
-        const inDateRange =
-          (!date.from || enrollmentDate >= date.from) &&
-          (!date.to || enrollmentDate <= date.to);
-        const matchesStatus =
-          status === "all" || enrollment.status === status;
-        return inDateRange && matchesStatus;
-      });
-
-      setEnrollments(filtered);
+      const data = await enrollmentService.getAllEnrollments();
+      setEnrollments(data.map(convertServiceEnrollmentToEnrollment));
     } catch (error) {
       console.error("Error loading enrollments:", error);
       toast({
         title: "Error",
-        description: "Failed to load enrollments. Please try again.",
+        description: "Failed to load enrollments",
         variant: "destructive",
       });
     } finally {
@@ -133,336 +101,220 @@ export function EnrollmentManagement() {
     }
   };
 
-  useEffect(() => {
-    loadEnrollments();
-  }, [date, status]);
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "confirmed":
-        return "bg-green-100 text-green-800";
-      case "pending_payment":
-        return "bg-yellow-100 text-yellow-800";
-      case "payment_failed":
-        return "bg-red-100 text-red-800";
-      case "cancelled":
-        return "bg-gray-100 text-gray-800";
-      default:
-        return "bg-blue-100 text-blue-800";
-    }
-  };
-
-  const getPaymentStatusColor = (status: string) => {
-    switch (status) {
-      case "completed":
-        return "bg-green-100 text-green-800";
-      case "pending":
-        return "bg-yellow-100 text-yellow-800";
-      case "failed":
-        return "bg-red-100 text-red-800";
-      case "refunded":
-        return "bg-gray-100 text-gray-800";
-      default:
-        return "bg-blue-100 text-blue-800";
-    }
-  };
-
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Enrollment Management</CardTitle>
-          <CardDescription>View and manage course enrollments</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="flex-1">
-              <DatePickerWithRange 
-                date={date} 
-                setDate={(newDate) => {
-                  if (newDate) {
-                    setDate(newDate);
-                  }
-                }} 
-              />
-            </div>
-            <div className="w-[200px]">
-              <Select value={status} onValueChange={setStatus}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="pending_registration">Pending Registration</SelectItem>
-                  <SelectItem value="pending_payment">Pending Payment</SelectItem>
-                  <SelectItem value="confirmed">Confirmed</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Student</TableHead>
-                  <TableHead>Course</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Payment</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
+    <div className="container mx-auto py-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Enrollments List */}
+        <div className="md:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Enrollments</CardTitle>
+              <CardDescription>View and manage enrollments</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-4">
-                      Loading...
-                    </TableCell>
+                    <TableHead>Student</TableHead>
+                    <TableHead>Course</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
-                ) : enrollments.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-4">
-                      No enrollments found
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  enrollments.map((enrollment) => (
-                    <TableRow key={enrollment.id}>
-                      <TableCell>
-                        {format(new Date(enrollment.createdAt), "MMM dd, yyyy")}
-                      </TableCell>
-                      <TableCell>
-                        {enrollment.student ? (
-                          <div>
-                            <div className="font-medium">
-                              {enrollment.student.firstName} {enrollment.student.lastName}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              Parent: {enrollment.parent?.firstName} {enrollment.parent?.lastName}
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="text-sm text-muted-foreground">
-                            Student data unavailable
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {enrollment.course ? (
-                          <div>
-                            <div className="font-medium">{enrollment.course.title}</div>
-                            <div className="text-sm text-muted-foreground">
-                              ${enrollment.paymentDetails?.amount || 0}
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="text-sm text-muted-foreground">
-                            Course data unavailable
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          className={getStatusColor(enrollment.status)}
-                          variant="secondary"
-                        >
-                          {enrollment.status.replace("_", " ")}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          className={getPaymentStatusColor(enrollment.paymentDetails?.paymentStatus || 'pending')}
-                          variant="secondary"
-                        >
-                          {enrollment.paymentDetails?.paymentStatus || 'pending'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setSelectedEnrollment(enrollment)}
-                            >
-                              View Details
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-2xl">
-                            <DialogHeader>
-                              <DialogTitle>Enrollment Details</DialogTitle>
-                              <DialogDescription>
-                                Complete enrollment information and history
-                              </DialogDescription>
-                            </DialogHeader>
-                            <ScrollArea className="max-h-[600px] mt-4">
-                              <div className="space-y-6">
-                                {/* Student Information */}
-                                <Card>
-                                  <CardHeader>
-                                    <CardTitle className="text-lg">Student Information</CardTitle>
-                                  </CardHeader>
-                                  <CardContent>
-                                    <dl className="grid grid-cols-2 gap-4">
-                                      <div>
-                                        <dt className="text-sm font-medium text-muted-foreground">Name</dt>
-                                        <dd>
-                                          {enrollment.student?.firstName} {enrollment.student?.lastName}
-                                        </dd>
-                                      </div>
-                                      <div>
-                                        <dt className="text-sm font-medium text-muted-foreground">Date of Birth</dt>
-                                        <dd>{enrollment.student?.dateOfBirth}</dd>
-                                      </div>
-                                      <div>
-                                        <dt className="text-sm font-medium text-muted-foreground">Emergency Contact</dt>
-                                        <dd>
-                                          {enrollment.student?.emergencyContact ? (
-                                            <>
-                                              {enrollment.student.emergencyContact.name} ({enrollment.student.emergencyContact.relationship})
-                                              <br />
-                                              {enrollment.student.emergencyContact.phone}
-                                            </>
-                                          ) : (
-                                            "No emergency contact provided"
-                                          )}
-                                        </dd>
-                                      </div>
-                                      <div>
-                                        <dt className="text-sm font-medium text-muted-foreground">Experience Level</dt>
-                                        <dd>{enrollment.student?.experience?.skillLevel || "N/A"}</dd>
-                                      </div>
-                                    </dl>
-                                  </CardContent>
-                                </Card>
-
-                                {/* Parent Information */}
-                                <Card>
-                                  <CardHeader>
-                                    <CardTitle className="text-lg">Parent Information</CardTitle>
-                                  </CardHeader>
-                                  <CardContent>
-                                    {enrollment.parent ? (
-                                      <dl className="grid grid-cols-2 gap-4">
-                                        <div>
-                                          <dt className="text-sm font-medium text-muted-foreground">Name</dt>
-                                          <dd>
-                                            {enrollment.parent.firstName} {enrollment.parent.lastName}
-                                          </dd>
-                                        </div>
-                                        <div>
-                                          <dt className="text-sm font-medium text-muted-foreground">Contact</dt>
-                                          <dd>
-                                            {enrollment.parent.email || "No email provided"}
-                                            <br />
-                                            {enrollment.parent.phone || "No phone provided"}
-                                          </dd>
-                                        </div>
-                                        <div className="col-span-2">
-                                          <dt className="text-sm font-medium text-muted-foreground">Address</dt>
-                                          <dd>
-                                            {enrollment.parent.address ? (
-                                              <>
-                                                {enrollment.parent.address.street}
-                                                <br />
-                                                {enrollment.parent.address.city}, {enrollment.parent.address.state} {enrollment.parent.address.zipCode}
-                                              </>
-                                            ) : (
-                                              "No address provided"
-                                            )}
-                                          </dd>
-                                        </div>
-                                      </dl>
-                                    ) : (
-                                      <p className="text-sm text-muted-foreground">
-                                        Parent information unavailable
-                                      </p>
-                                    )}
-                                  </CardContent>
-                                </Card>
-
-                                {/* Payment History */}
-                                <Card>
-                                  <CardHeader>
-                                    <CardTitle className="text-lg">Payment Information</CardTitle>
-                                  </CardHeader>
-                                  <CardContent>
-                                    <dl className="grid grid-cols-2 gap-4">
-                                      <div>
-                                        <dt className="text-sm font-medium text-muted-foreground">Amount</dt>
-                                        <dd>${enrollment.paymentDetails?.amount || 0}</dd>
-                                      </div>
-                                      <div>
-                                        <dt className="text-sm font-medium text-muted-foreground">Status</dt>
-                                        <dd>
-                                          <Badge
-                                            className={getPaymentStatusColor(enrollment.paymentDetails?.paymentStatus || 'pending')}
-                                            variant="secondary"
-                                          >
-                                            {enrollment.paymentDetails?.paymentStatus || 'pending'}
-                                          </Badge>
-                                        </dd>
-                                      </div>
-                                      <div>
-                                        <dt className="text-sm font-medium text-muted-foreground">Transaction ID</dt>
-                                        <dd>{enrollment.paymentDetails?.transactionId || "N/A"}</dd>
-                                      </div>
-                                      <div>
-                                        <dt className="text-sm font-medium text-muted-foreground">Payment Method</dt>
-                                        <dd>{enrollment.paymentDetails?.paymentMethod || "N/A"}</dd>
-                                      </div>
-                                    </dl>
-                                  </CardContent>
-                                </Card>
-
-                                {/* Communication History */}
-                                <Card>
-                                  <CardHeader>
-                                    <CardTitle className="text-lg">Communication History</CardTitle>
-                                  </CardHeader>
-                                  <CardContent>
-                                    {enrollment.communicationHistory?.length ? (
-                                      <div className="space-y-4">
-                                        {enrollment.communicationHistory.map((comm) => (
-                                          <div
-                                            key={comm.id}
-                                            className="border rounded-lg p-4"
-                                          >
-                                            <div className="flex justify-between items-start mb-2">
-                                              <Badge variant="outline">
-                                                {comm.type}
-                                              </Badge>
-                                              <span className="text-sm text-muted-foreground">
-                                                {format(new Date(comm.timestamp), "MMM dd, yyyy HH:mm")}
-                                              </span>
-                                            </div>
-                                            <p className="text-sm">{comm.content}</p>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    ) : (
-                                      <p className="text-sm text-muted-foreground">
-                                        No communication history available
-                                      </p>
-                                    )}
-                                  </CardContent>
-                                </Card>
-                              </div>
-                            </ScrollArea>
-                          </DialogContent>
-                        </Dialog>
+                </TableHeader>
+                <TableBody>
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center">
+                        Loading...
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+                  ) : enrollments.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center">
+                        No enrollments found
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    enrollments.map((enrollment) => (
+                      <TableRow key={enrollment.id}>
+                        <TableCell>{enrollment.student?.name || "Unknown Student"}</TableCell>
+                        <TableCell>{enrollment.course?.title || "Unknown Course"}</TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="secondary"
+                            className={
+                              enrollment.status === "confirmed"
+                                ? "bg-green-100 text-green-800"
+                                : enrollment.status === "pending"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-red-100 text-red-800"
+                            }
+                          >
+                            {enrollment.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSelectedEnrollment(enrollment)}
+                          >
+                            View Details
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Enrollment Details */}
+        <div className="md:col-span-1">
+          <Card>
+            <CardHeader>
+              <CardTitle>Enrollment Details</CardTitle>
+              <CardDescription>
+                {selectedEnrollment ? "View enrollment details" : "Select an enrollment to view details"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {selectedEnrollment ? (
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4">Student Information</h3>
+                    <dl className="grid grid-cols-1 gap-4">
+                      <div>
+                        <dt className="text-sm font-medium text-muted-foreground">Name</dt>
+                        <dd>{selectedEnrollment.student?.name || "Unknown"}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-sm font-medium text-muted-foreground">Email</dt>
+                        <dd>{selectedEnrollment.student?.email || "N/A"}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-sm font-medium text-muted-foreground">Phone</dt>
+                        <dd>{selectedEnrollment.student?.phone || "N/A"}</dd>
+                      </div>
+                    </dl>
+                  </div>
+
+                  <Separator />
+
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4">Course Information</h3>
+                    <dl className="grid grid-cols-1 gap-4">
+                      <div>
+                        <dt className="text-sm font-medium text-muted-foreground">Course</dt>
+                        <dd>{selectedEnrollment.course?.title || "Unknown Course"}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-sm font-medium text-muted-foreground">Dates</dt>
+                        <dd>
+                          {selectedEnrollment.course?.startDate
+                            ? new Date(selectedEnrollment.course.startDate).toLocaleDateString()
+                            : "N/A"}{" "}
+                          -{" "}
+                          {selectedEnrollment.course?.endDate
+                            ? new Date(selectedEnrollment.course.endDate).toLocaleDateString()
+                            : "N/A"}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-sm font-medium text-muted-foreground">Status</dt>
+                        <dd>
+                          <Badge
+                            variant="secondary"
+                            className={
+                              selectedEnrollment.status === "confirmed"
+                                ? "bg-green-100 text-green-800"
+                                : selectedEnrollment.status === "pending"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-red-100 text-red-800"
+                            }
+                          >
+                            {selectedEnrollment.status}
+                          </Badge>
+                        </dd>
+                      </div>
+                    </dl>
+                  </div>
+
+                  <Separator />
+
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4">Payment Information</h3>
+                    <dl className="grid grid-cols-1 gap-4">
+                      <div>
+                        <dt className="text-sm font-medium text-muted-foreground">Amount</dt>
+                        <dd>
+                          ${selectedEnrollment.payment?.amount?.toFixed(2) || "0.00"}{" "}
+                          {selectedEnrollment.payment?.currency || "USD"}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-sm font-medium text-muted-foreground">Status</dt>
+                        <dd>
+                          <Badge
+                            variant="secondary"
+                            className={
+                              selectedEnrollment.payment?.status === "completed"
+                                ? "bg-green-100 text-green-800"
+                                : selectedEnrollment.payment?.status === "pending"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-red-100 text-red-800"
+                            }
+                          >
+                            {selectedEnrollment.payment?.status || "Unknown"}
+                          </Badge>
+                        </dd>
+                      </div>
+                      {selectedEnrollment.payment?.transactionId && (
+                        <div>
+                          <dt className="text-sm font-medium text-muted-foreground">Transaction ID</dt>
+                          <dd>{selectedEnrollment.payment.transactionId}</dd>
+                        </div>
+                      )}
+                    </dl>
+                  </div>
+
+                  <Separator />
+
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4">Actions</h3>
+                    <div className="space-y-2">
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() =>
+                          router.push(`/admin/academy/enrollments/${selectedEnrollment.id}/edit`)
+                        }
+                      >
+                        Edit Enrollment
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() =>
+                          router.push(`/admin/academy/enrollments/${selectedEnrollment.id}/notes`)
+                        }
+                      >
+                        View Notes
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center text-muted-foreground">
+                  Select an enrollment to view details
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 } 

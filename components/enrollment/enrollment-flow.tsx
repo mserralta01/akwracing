@@ -101,12 +101,14 @@ export function EnrollmentFlow({ course, onComplete }: EnrollmentFlowProps) {
         courseId: course.id,
         studentId: student.id,
         parentId: student.parentId,
-        status: "pending_payment" as const,
+        status: "pending" as const,
         paymentDetails: {
           amount: course.price,
           currency: "USD",
           paymentStatus: "pending" as const,
         },
+        notes: [],
+        communicationHistory: []
       };
 
       const createdEnrollment = await studentService.createEnrollment(enrollmentData);
@@ -134,9 +136,14 @@ export function EnrollmentFlow({ course, onComplete }: EnrollmentFlowProps) {
         status: "confirmed",
         paymentDetails: {
           ...enrollment.paymentDetails,
-          paymentStatus: "completed",
-          transactionId,
+          paymentStatus: "completed"
         },
+        payment: {
+          amount: enrollment.paymentDetails.amount,
+          currency: enrollment.paymentDetails.currency,
+          status: "completed",
+          transactionId
+        }
       });
 
       // Send confirmation emails

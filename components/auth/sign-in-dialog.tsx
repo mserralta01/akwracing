@@ -83,9 +83,10 @@ export function SignInDialog({ open, onOpenChange }: SignInDialogProps) {
   const handleGoogleSignIn = async () => {
     setLoading(true);
     try {
-      const user = await signInWithGoogle();
-      if (user) {
-        await handleAdminNavigation(user);
+      await signInWithGoogle();
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        await handleAdminNavigation(currentUser);
         onOpenChange(false);
       } else {
         toast({

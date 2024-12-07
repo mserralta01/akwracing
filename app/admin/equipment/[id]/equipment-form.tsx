@@ -109,12 +109,12 @@ const formSchema = z.object({
   description: z.string().min(1, 'Description is required'),
   categoryId: z.string().min(1, 'Category is required'),
   brandId: z.string().min(1, 'Brand is required'),
-  salePrice: z.coerce.number().min(0, 'Price cannot be negative'),
-  wholesalePrice: z.coerce.number().min(0, 'Wholesale price cannot be negative'),
+  sellingPrice: z.coerce.number().min(0, 'Price cannot be negative'),
+  purchasePrice: z.coerce.number().min(0, 'Purchase price cannot be negative'),
   hourlyRate: z.coerce.number().min(0, 'Hourly rate cannot be negative'),
   dailyRate: z.coerce.number().min(0, 'Daily rate cannot be negative'),
   weeklyRate: z.coerce.number().min(0, 'Weekly rate cannot be negative'),
-  quantity: z.coerce.number().min(0, 'Quantity cannot be negative'),
+  inStock: z.coerce.number().min(0, 'Stock cannot be negative'),
   forSale: z.boolean().default(false),
   forLease: z.boolean().default(false)
 })
@@ -171,12 +171,12 @@ export default function EquipmentFormClient({ id }: Props) {
       description: '',
       categoryId: '',
       brandId: '',
-      salePrice: 0,
-      wholesalePrice: 0,
+      sellingPrice: 0,
+      purchasePrice: 0,
       hourlyRate: 0,
       dailyRate: 0,
       weeklyRate: 0,
-      quantity: 0,
+      inStock: 0,
       forSale: false,
       forLease: false
     }
@@ -212,12 +212,12 @@ export default function EquipmentFormClient({ id }: Props) {
               description: equipment.description || '',
               categoryId: equipment.categoryId || '',
               brandId: equipment.brandId || '',
-              salePrice: equipment.salePrice || 0,
-              wholesalePrice: equipment.wholesalePrice || 0,
+              sellingPrice: equipment.sellingPrice || 0,
+              purchasePrice: equipment.purchasePrice || 0,
               hourlyRate: equipment.hourlyRate || 0,
               dailyRate: equipment.dailyRate || 0,
               weeklyRate: equipment.weeklyRate || 0,
-              quantity: equipment.quantity || 0,
+              inStock: equipment.inStock || 0,
               forSale: equipment.forSale || false,
               forLease: equipment.forLease || false
             })
@@ -233,12 +233,12 @@ export default function EquipmentFormClient({ id }: Props) {
             description: '',
             categoryId: '',
             brandId: '',
-            salePrice: 0,
-            wholesalePrice: 0,
+            sellingPrice: 0,
+            purchasePrice: 0,
             hourlyRate: 0,
             dailyRate: 0,
             weeklyRate: 0,
-            quantity: 0,
+            inStock: 0,
             forSale: false,
             forLease: false
           })
@@ -272,8 +272,8 @@ export default function EquipmentFormClient({ id }: Props) {
   const onSubmit = async (data: FormData) => {
     try {
       // Validate required fields based on toggles
-      if (forSale && data.salePrice <= 0) {
-        form.setError('salePrice', { message: 'Retail price is required when for sale is enabled' })
+      if (forSale && data.sellingPrice <= 0) {
+        form.setError('sellingPrice', { message: 'Retail price is required when for sale is enabled' })
         return
       }
 
@@ -285,15 +285,15 @@ export default function EquipmentFormClient({ id }: Props) {
       setSubmitting(true)
       console.log('Form data before submission:', {
         ...data,
-        wholesalePrice: data.wholesalePrice,
+        purchasePrice: data.purchasePrice,
         forSale
       })
 
       const cleanData = {
         ...data,
         description: editor?.getHTML() || data.description,
-        salePrice: forSale ? data.salePrice : 0,
-        wholesalePrice: forSale ? data.wholesalePrice : 0,
+        sellingPrice: forSale ? data.sellingPrice : 0,
+        purchasePrice: forSale ? data.purchasePrice : 0,
         hourlyRate: forLease ? data.hourlyRate : 0,
         dailyRate: forLease ? data.dailyRate : 0,
         weeklyRate: forLease ? data.weeklyRate : 0,
@@ -303,7 +303,7 @@ export default function EquipmentFormClient({ id }: Props) {
 
       console.log('Clean data before service call:', {
         ...cleanData,
-        wholesalePrice: cleanData.wholesalePrice
+        purchasePrice: cleanData.purchasePrice
       })
 
       if (isEditing) {
@@ -549,10 +549,10 @@ export default function EquipmentFormClient({ id }: Props) {
                       <div className="grid grid-cols-2 gap-4">
                         <FormField
                           control={form.control}
-                          name="quantity"
+                          name="inStock"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Quantity</FormLabel>
+                              <FormLabel>Stock</FormLabel>
                               <FormControl>
                                 <div className="relative">
                                   <Truck className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
@@ -628,7 +628,7 @@ export default function EquipmentFormClient({ id }: Props) {
                     <div className="grid grid-cols-2 gap-6">
                       <FormField
                         control={form.control}
-                        name="salePrice"
+                        name="sellingPrice"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Retail Price *</FormLabel>
@@ -652,10 +652,10 @@ export default function EquipmentFormClient({ id }: Props) {
 
                       <FormField
                         control={form.control}
-                        name="wholesalePrice"
+                        name="purchasePrice"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Wholesale Price</FormLabel>
+                            <FormLabel>Purchase Price</FormLabel>
                             <FormControl>
                               <div className="relative">
                                 <DollarSign className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
@@ -665,9 +665,9 @@ export default function EquipmentFormClient({ id }: Props) {
                                   value={field.value || 0}
                                   onChange={(e) => {
                                     const value = e.target.value === '' ? 0 : Number(e.target.value)
-                                    console.log('Setting wholesale price:', value)
+                                    console.log('Setting purchase price:', value)
                                     field.onChange(value)
-                                    form.setValue('wholesalePrice', value, {
+                                    form.setValue('purchasePrice', value, {
                                       shouldValidate: true,
                                       shouldDirty: true,
                                       shouldTouch: true

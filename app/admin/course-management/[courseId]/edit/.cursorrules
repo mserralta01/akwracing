@@ -1,0 +1,215 @@
+{
+  "project": {
+    "type": "next.js",
+    "framework": {
+      "version": "latest",
+      "mode": "app-router",
+      "typescript": true
+    }
+  },
+  "editor": {
+    "codeActions": {
+      "source.fixAll": true,
+      "source.organizeImports": true,
+      "source.addMissingImports": true
+    },
+    "suggestions": {
+      "enabled": true,
+      "includeCompletions": true,
+      "includeCodeActions": true
+    }
+  },
+  "completion": {
+    "engine": "claude-3-sonnet",
+    "temperature": 0.7,
+    "includeContext": true,
+    "maxTokens": 4000,
+    "model": {
+      "context": "You are assisting with a professional Next.js/React project using ShadCN UI, Firebase, and Vercel hosting. Focus on maintainable, performant, and user-friendly solutions.",
+      "rules": [
+        "Always use TypeScript with proper type definitions",
+        "Implement proper error handling and loading states",
+        "Consider build process implications",
+        "Follow React Server Components patterns when applicable",
+        "Use ShadCN UI components and styling system consistently",
+        "Maintain mobile-first responsive design",
+        "Implement proper accessibility features",
+        "Consider performance optimizations",
+        "Follow Firebase best practices",
+        "Include comprehensive error handling",
+        "Ensure proper metadata for SEO",
+        "Implement proper caching strategies",
+        "Use proper image optimization",
+        "Follow security best practices",
+        "Implement proper data validation"
+      ],
+      "preferences": {
+        "styleGuide": "standard",
+        "formatting": "prettier",
+        "testingFramework": "jest",
+        "componentStructure": "functional",
+        "stateManagement": "react-hooks",
+        "cssFramework": "tailwind",
+        "buildTool": "turbopack",
+        "deployment": "vercel"
+      }
+    }
+  },
+  "linting": {
+    "enabled": true,
+    "eslint": {
+      "enabled": true,
+      "rules": {
+        "react-hooks/rules-of-hooks": "error",
+        "react-hooks/exhaustive-deps": "warn",
+        "no-unused-vars": "warn",
+        "@typescript-eslint/no-explicit-any": "warn",
+        "@typescript-eslint/explicit-function-return-type": "warn"
+      }
+    },
+    "typescript": {
+      "enabled": true,
+      "strict": true,
+      "noImplicitAny": true,
+      "strictNullChecks": true
+    }
+  },
+  "formatting": {
+    "enabled": true,
+    "prettier": {
+      "enabled": true,
+      "singleQuote": true,
+      "trailingComma": "es5",
+      "tabWidth": 2,
+      "semi": true,
+      "printWidth": 100
+    },
+    "organizeImports": true,
+    "rules": {
+      "maxLineLength": 100,
+      "indentStyle": "space",
+      "indentWidth": 2
+    }
+  },
+  "testing": {
+    "generateTests": true,
+    "coverage": {
+      "enabled": true,
+      "threshold": 80
+    },
+    "frameworks": {
+      "jest": true,
+      "cypress": true,
+      "testingLibrary": true
+    },
+    "requirements": {
+      "unitTests": true,
+      "integrationTests": true,
+      "e2eTests": true
+    }
+  },
+  "documentation": {
+    "generateDocs": true,
+    "includeTypes": true,
+    "componentProps": true,
+    "requirements": {
+      "jsdoc": true,
+      "readme": true,
+      "changelog": true,
+      "api": true
+    }
+  },
+  "security": {
+    "checkDependencies": true,
+    "preventLeaks": true,
+    "rules": {
+      "noSecrets": true,
+      "noSensitiveData": true,
+      "secureHeaders": true,
+      "xssProtection": true,
+      "csrfProtection": true
+    },
+    "scanning": {
+      "enabled": true,
+      "frequency": "onSave"
+    }
+  },
+  "build": {
+    "checkCompatibility": true,
+    "validateTypes": true,
+    "ensureProduction": true,
+    "optimization": {
+      "minify": true,
+      "treeshake": true,
+      "splitChunks": true,
+      "imageOptimization": true
+    },
+    "requirements": {
+      "noConsole": "warn",
+      "noDebugger": "error",
+      "noDuplicateImports": true,
+      "noUnusedExports": true
+    },
+    "checks": {
+      "typescript": true,
+      "lint": true,
+      "test": true,
+      "bundle": true
+    }
+  },
+  "nextjs": {
+    "features": {
+      "serverComponents": true,
+      "serverActions": true,
+      "appRouter": true,
+      "imageOptimization": true,
+      "incrementalStaticRegeneration": true
+    },
+    "performance": {
+      "reactStrictMode": true,
+      "optimizeFonts": true,
+      "optimizeImages": true,
+      "swcMinify": true
+    }
+  },
+  "firebase": {
+    "features": {
+      "auth": true,
+      "firestore": true,
+      "storage": true,
+      "analytics": true
+    },
+    "requirements": {
+      "securityRules": true,
+      "indexes": true,
+      "backups": true
+    }
+  },
+  "deployment": {
+    "platform": "vercel",
+    "requirements": {
+      "environmentVariables": true,
+      "buildOptimization": true,
+      "edgeFunction": true
+    }
+  },
+  "accessibility": {
+    "wcag": "2.1",
+    "level": "AA",
+    "requirements": {
+      "aria": true,
+      "contrast": true,
+      "keyboard": true,
+      "screenReader": true
+    }
+  },
+  "seo": {
+    "requirements": {
+      "metadata": true,
+      "openGraph": true,
+      "schema": true,
+      "sitemap": true,
+      "robots": true
+    }
+  }
+}

@@ -92,7 +92,7 @@ export default function CalendarPage() {
   // Extract unique locations and instructors from courses
   const locations = Array.from(new Set(courses.map(c => c.location)));
   const instructors: InstructorInfo[] = Array.from(
-    new Set(courses.map(c => c.instructorId))
+    new Set(courses.map(c => c.instructorId).filter((id): id is string => id !== undefined))
   ).map(id => ({
     id,
     name: instructorNames.get(id) || 'Unknown Instructor'

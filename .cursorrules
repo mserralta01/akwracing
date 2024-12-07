@@ -1,0 +1,549 @@
+{
+  "project": {
+    "type": "next.js",
+    "framework": {
+      "version": "latest",
+      "mode": "app-router",
+      "typescript": true
+    }
+  },
+  "editor": {
+    "codeActions": {
+      "source.fixAll": true,
+      "source.organizeImports": true,
+      "source.addMissingImports": true
+    },
+    "suggestions": {
+      "enabled": true,
+      "includeCompletions": true,
+      "includeCodeActions": true
+    }
+  },
+  "completion": {
+    "engine": "claude-3-sonnet",
+    "temperature": 0.7,
+    "includeContext": true,
+    "maxTokens": 4000,
+    "model": {
+      "context": "You are assisting with a professional Next.js/React project using ShadCN UI, Firebase, and Vercel hosting. Focus on maintainable, performant, and user-friendly solutions.",
+      "rules": [
+        "Always use TypeScript with proper type definitions",
+        "Implement proper error handling and loading states",
+        "Consider build process implications",
+        "Follow React Server Components patterns when applicable",
+        "Use ShadCN UI components and styling system consistently",
+        "Maintain mobile-first responsive design",
+        "Implement proper accessibility features",
+        "Consider performance optimizations",
+        "Follow Firebase best practices",
+        "Include comprehensive error handling",
+        "Ensure proper metadata for SEO",
+        "Implement proper caching strategies",
+        "Use proper image optimization",
+        "Follow security best practices",
+        "Implement proper data validation"
+      ],
+      "preferences": {
+        "styleGuide": "standard",
+        "formatting": "prettier",
+        "testingFramework": "jest",
+        "componentStructure": "functional",
+        "stateManagement": "react-hooks",
+        "cssFramework": "tailwind",
+        "buildTool": "turbopack",
+        "deployment": "vercel"
+      }
+    }
+  },
+  "linting": {
+    "enabled": true,
+    "eslint": {
+      "enabled": true,
+      "rules": {
+        "react-hooks/rules-of-hooks": "error",
+        "react-hooks/exhaustive-deps": "warn",
+        "no-unused-vars": "warn",
+        "@typescript-eslint/no-explicit-any": "warn",
+        "@typescript-eslint/explicit-function-return-type": "warn"
+      }
+    },
+    "typescript": {
+      "enabled": true,
+      "strict": true,
+      "noImplicitAny": true,
+      "strictNullChecks": true
+    }
+  },
+  "formatting": {
+    "enabled": true,
+    "prettier": {
+      "enabled": true,
+      "singleQuote": true,
+      "trailingComma": "es5",
+      "tabWidth": 2,
+      "semi": true,
+      "printWidth": 100
+    },
+    "organizeImports": true,
+    "rules": {
+      "maxLineLength": 100,
+      "indentStyle": "space",
+      "indentWidth": 2
+    }
+  },
+  "testing": {
+    "generateTests": true,
+    "coverage": {
+      "enabled": true,
+      "threshold": 80
+    },
+    "frameworks": {
+      "jest": true,
+      "cypress": true,
+      "testingLibrary": true
+    },
+    "requirements": {
+      "unitTests": true,
+      "integrationTests": true,
+      "e2eTests": true
+    }
+  },
+  "documentation": {
+    "generateDocs": true,
+    "includeTypes": true,
+    "componentProps": true,
+    "requirements": {
+      "jsdoc": true,
+      "readme": true,
+      "changelog": true,
+      "api": true
+    }
+  },
+  "security": {
+    "checkDependencies": true,
+    "preventLeaks": true,
+    "rules": {
+      "noSecrets": true,
+      "noSensitiveData": true,
+      "secureHeaders": true,
+      "xssProtection": true,
+      "csrfProtection": true
+    },
+    "scanning": {
+      "enabled": true,
+      "frequency": "onSave"
+    }
+  },
+  "build": {
+    "checkCompatibility": true,
+    "validateTypes": true,
+    "ensureProduction": true,
+    "optimization": {
+      "minify": true,
+      "treeshake": true,
+      "splitChunks": true,
+      "imageOptimization": true
+    },
+    "requirements": {
+      "noConsole": "warn",
+      "noDebugger": "error",
+      "noDuplicateImports": true,
+      "noUnusedExports": true
+    },
+    "checks": {
+      "typescript": true,
+      "lint": true,
+      "test": true,
+      "bundle": true
+    }
+  },
+  "nextjs": {
+    "features": {
+      "serverComponents": true,
+      "serverActions": true,
+      "appRouter": true,
+      "imageOptimization": true,
+      "incrementalStaticRegeneration": true
+    },
+    "performance": {
+      "reactStrictMode": true,
+      "optimizeFonts": true,
+      "optimizeImages": true,
+      "swcMinify": true
+    }
+  },
+  "firebase": {
+    "features": {
+      "auth": true,
+      "firestore": true,
+      "storage": true,
+      "analytics": true
+    },
+    "requirements": {
+      "securityRules": true,
+      "indexes": true,
+      "backups": true
+    }
+  },
+  "deployment": {
+    "platform": "vercel",
+    "requirements": {
+      "environmentVariables": true,
+      "buildOptimization": true,
+      "edgeFunction": true
+    }
+  },
+  "accessibility": {
+    "wcag": "2.1",
+    "level": "AA",
+    "requirements": {
+      "aria": true,
+      "contrast": true,
+      "keyboard": true,
+      "screenReader": true
+    }
+  },
+  "seo": {
+    "requirements": {
+      "metadata": true,
+      "openGraph": true,
+      "schema": true,
+      "sitemap": true,
+      "robots": true
+    }
+  }
+}
+```
+└── 📁akwracing
+        └── extensions.json
+    └── 📁app
+        └── 📁(dashboard)
+            └── 📁(routes)
+                └── 📁equipment
+                    └── page.tsx
+        └── 📁admin
+            └── 📁academy
+                └── 📁course-management
+                    └── 📁[courseId]
+                        └── 📁edit
+                            └── page.tsx
+                    └── 📁components
+                    └── 📁new
+                        └── page.tsx
+                    └── page.tsx
+                └── 📁enrollment-management
+                    └── page.tsx
+                └── 📁enrollments
+                    └── page.tsx
+                └── 📁equipment
+                └── 📁instructor-management
+                    └── 📁[instructorId]
+                        └── 📁edit
+                            └── page.tsx
+                    └── 📁new
+                        └── page.tsx
+                    └── page.tsx
+                └── 📁payments
+                    └── page.tsx
+                └── 📁students
+                    └── page.tsx
+                └── page.tsx
+            └── 📁course-management
+                └── 📁[courseId]
+                    └── 📁edit
+                        └── .DS_Store
+                        └── edit-course-content.tsx
+                        └── page.tsx
+                    └── .DS_Store
+                └── 📁[slug]
+                    ├── edit
+                └── 📁new
+                    └── page.tsx
+                └── .DS_Store
+                └── page.tsx
+            └── 📁equipment
+                └── 📁[id]
+                    └── equipment-form.tsx
+                    └── page.tsx
+                └── page.tsx
+            └── 📁settings
+                └── 📁features
+                    └── page.tsx
+                └── 📁roles
+                    └── page.tsx
+            └── 📁students
+                └── 📁all
+                    └── page.tsx
+                └── 📁parents
+                    └── page.tsx
+                └── 📁reports
+                    └── page.tsx
+            └── 📁team-management
+                └── 📁[memberId]
+                    └── 📁edit
+                        └── page.tsx
+                └── 📁[teamMemberId]
+                    ├── edit
+                └── 📁new
+                    └── page.tsx
+                └── page.tsx
+            └── .DS_Store
+            └── layout.tsx
+            └── page.tsx
+        └── 📁api
+            └── 📁email
+                └── 📁send
+                    └── route.ts
+            └── 📁payment
+                └── 📁process
+                    └── route.ts
+        └── 📁calendar
+            └── page.tsx
+        └── 📁courses
+            └── 📁[courseName]
+                └── page.tsx
+            └── 📁[slug]
+            └── page.tsx
+        └── 📁facilities
+            └── page.tsx
+        └── 📁instructors
+            └── 📁[instructorId]
+                └── page.tsx
+            └── page.tsx
+        └── 📁team
+            └── 📁[memberId]
+            └── page.tsx
+        └── .DS_Store
+        └── globals.css
+        └── layout.tsx
+        └── page.tsx
+    └── 📁components
+        └── 📁admin
+            └── 📁courses
+            └── add-course.tsx
+            └── course-form.tsx
+            └── course-management.tsx
+            └── enrollment-management.tsx
+            └── equipment-management.tsx
+            └── instructor-form.tsx
+            └── instructor-management.tsx
+            └── left-menu.tsx
+            └── parent-list.tsx
+            └── role-management.tsx
+            └── student-list.tsx
+            └── student-management.tsx
+            └── team-form.tsx
+            └── team-management.tsx
+        └── 📁auth
+            └── admin-guard.tsx
+            └── auth-buttons.tsx
+            └── sign-in-dialog.tsx
+            └── sign-up-dialog.tsx
+            └── user-nav.tsx
+        └── 📁brands
+            └── manage-brands.tsx
+        └── 📁categories
+            └── manage-categories.tsx
+        └── 📁courses
+            └── course-card.tsx
+            └── course-details.tsx
+        └── 📁enrollment
+            └── enrollment-flow.tsx
+            └── parent-form.tsx
+            └── student-form.tsx
+        └── 📁equipment
+            └── brand-manager.tsx
+            └── category-manager.tsx
+            └── equipment-form.tsx
+            └── equipment-grid.tsx
+            └── equipment-table.tsx
+            └── sale-lease-switch.tsx
+            └── view-toggle.tsx
+        └── 📁facilities
+            └── facility-card.tsx
+            └── hero-section.tsx
+        └── 📁footer
+            └── bottom-bar.tsx
+            └── brand.tsx
+            └── contact-info.tsx
+            └── copyright.tsx
+            └── index.tsx
+            └── legal-links.tsx
+            └── newsletter-form.tsx
+            └── newsletter-section.tsx
+            └── quick-links.tsx
+            └── social-links.tsx
+        └── 📁layout
+            └── sidebar.tsx
+        └── 📁navigation
+            └── top-menu.tsx
+        └── 📁payment
+            └── payment-form.tsx
+            └── payment-notification.tsx
+        └── 📁providers
+        └── 📁sections
+            └── about.tsx
+            └── benefits.tsx
+            └── contact.tsx
+            └── facilities.tsx
+            └── hero.tsx
+            └── instructors.tsx
+            └── programs.tsx
+            └── safety.tsx
+            └── team.tsx
+        └── 📁team
+            └── team-member-card.tsx
+            └── team-member-grid.tsx
+        └── 📁ui
+            └── accordion.tsx
+            └── alert-dialog.tsx
+            └── alert.tsx
+            └── aspect-ratio.tsx
+            └── avatar.tsx
+            └── badge.tsx
+            └── breadcrumb.tsx
+            └── button.tsx
+            └── calendar.tsx
+            └── card.tsx
+            └── carousel.tsx
+            └── chart.tsx
+            └── checkbox.tsx
+            └── collapsible.tsx
+            └── command.tsx
+            └── context-menu.tsx
+            └── data-table.tsx
+            └── date-range-picker.tsx
+            └── dialog.tsx
+            └── drawer.tsx
+            └── dropdown-menu.tsx
+            └── editor.tsx
+            └── file-dialog.tsx
+            └── file-upload.tsx
+            └── form-input.tsx
+            └── form.tsx
+            └── hover-card.tsx
+            └── image-upload.tsx
+            └── input-otp.tsx
+            └── input.tsx
+            └── label.tsx
+            └── manage-items.tsx
+            └── menubar.tsx
+            └── navigation-menu.tsx
+            └── pagination.tsx
+            └── popover.tsx
+            └── progress.tsx
+            └── racing-icon-selector.tsx
+            └── radio-group.tsx
+            └── resizable.tsx
+            └── rich-text-editor.tsx
+            └── scroll-area.tsx
+            └── select.tsx
+            └── separator.tsx
+            └── sheet.tsx
+            └── skeleton.tsx
+            └── slider.tsx
+            └── sonner.tsx
+            └── switch.tsx
+            └── table.tsx
+            └── tabs.tsx
+            └── textarea.tsx
+            └── toast.tsx
+            └── toaster.tsx
+            └── toggle-group.tsx
+            └── toggle.tsx
+            └── tooltip.tsx
+            └── use-toast.ts
+            └── user-menu.tsx
+            └── user-nav-menu.tsx
+        └── editor.tsx
+        └── footer.tsx
+        └── image-upload.tsx
+        └── navigation.tsx
+        └── theme-provider.tsx
+        └── tiptap.tsx
+    └── 📁contexts
+        └── auth-context.tsx
+        └── features-context.tsx
+    └── 📁functions
+        └── 📁src
+            └── index.ts
+    └── 📁hooks
+        └── use-auth.ts
+        └── use-toast.ts
+    └── 📁lib
+        └── 📁config
+            └── menu-items.ts
+        └── 📁constants
+            └── icons.ts
+        └── 📁contexts
+        └── 📁firebase
+            └── config.ts
+        └── 📁hooks
+        └── 📁services
+            └── course-service.ts
+            └── email-service.ts
+            └── enrollment-service.ts
+            └── equipment-service.ts
+            └── instructor-service.ts
+            └── payment-service.ts
+            └── role-service.ts
+            └── student-service.ts
+            └── user-service.ts
+        └── 📁utils
+            └── slug.ts
+        └── auth.ts
+        └── firebase.ts
+        └── utils.ts
+    └── 📁pages
+        └── 📁admin
+            └── 📁equipment
+            └── brands.tsx
+        └── 📁equipment
+            └── 📁[id]
+                └── edit.tsx
+            └── new.tsx
+        └── your-page.tsx
+    └── 📁providers
+        └── query-provider.tsx
+    └── 📁public
+        └── 📁images
+            └── .DS_Store
+            └── akwracingheadquarters.jpg
+            └── akwracingtrailor.jpg
+            └── HomesteadTrack.jpg
+            └── kartsimpro.jpg
+            └── PiquetTrack.webp
+            └── wilma.webp
+        └── .DS_Store
+        └── AKWacademylogo.png
+    └── 📁types
+        └── course.ts
+        └── email.ts
+        └── equipment.ts
+        └── firebase.ts
+        └── instructor.ts
+        └── next.ts
+        └── role.ts
+        └── student.ts
+        └── user.ts
+    └── .cursorrules
+    └── .DS_Store
+    └── .env
+    └── .env.local
+    └── .eslintrc.json
+    └── .gitignore
+    └── components.json
+    └── firebase-debug.log
+    └── firebase.json
+    └── firestore.indexes.json
+    └── firestore.rules
+    └── middleware.ts
+    └── next-env.d.ts
+    └── next.config.js
+    └── package-lock.json
+    └── package.json
+    └── postcss.config.js
+    └── storage.rules
+    └── tailwind.config.ts
+    └── tsconfig.json
+```

@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { User, onAuthStateChanged, signOut as firebaseSignOut } from "firebase/auth";
+import { User, onAuthStateChanged, signOut as firebaseSignOut, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { signInWithGoogle } from "@/lib/auth";
 import { userService, UserDocument } from "@/lib/services/user-service";
@@ -11,6 +11,8 @@ interface AuthContextType {
   userDoc: UserDocument | null;
   isAdmin: boolean;
   loading: boolean;
+  signIn: (email: string, password: string) => Promise<User>;
+  signUp: (email: string, password: string) => Promise<User>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -20,6 +22,8 @@ const AuthContext = createContext<AuthContextType>({
   userDoc: null,
   isAdmin: false,
   loading: true,
+  signIn: async () => { throw new Error("Not implemented"); },
+  signUp: async () => { throw new Error("Not implemented"); },
   signInWithGoogle: async () => {},
   signOut: async () => {},
 });
@@ -52,6 +56,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => unsubscribe();
   }, []);
+
+  const handleSignIn = async (email: string, password: string) => {
+    const { user } = await signInWithEmailAndPassword(auth, email, password);
+    if (user) {
+      // Get or create user document
+      let doc = await userService.getUserDocument(user.uid);
+      if (!doc) {
+        doc = await userService.createUserDocument(user);
+      }
+      setUserDoc(doc);
+      setIsAdmin(doc.role === "admin");
+    }
+    return user;
+  };
+
+  const handleSignUp = async (email: string, password: string) => {
+    const { user } = await createUserWithEmailAndPassword(auth, email, password);
+    if (user) {
+      // Create user document
+      const doc = await userService.createUserDocument(user);
+      setUserDoc(doc);
+      setIsAdmin(doc.role === "admin");
+    }
+    return user;
+  };
 
   const handleSignInWithGoogle = async () => {
     try {
@@ -88,6 +117,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         userDoc,
         isAdmin,
         loading,
+        signIn: handleSignIn,
+        signUp: handleSignUp,
         signInWithGoogle: handleSignInWithGoogle,
         signOut: handleSignOut,
       }}

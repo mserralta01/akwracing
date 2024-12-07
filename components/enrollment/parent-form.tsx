@@ -15,17 +15,26 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const parentFormSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   email: z.string().email("Please enter a valid email address"),
   phone: z.string().min(10, "Please enter a valid phone number"),
+  relationship: z.string().min(1, "Relationship is required"),
   address: z.object({
     street: z.string().min(1, "Street address is required"),
     city: z.string().min(1, "City is required"),
     state: z.string().min(1, "State is required"),
     zipCode: z.string().min(5, "Valid ZIP code is required"),
+    country: z.string().min(1, "Country is required"),
   }),
 });
 
@@ -63,11 +72,13 @@ const defaultValues = {
   lastName: "",
   email: "",
   phone: "+1 ",
+  relationship: "",
   address: {
     street: "",
     city: "",
     state: "",
     zipCode: "",
+    country: "United States",
   },
 };
 
@@ -82,6 +93,10 @@ export function ParentForm({ onSubmit, loading }: ParentFormProps) {
     const formattedData = {
       ...data,
       phone: unformatPhoneNumber(data.phone),
+      address: {
+        ...data.address,
+        country: data.address.country || "United States",
+      },
     };
     onSubmit(formattedData);
   };
@@ -179,6 +194,29 @@ export function ParentForm({ onSubmit, loading }: ParentFormProps) {
 
         <FormField
           control={form.control}
+          name="relationship"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Relationship to Student</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select relationship" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="parent">Parent</SelectItem>
+                  <SelectItem value="guardian">Legal Guardian</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
           name="address.street"
           render={({ field }) => (
             <FormItem>
@@ -232,6 +270,30 @@ export function ParentForm({ onSubmit, loading }: ParentFormProps) {
             )}
           />
         </div>
+
+        <FormField
+          control={form.control}
+          name="address.country"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Country</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select country" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="United States">United States</SelectItem>
+                  <SelectItem value="Canada">Canada</SelectItem>
+                  <SelectItem value="Mexico">Mexico</SelectItem>
+                  {/* Add more countries as needed */}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? (

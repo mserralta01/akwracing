@@ -30,9 +30,9 @@ const studentFormSchema = z.object({
   phone: z.string().min(10, "Valid phone number is required"),
   experience: z
     .object({
-      yearsOfExperience: z.number().min(0),
-      previousCourses: z.array(z.string()).default([]),
       skillLevel: z.enum(["Beginner", "Intermediate", "Advanced"]),
+      yearsRiding: z.number().min(0),
+      previousTraining: z.string().optional(),
     })
     .optional(),
 });
@@ -77,9 +77,9 @@ export function StudentForm({ onSubmit, loading, course }: StudentFormProps) {
     dateOfBirth: "",
     phone: "+1 ",
     experience: {
-      yearsOfExperience: 0,
-      previousCourses: [],
+      yearsRiding: 0,
       skillLevel: "Beginner" as const,
+      previousTraining: "",
     },
   };
 
@@ -94,9 +94,9 @@ export function StudentForm({ onSubmit, loading, course }: StudentFormProps) {
       ...data,
       phone: unformatPhoneNumber(data.phone),
       experience: data.experience || {
-        yearsOfExperience: 0,
-        previousCourses: [],
+        yearsRiding: 0,
         skillLevel: "Beginner",
+        previousTraining: "",
       },
     };
     onSubmit(formattedData);
@@ -204,10 +204,10 @@ export function StudentForm({ onSubmit, loading, course }: StudentFormProps) {
           <div className="grid grid-cols-2 gap-4">
             <FormField
               control={form.control}
-              name="experience.yearsOfExperience"
+              name="experience.yearsRiding"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Years of Experience</FormLabel>
+                  <FormLabel>Years of Riding Experience</FormLabel>
                   <FormControl>
                     <Input 
                       type="number" 
@@ -243,6 +243,20 @@ export function StudentForm({ onSubmit, loading, course }: StudentFormProps) {
               )}
             />
           </div>
+
+          <FormField
+            control={form.control}
+            name="experience.previousTraining"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Previous Training (Optional)</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="List any previous training or courses" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
 
         <Button type="submit" className="w-full" disabled={loading}>

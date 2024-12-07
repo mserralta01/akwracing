@@ -17,7 +17,7 @@ type FormData = {
   brandId: string
   categoryId: string
   imageUrl: string
-  salePrice?: number
+  sellingPrice?: number
   wholesalePrice?: number
   leasePrice?: number
   condition?: string
@@ -46,7 +46,7 @@ export const EquipmentForm = ({
     brandId: "",
     categoryId: "",
     imageUrl: "",
-    salePrice: initialData?.salePrice ?? 0,
+    sellingPrice: initialData?.sellingPrice ?? 0,
     wholesalePrice: initialData?.wholesalePrice ?? 0,
     leasePrice: 0,
     hourlyRate: 0,
@@ -75,7 +75,7 @@ export const EquipmentForm = ({
             brandId: equipmentData.brandId || "",
             categoryId: equipmentData.categoryId || "",
             imageUrl: equipmentData.imageUrl || "",
-            salePrice: equipmentData.salePrice || 0,
+            sellingPrice: equipmentData.sellingPrice || 0,
             wholesalePrice: equipmentData.wholesalePrice || 0,
             leasePrice: equipmentData.leasePrice || 0,
             hourlyRate: equipmentData.hourlyRate || 0,
@@ -104,7 +104,7 @@ export const EquipmentForm = ({
   }, [equipmentId])
 
   const validateSaleSection = () => {
-    if (forSale && (!formData.salePrice || !formData.condition)) {
+    if (forSale && (!formData.sellingPrice || !formData.condition)) {
       return {
         isValid: false,
         message: "Please complete sale price and condition"
@@ -128,7 +128,7 @@ export const EquipmentForm = ({
     
     try {
       console.log('Current form state:', {
-        salePrice: formData.salePrice,
+        sellingPrice: formData.sellingPrice,
         wholesalePrice: formData.wholesalePrice,
         forSale
       });
@@ -138,7 +138,7 @@ export const EquipmentForm = ({
         brandId: formData.brandId,
         categoryId: formData.categoryId,
         imageUrl: formData.imageUrl,
-        salePrice: forSale ? Number(formData.salePrice) : 0,
+        sellingPrice: forSale ? Number(formData.sellingPrice) : 0,
         wholesalePrice: forSale ? Number(formData.wholesalePrice) : 0,
         condition: forSale ? formData.condition : "",
         leasePrice: forLease ? formData.leasePrice : 0,
@@ -245,33 +245,19 @@ export const EquipmentForm = ({
               {forSale && (
                 <div className="mt-4 space-y-4">
                   <FormInput
-                    id="salePrice"
+                    id="sellingPrice"
                     label="Retail Price"
                     type="number"
-                    value={formData.salePrice || 0}
-                    onChange={(e) => {
-                      const newValue = Number(e.target.value);
-                      console.log('Setting sale price:', newValue);
-                      setFormData(prev => ({
-                        ...prev,
-                        salePrice: newValue
-                      }));
-                    }}
-                    required
+                    value={formData.sellingPrice}
+                    onChange={(e) => setFormData({ ...formData, sellingPrice: parseFloat(e.target.value) })}
+                    required={forSale}
                   />
                   <FormInput
                     id="wholesalePrice"
                     label="Wholesale Price"
                     type="number"
-                    value={formData.wholesalePrice || 0}
-                    onChange={(e) => {
-                      const newValue = Number(e.target.value);
-                      console.log('Setting wholesale price:', newValue);
-                      setFormData(prev => ({
-                        ...prev,
-                        wholesalePrice: newValue
-                      }));
-                    }}
+                    value={formData.wholesalePrice}
+                    onChange={(e) => setFormData({ ...formData, wholesalePrice: parseFloat(e.target.value) })}
                     required
                   />
                   <FormInput

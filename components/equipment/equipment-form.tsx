@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { db } from "@/lib/firebase"
 import { doc, getDoc, setDoc, updateDoc, collection } from "firebase/firestore"
 import { Card, CardContent } from "@/components/ui/card"
-import { ImageUpload } from "@/components/ui/image-upload"
+import { ImageUpload, type PreloadedFile } from "@/components/ui/image-upload"
 import { Equipment } from "@/types/equipment"
 import { equipmentService } from "@/lib/services/equipment-service"
 import { type EquipmentFormProps } from "@/types/equipment";
@@ -83,11 +83,11 @@ export const EquipmentForm = ({
             weeklyRate: equipmentData.weeklyRate || 0,
             condition: equipmentData.condition || "",
             leaseTerm: equipmentData.leaseTerm || "",
-            forSale: equipmentData.forSale || false,
-            forLease: equipmentData.forLease || false,
+            forSale: equipmentData.forSale ?? false,
+            forLease: equipmentData.forLease ?? false,
           })
-          setForSale(equipmentData.forSale)
-          setForLease(equipmentData.forLease)
+          setForSale(equipmentData.forSale ?? false)
+          setForLease(equipmentData.forLease ?? false)
           
           if (equipmentData.imageUrl) {
             setPreloadedImage({

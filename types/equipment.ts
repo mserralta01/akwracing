@@ -22,6 +22,7 @@ export type Equipment = {
   inStock: number;
   purchasePrice?: number;
   sellingPrice?: number;
+  wholesalePrice?: number;
   imageUrl?: string;
   brandId?: string;
   categoryId?: string;

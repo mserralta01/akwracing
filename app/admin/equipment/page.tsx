@@ -119,18 +119,19 @@ export default function EquipmentPage() {
     }
   }
 
-  const handleEditCategory = async (id: string, name: string) => {
+  const handleUpdateCategory = async (id: string, name: string) => {
     try {
       await equipmentService.updateCategory(id, { name })
       await loadData()
       toast({
+        title: 'Success',
         description: 'Category updated successfully'
       })
     } catch (error) {
-      console.error('Error updating category:', error)
       toast({
-        variant: 'destructive',
-        description: 'Failed to update category'
+        title: 'Error',
+        description: 'Failed to update category',
+        variant: 'destructive'
       })
     }
   }
@@ -167,18 +168,19 @@ export default function EquipmentPage() {
     }
   }
 
-  const handleEditBrand = async (id: string, name: string) => {
+  const handleUpdateBrand = async (id: string, name: string) => {
     try {
       await equipmentService.updateBrand(id, { name })
       await loadData()
       toast({
-        description: 'Brand updated successfully'
+        title: 'Success',
+        description: 'Brand updated successfully',
       })
     } catch (error) {
-      console.error('Error updating brand:', error)
       toast({
+        title: 'Error',
+        description: 'Failed to update brand',
         variant: 'destructive',
-        description: 'Failed to update brand'
       })
     }
   }
@@ -247,13 +249,13 @@ export default function EquipmentPage() {
             <CategoryManager
               categories={categories}
               onAdd={handleAddCategory}
-              onEdit={handleEditCategory}
+              onUpdate={handleUpdateCategory}
               onDelete={handleDeleteCategory}
             />
             <BrandManager
               brands={brands}
               onAdd={handleAddBrand}
-              onEdit={handleEditBrand}
+              onUpdate={handleUpdateBrand}
               onDelete={handleDeleteBrand}
             />
             <ViewToggle currentView={viewMode} onViewChange={setViewMode} />

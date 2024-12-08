@@ -10,23 +10,27 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Category } from "@/types/equipment"
 import { useToast } from "@/components/ui/use-toast"
 import { Settings } from "lucide-react"
 
-type CategoryManagerProps = {
-  categories: Category[]
-  onAdd: (name: string) => Promise<void>
-  onEdit: (id: string, name: string) => Promise<void>
-  onDelete: (id: string) => Promise<void>
+interface Category {
+  id: string;
+  name: string;
 }
 
-export function CategoryManager({
+interface CategoryManagerProps {
+  categories: Category[];
+  onAdd: (name: string) => Promise<void>;
+  onUpdate: (id: string, name: string) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
+}
+
+export const CategoryManager: React.FC<CategoryManagerProps> = ({
   categories,
   onAdd,
-  onEdit,
+  onUpdate,
   onDelete,
-}: CategoryManagerProps) {
+}) => {
   const [newCategory, setNewCategory] = useState("")
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingName, setEditingName] = useState("")
@@ -55,7 +59,7 @@ export function CategoryManager({
     }
   }
 
-  const handleEdit = async () => {
+  const handleUpdate = async () => {
     if (!editingName.trim()) {
       toast({
         variant: "destructive",
@@ -66,7 +70,7 @@ export function CategoryManager({
 
     try {
       if (editingId) {
-        await onEdit(editingId, editingName)
+        await onUpdate(editingId, editingName)
       }
       setEditingId(null)
       setEditingName('')
@@ -77,20 +81,6 @@ export function CategoryManager({
       toast({
         variant: "destructive",
         description: "Failed to update category",
-      })
-    }
-  }
-
-  const handleDelete = async (id: string) => {
-    try {
-      await onDelete(id)
-      toast({
-        description: "Category deleted successfully",
-      })
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        description: "Failed to delete category",
       })
     }
   }
@@ -128,7 +118,7 @@ export function CategoryManager({
                       value={editingName}
                       onChange={(e) => setEditingName(e.target.value)}
                     />
-                    <Button onClick={handleEdit}>Save</Button>
+                    <Button onClick={handleUpdate}>Save</Button>
                     <Button
                       variant="ghost"
                       onClick={() => {
@@ -153,7 +143,7 @@ export function CategoryManager({
                     </Button>
                     <Button
                       variant="destructive"
-                      onClick={() => handleDelete(category.id)}
+                      onClick={() => onDelete(category.id)}
                     >
                       Delete
                     </Button>

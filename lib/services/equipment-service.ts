@@ -311,18 +311,18 @@ export const equipmentService = {
   // Brand functions
   async getBrands(): Promise<Brand[]> {
     try {
-      const brandQuery = query(
+      const brandsQuery = query(
         collection(db, BRAND_COLLECTION),
         orderBy("createdAt", "desc")
       );
-      const snapshot = await getDocs(brandQuery);
+      const snapshot = await getDocs(brandsQuery);
       return snapshot.docs.map((doc) => {
         const data = doc.data();
         return {
           id: doc.id,
-          ...data,
+          name: data.name,
           createdAt: data.createdAt?.toDate?.() || new Date(),
-          updatedAt: data.updatedAt?.toDate?.() || new Date(),
+          updatedAt: data.updatedAt?.toDate?.() || new Date()
         } as Brand;
       });
     } catch (error) {

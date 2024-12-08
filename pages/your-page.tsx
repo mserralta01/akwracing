@@ -12,12 +12,15 @@ export default function BrandsManagementPage() {
     const fetchBrands = async () => {
       try {
         const brandsSnapshot = await getDocs(collection(db, "brands"))
-        const brandsData = brandsSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          createdAt: new Date(doc.data().createdAt),
-          updatedAt: new Date(doc.data().updatedAt || doc.data().createdAt)
-        })) as Brand[]
+        const brandsData = brandsSnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            name: data.name,
+            createdAt: new Date(data.createdAt),
+            updatedAt: new Date(data.updatedAt || data.createdAt)
+          };
+        }) as Brand[]
         setBrands(brandsData)
       } catch (error) {
         console.error("Error fetching brands:", error)

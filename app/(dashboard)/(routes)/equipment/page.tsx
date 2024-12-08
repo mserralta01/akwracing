@@ -73,7 +73,7 @@ export default function EquipmentPage() {
     }
   }
 
-  const handleEditCategory = async (id: string, name: string) => {
+  const handleUpdateCategory = async (id: string, name: string) => {
     try {
       await equipmentService.updateCategory(id, { name })
       await loadData()
@@ -236,7 +236,7 @@ export default function EquipmentPage() {
           <CategoryManager
             categories={categories}
             onAdd={handleAddCategory}
-            onEdit={handleEditCategory}
+            onUpdate={handleUpdateCategory}
             onDelete={handleDeleteCategory}
           />
           <BrandManager

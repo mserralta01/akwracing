@@ -187,9 +187,13 @@ export const studentService = {
       }
 
       const updatedDoc = await getDoc(parentRef);
+      const docData = updatedDoc.data();
+      if (!docData) {
+        throw new Error('Failed to get updated parent profile data');
+      }
       return {
         id: updatedDoc.id,
-        ...convertTimestampsToDates(updatedDoc.data()),
+        ...convertTimestampsToDates(docData),
       } as ParentProfile;
     } catch (error) {
       console.error('Error updating parent profile:', error);

@@ -29,11 +29,12 @@ export type StudentProfile = {
 
 export type ParentProfile = {
   id: string;
+  userId: string;
   firstName: string;
   lastName: string;
   phone: string;
   email: string;
-  relationship: string;
+  relationship?: string;
   address: {
     street: string;
     city: string;
@@ -42,6 +43,8 @@ export type ParentProfile = {
     country: string;
   };
   students: string[];
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type Enrollment = {

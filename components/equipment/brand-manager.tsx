@@ -10,18 +10,27 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Brand } from "@/types/equipment"
 import { useToast } from "@/components/ui/use-toast"
 import { Settings } from "lucide-react"
 
-type BrandManagerProps = {
-  brands: Brand[]
-  onAdd: (name: string) => Promise<void>
-  onEdit: (id: string, name: string) => Promise<void>
-  onDelete: (id: string) => Promise<void>
+interface Brand {
+  id: string;
+  name: string;
 }
 
-export function BrandManager({ brands, onAdd, onEdit, onDelete }: BrandManagerProps) {
+interface BrandManagerProps {
+  brands: Brand[];
+  onAdd: (name: string) => Promise<void>;
+  onUpdate: (id: string, name: string) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
+}
+
+export const BrandManager: React.FC<BrandManagerProps> = ({
+  brands,
+  onAdd,
+  onUpdate,
+  onDelete,
+}) => {
   const [newBrand, setNewBrand] = useState("")
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingName, setEditingName] = useState("")
@@ -61,7 +70,7 @@ export function BrandManager({ brands, onAdd, onEdit, onDelete }: BrandManagerPr
 
     try {
       if (editingId) {
-        await onEdit(editingId, editingName)
+        await onUpdate(editingId, editingName)
       }
       setEditingId(null)
       setEditingName('')

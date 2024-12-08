@@ -5,11 +5,9 @@ export type Category = {
   updatedAt: Date
 }
 
-export type Brand = {
-  id: string
-  name: string
-  createdAt: Date
-  updatedAt: Date
+export interface Brand {
+  id: string;
+  name: string;
 }
 
 export type EquipmentType = "Helmet" | "Suit" | "Gloves" | "Boots" | "Kart" | "Other";
@@ -58,4 +56,11 @@ export type PreloadedFile = {
   name: string;
   size: number;
   type: string;
-}; 
+};
+
+export interface BrandManagerProps {
+  brands: Brand[];
+  onAdd: (name: string) => Promise<void>;
+  onUpdate: (id: string, name: string) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
+} 

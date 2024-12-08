@@ -52,7 +52,7 @@ export type Enrollment = {
   studentId: string;
   parentId: string;
   courseId: string;
-  status: "pending" | "confirmed" | "cancelled" | "completed";
+  status: EnrollmentStatus;
   createdAt: string;
   updatedAt: string;
   paymentDetails: {

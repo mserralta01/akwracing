@@ -1,4 +1,1 @@
-export type { Enrollment, StudentProfile } from './student';
-
-</```
-rewritten_file>
+export type { Enrollment, StudentProfile } from './student'; 

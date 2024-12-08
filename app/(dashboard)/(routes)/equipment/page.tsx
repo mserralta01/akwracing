@@ -124,7 +124,7 @@ export default function EquipmentPage() {
     }
   }
 
-  const handleEditBrand = async (id: string, name: string) => {
+  const handleUpdateBrand = async (id: string, name: string) => {
     try {
       await equipmentService.updateBrand(id, { name })
       await loadData()
@@ -242,7 +242,7 @@ export default function EquipmentPage() {
           <BrandManager
             brands={brands}
             onAdd={handleAddBrand}
-            onEdit={handleEditBrand}
+            onUpdate={handleUpdateBrand}
             onDelete={handleDeleteBrand}
           />
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>

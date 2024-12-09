@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { AdminGuard } from "@/components/auth/admin-guard";
 import { studentService } from "@/lib/services/student-service";
 import { DateRange } from "@/types/course";
-import { DatePickerWithRange } from "@/components/ui/date-range-picker";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -39,7 +39,7 @@ const COLORS = ["#10B981", "#F59E0B", "#EF4444", "#6B7280"];
 export default function ReportsPage() {
   const [date, setDate] = useState<DateRange>({
     from: new Date(new Date().setMonth(new Date().getMonth() - 1)),
-    to: new Date(),
+    to: new Date()
   });
   const [enrollments, setEnrollments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -190,12 +190,10 @@ export default function ReportsPage() {
                   </CardDescription>
                 </div>
                 <div className="flex gap-4">
-                  <DatePickerWithRange 
-                    date={date} 
-                    setDate={(newDate) => {
-                      if (newDate) {
-                        setDate(newDate);
-                      }
+                  <DateRangePicker
+                    value={date}
+                    onChange={(newDate) => {
+                      setDate(newDate || { from: undefined });
                     }}
                   />
                   <Select value={viewType} onValueChange={(v: "daily" | "status") => setViewType(v)}>

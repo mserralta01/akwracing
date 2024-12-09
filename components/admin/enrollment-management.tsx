@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Enrollment } from "@/types/student";
+import { Enrollment, EnrollmentStatus } from "@/types/student";
 import { enrollmentService } from "@/lib/services/enrollment-service";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,21 +37,46 @@ import {
   MessageSquare,
 } from "lucide-react";
 
+type ServiceEnrollmentStatus = "ACTIVE" | "COMPLETED" | "CANCELLED";
+
 type ServiceEnrollment = {
   id: string;
   studentId: string;
   courseId: string;
-  status: "ACTIVE" | "COMPLETED" | "CANCELLED";
+  status: ServiceEnrollmentStatus;
   enrollmentDate?: Date;
   lastAccessedDate?: Date;
-} & Partial<Enrollment>;
+};
+
+const convertEnrollmentStatusToService = (status: EnrollmentStatus): ServiceEnrollmentStatus => {
+  switch (status) {
+    case "confirmed":
+      return "ACTIVE";
+    case "completed":
+      return "COMPLETED";
+    case "cancelled":
+    case "pending":
+      return "CANCELLED";
+  }
+};
+
+const convertServiceStatusToEnrollment = (status: ServiceEnrollmentStatus): EnrollmentStatus => {
+  switch (status) {
+    case "ACTIVE":
+      return "confirmed";
+    case "COMPLETED":
+      return "completed";
+    case "CANCELLED":
+      return "cancelled";
+  }
+};
+
 const convertServiceEnrollmentToEnrollment = (serviceEnrollment: ServiceEnrollment): Enrollment => ({
   id: serviceEnrollment.id ?? crypto.randomUUID(),
   studentId: serviceEnrollment.studentId ?? crypto.randomUUID(), 
   parentId: "",
   courseId: serviceEnrollment.courseId ?? crypto.randomUUID(),
-  status: serviceEnrollment.status === "ACTIVE" ? "confirmed" :
-          serviceEnrollment.status === "COMPLETED" ? "completed" : "cancelled",
+  status: convertServiceStatusToEnrollment(serviceEnrollment.status),
   createdAt: serviceEnrollment.enrollmentDate?.toISOString() || new Date().toISOString(),
   updatedAt: serviceEnrollment.lastAccessedDate?.toISOString() || serviceEnrollment.enrollmentDate?.toISOString() || new Date().toISOString(),
   paymentDetails: {
@@ -60,23 +85,7 @@ const convertServiceEnrollmentToEnrollment = (serviceEnrollment: ServiceEnrollme
     paymentStatus: "pending",
   },
   notes: [],
-  communicationHistory: [],
-  student: {
-    name: "Unknown Student",
-    email: "",
-    phone: "",
-  },
-  course: {
-    title: "Unknown Course",
-    startDate: new Date().toISOString(),
-    endDate: new Date().toISOString(),
-  },
-  payment: {
-    amount: 0,
-    currency: "USD",
-    status: "pending",
-    transactionId: undefined,
-  },
+  communicationHistory: []
 });
 
 export default function EnrollmentManagement() {
@@ -87,25 +96,25 @@ export default function EnrollmentManagement() {
   const router = useRouter();
 
   useEffect(() => {
-    loadEnrollments();
-  }, []);
+    const loadEnrollments = async () => {
+      try {
+        setLoading(true);
+        const data = await enrollmentService.getAllEnrollments();
+        setEnrollments(data);
+      } catch (error) {
+        console.error("Error loading enrollments:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load enrollments. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const loadEnrollments = async () => {
-    try {
-      setLoading(true);
-      const data = await enrollmentService.getAllEnrollments();
-      setEnrollments(data.map((serviceEnrollment) => convertServiceEnrollmentToEnrollment(serviceEnrollment)));
-    } catch (error) {
-      console.error("Error loading enrollments:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load enrollments",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+    loadEnrollments();
+  }, [toast]);
 
   return (
     <div className="container mx-auto py-8">

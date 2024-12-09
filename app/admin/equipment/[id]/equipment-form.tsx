@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
+import DOMPurify from 'isomorphic-dompurify'
 import { useToast } from '@/components/ui/use-toast'
 import { equipmentService } from '@/lib/services/equipment-service'
 import { Equipment, Category, Brand } from '@/types/equipment'
@@ -193,6 +194,8 @@ export default function EquipmentForm({ id }: Props) {
 
   const onSubmit = async (data: FormData) => {
     try {
+      console.log('Form data before processing:', data);
+
       // Validate required fields based on toggles
       if (forSale && data.sellingPrice <= 0) {
         form.setError('sellingPrice', { message: 'Retail price is required when for sale is enabled' })
@@ -206,8 +209,23 @@ export default function EquipmentForm({ id }: Props) {
 
       setSubmitting(true)
 
+      // Sanitize HTML content and ensure it's a string
+      const sanitizedShortDescription = DOMPurify.sanitize(data.shortDescription || '')
+      const sanitizedDescription = DOMPurify.sanitize(data.description || '')
+
+      console.log('Sanitized descriptions:', {
+        short: sanitizedShortDescription,
+        full: sanitizedDescription
+      });
+
       const cleanData: Partial<Equipment> = {
-        ...data,
+        name: data.name,
+        type: "Other" as const,
+        shortDescription: sanitizedShortDescription,
+        description: sanitizedDescription,
+        inStock: data.inStock,
+        brandId: data.brandId,
+        categoryId: data.categoryId,
         sellingPrice: forSale ? data.sellingPrice : 0,
         purchasePrice: forSale ? data.purchasePrice : 0,
         hourlyRate: forLease ? data.hourlyRate : 0,
@@ -217,10 +235,17 @@ export default function EquipmentForm({ id }: Props) {
         forLease
       }
 
+      console.log('Clean data before submission:', cleanData);
+
       if (isEditing) {
         await equipmentService.updateEquipment(id, cleanData, selectedImage || undefined)
       } else {
-        await equipmentService.createEquipment(cleanData, selectedImage || undefined)
+        try {
+          await equipmentService.createEquipment(cleanData, selectedImage || undefined)
+        } catch (error) {
+          console.error('Detailed error in createEquipment:', error);
+          throw error;
+        }
       }
 
       toast({
@@ -231,10 +256,10 @@ export default function EquipmentForm({ id }: Props) {
       router.push('/admin/equipment')
       router.refresh()
     } catch (error) {
-      console.error('Error saving equipment:', error)
+      console.error('Detailed form submission error:', error)
       toast({
         title: 'Error',
-        description: 'Failed to save equipment',
+        description: error instanceof Error ? error.message : 'Failed to save equipment',
         variant: 'destructive'
       })
     } finally {

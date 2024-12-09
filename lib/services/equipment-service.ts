@@ -130,45 +130,62 @@ export const equipmentService = {
 
   async createEquipment(data: Partial<Equipment>, image?: File): Promise<string> {
     try {
+      console.log('Starting equipment creation with data:', data);
+
+      // Validate required fields
+      if (!data.name) throw new Error('Equipment name is required');
+      if (!data.categoryId) throw new Error('Category is required');
+      if (!data.brandId) throw new Error('Brand is required');
+
       let imageUrl = undefined;
       if (image) {
-        const storageRef = ref(storage, `equipment/${Date.now()}-${image.name}`);
-        await uploadBytes(storageRef, image);
-        imageUrl = await getDownloadURL(storageRef);
+        try {
+          const storageRef = ref(storage, `equipment/${Date.now()}-${image.name}`);
+          await uploadBytes(storageRef, image);
+          imageUrl = await getDownloadURL(storageRef);
+          console.log('Image uploaded successfully:', imageUrl);
+        } catch (error) {
+          console.error('Error uploading image:', error);
+          throw new Error('Failed to upload image');
+        }
       }
 
-      console.log('Received data for creation:', data);
-
       const equipmentData = {
-        name: data.name || "",
+        name: data.name,
         type: data.type || "Other",
         description: data.description || "",
         inStock: data.inStock || 0,
-        shortDescription: data.shortDescription,
-        brandId: data.brandId || data.brand?.id,
-        categoryId: data.categoryId || data.category?.id,
-        imageUrl: imageUrl || data.imageUrl,
-        purchasePrice: data.purchasePrice,
-        sellingPrice: data.sellingPrice,
-        leasePrice: data.leasePrice,
-        hourlyRate: data.hourlyRate,
-        dailyRate: data.dailyRate,
-        weeklyRate: data.weeklyRate,
+        shortDescription: data.shortDescription || "",
+        brandId: data.brandId,
+        categoryId: data.categoryId,
+        imageUrl: imageUrl || data.imageUrl || "",
+        purchasePrice: data.purchasePrice || 0,
+        sellingPrice: data.sellingPrice || 0,
+        leasePrice: data.leasePrice || 0,
+        hourlyRate: data.hourlyRate || 0,
+        dailyRate: data.dailyRate || 0,
+        weeklyRate: data.weeklyRate || 0,
         forSale: data.forSale ?? false,
         forLease: data.forLease ?? false,
-        condition: data.condition,
-        leaseTerm: data.leaseTerm,
+        condition: data.condition || "",
+        leaseTerm: data.leaseTerm || "",
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
 
-      console.log('Creating equipment with data:', equipmentData);
+      console.log('Prepared equipment data for creation:', equipmentData);
 
-      const docRef = await addDoc(collection(db, EQUIPMENT_COLLECTION), equipmentData);
-      return docRef.id;
+      try {
+        const docRef = await addDoc(collection(db, EQUIPMENT_COLLECTION), equipmentData);
+        console.log('Equipment created successfully with ID:', docRef.id);
+        return docRef.id;
+      } catch (error) {
+        console.error('Error adding document to Firestore:', error);
+        throw new Error('Failed to save equipment to database');
+      }
     } catch (error) {
-      console.error("Error creating equipment:", error);
-      throw new Error("Failed to create equipment");
+      console.error("Detailed error in createEquipment:", error);
+      throw error instanceof Error ? error : new Error("Failed to create equipment");
     }
   },
 

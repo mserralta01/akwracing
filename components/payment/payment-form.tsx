@@ -85,46 +85,6 @@ const formatCreditCard = (value: string) => {
   return value;
 };
 
-const getPaymentErrorMessage = (error: string): { message: string; details?: string } => {
-  const errorMessages: Record<string, { message: string; details?: string }> = {
-    "card_declined": {
-      message: "Your card was declined.",
-      details: "Please check your card details or try a different card."
-    },
-    "insufficient_funds": {
-      message: "Insufficient funds.",
-      details: "Please ensure your card has sufficient funds or try a different card."
-    },
-    "invalid_card": {
-      message: "Invalid card information.",
-      details: "Please check your card details and try again."
-    },
-    "expired_card": {
-      message: "Your card has expired.",
-      details: "Please use a different card."
-    },
-    "invalid_expiry": {
-      message: "Invalid expiration date.",
-      details: "Please check the expiration date and try again."
-    },
-    "invalid_cvv": {
-      message: "Invalid security code (CVV).",
-      details: "Please check the CVV and try again."
-    }
-  };
-
-  for (const [key, value] of Object.entries(errorMessages)) {
-    if (error.toLowerCase().includes(key)) {
-      return value;
-    }
-  }
-
-  return {
-    message: "We couldn't process your payment.",
-    details: "Please try again or contact support if the problem persists."
-  };
-};
-
 export function PaymentForm({
   course,
   enrollment,
@@ -135,25 +95,60 @@ export function PaymentForm({
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
   const [showErrorDialog, setShowErrorDialog] = useState(false);
-  const [errorDetails, setErrorDetails] = useState<{ message: string; details?: string } | null>(null);
+  const [errorDetails, setErrorDetails] = useState<{
+    title: string;
+    message: string;
+    suggestion?: string;
+  }>({
+    title: 'Error',
+    message: '',
+  });
+
+  const getPaymentErrorMessage = (error: string): {
+    title: string;
+    message: string;
+    suggestion?: string;
+  } => {
+    if (error.includes('card')) {
+      return {
+        title: 'Card Error',
+        message: error,
+        suggestion: 'Please check your card details and try again.'
+      };
+    }
+    if (error.includes('payment')) {
+      return {
+        title: 'Payment Error',
+        message: error,
+        suggestion: 'Please try again or use a different payment method.'
+      };
+    }
+    return {
+      title: 'Error',
+      message: error,
+      suggestion: 'Please try again or contact support.'
+    };
+  };
+
+  const defaultValues = {
+    cardNumber: '',
+    expiryMonth: '',
+    expiryYear: '',
+    cvv: '',
+    sameAsParent: true,
+    firstName: parent.firstName,
+    lastName: parent.lastName,
+    address: {
+      street: parent.address.street,
+      city: parent.address.city,
+      state: parent.address.state,
+      zipCode: parent.address.zipCode,
+    },
+  };
 
   const form = useForm<PaymentFormData>({
     resolver: zodResolver(paymentFormSchema),
-    defaultValues: {
-      cardNumber: "",
-      expiryMonth: "",
-      expiryYear: "",
-      cvv: "",
-      sameAsParent: true,
-      firstName: parent.firstName,
-      lastName: parent.lastName,
-      address: {
-        street: parent.address.street,
-        city: parent.address.city,
-        state: parent.address.state,
-        zipCode: parent.address.zipCode,
-      },
-    },
+    defaultValues,
   });
 
   const sameAsParent = form.watch("sameAsParent");
@@ -212,28 +207,6 @@ export function PaymentForm({
 
   return (
     <>
-      <Dialog open={showErrorDialog} onOpenChange={setShowErrorDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="text-red-600">Payment Failed</DialogTitle>
-            <DialogDescription>
-              <div className="space-y-4">
-                <p className="font-medium">{errorDetails?.message}</p>
-                {errorDetails?.details && (
-                  <p className="text-sm text-muted-foreground">{errorDetails.details}</p>
-                )}
-                <Button 
-                  onClick={() => setShowErrorDialog(false)}
-                  className="w-full"
-                >
-                  Try Again
-                </Button>
-              </div>
-            </DialogDescription>
-          </DialogHeader>
-        </DialogContent>
-      </Dialog>
-
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handlePaymentSubmit)} className="space-y-6">
           <div className="rounded-lg border p-4 space-y-4">
@@ -505,6 +478,26 @@ export function PaymentForm({
           </div>
         </form>
       </Form>
+
+      <Dialog open={showErrorDialog} onOpenChange={setShowErrorDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{errorDetails.title}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="font-medium">{errorDetails.message}</div>
+            {errorDetails.suggestion && (
+              <div className="text-sm text-muted-foreground">{errorDetails.suggestion}</div>
+            )}
+            <Button 
+              onClick={() => setShowErrorDialog(false)}
+              className="w-full"
+            >
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 } 

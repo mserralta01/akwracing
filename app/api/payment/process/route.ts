@@ -1,132 +1,92 @@
-import { NextResponse } from "next/server";
-import { Enrollment } from "@/types/student";
-import { Course } from "@/types/course";
+import { NextResponse } from 'next/server';
+import { studentService } from '@/lib/services/student-service';
+import { Enrollment, PaymentDetails } from '@/types/student';
+import { Course } from '@/types/course';
 
-interface PaymentDetails {
-  cardNumber: string;
-  expiryMonth: string;
-  expiryYear: string;
-  cvv: string;
-  firstName: string;
-  lastName: string;
-  address: {
-    street: string;
-    city: string;
-    state: string;
-    zipCode: string;
-  };
+interface PaymentRequestBody {
+  enrollment: Enrollment;
+  course: Course;
+  paymentDetails: PaymentDetails;
 }
-
-interface NMIResponse {
-  response: string;
-  responsetext: string;
-  authcode: string;
-  transactionid: string;
-  avsresponse: string;
-  cvvresponse: string;
-  orderid: string;
-  type: string;
-  response_code: string;
-}
-
-const parseNMIResponse = (responseText: string): NMIResponse => {
-  const params = new URLSearchParams(responseText);
-  return {
-    response: params.get('response') || '',
-    responsetext: params.get('responsetext') || '',
-    authcode: params.get('authcode') || '',
-    transactionid: params.get('transactionid') || '',
-    avsresponse: params.get('avsresponse') || '',
-    cvvresponse: params.get('cvvresponse') || '',
-    orderid: params.get('orderid') || '',
-    type: params.get('type') || '',
-    response_code: params.get('response_code') || '',
-  };
-};
 
 export async function POST(request: Request) {
   try {
-    const { enrollment, course, paymentDetails } = await request.json() as {
-      enrollment: Enrollment;
-      course: Course;
-      paymentDetails: PaymentDetails;
-    };
+    const body = await request.json() as PaymentRequestBody;
+    const { enrollment, course, paymentDetails } = body;
 
-    const nmiApiKey = process.env.NMI_API_KEY;
-    const nmiApiUrl = process.env.NMI_API_URL;
-    const nmiUsername = process.env.NMI_USERNAME;
-    const nmiPassword = process.env.NMI_PASSWORD;
-
-    if (!nmiApiKey || !nmiApiUrl || !nmiUsername || !nmiPassword) {
+    // Validate required fields
+    if (!enrollment?.id || !course?.id || !paymentDetails) {
       return NextResponse.json(
-        { success: false, error: "Payment gateway configuration missing" },
-        { status: 500 }
+        { 
+          success: false, 
+          error: 'Missing required fields',
+          details: 'Please provide all required payment information'
+        },
+        { status: 400 }
       );
     }
 
-    // Construct the payment request data
-    const requestData: Record<string, string> = {
-      security_key: nmiApiKey,
-      type: "sale",
-      amount: course.price.toString(),
-      ccnumber: paymentDetails.cardNumber,
-      ccexp: `${paymentDetails.expiryMonth}${paymentDetails.expiryYear}`,
-      cvv: paymentDetails.cvv,
-      first_name: paymentDetails.firstName,
-      last_name: paymentDetails.lastName,
-      address1: paymentDetails.address.street,
-      city: paymentDetails.address.city,
-      state: paymentDetails.address.state,
-      zip: paymentDetails.address.zipCode,
-      orderid: enrollment.id,
-      customer_receipt: "true",
-    };
-
-    // Make the API request to NMI
-    const response = await fetch(nmiApiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        Authorization: `Basic ${Buffer.from(
-          `${nmiUsername}:${nmiPassword}`
-        ).toString("base64")}`,
-      },
-      body: new URLSearchParams(requestData).toString(),
-    });
-
-    if (!response.ok) {
+    // Validate payment details
+    if (!paymentDetails.cardNumber || !paymentDetails.expiryMonth || 
+        !paymentDetails.expiryYear || !paymentDetails.cvv) {
       return NextResponse.json(
-        { success: false, error: "Payment gateway error" },
-        { status: 500 }
+        { 
+          success: false, 
+          error: 'Invalid payment details',
+          details: 'Please provide valid card information'
+        },
+        { status: 400 }
       );
     }
 
-    const responseText = await response.text();
-    const result = parseNMIResponse(responseText);
+    // Process payment with your payment provider here
+    // This is a mock implementation
+    const isPaymentSuccessful = true;
+    const mockTransactionId = `TR${Date.now()}`;
 
-    if (result.response === "1") {
-      // Payment successful
+    if (isPaymentSuccessful) {
+      // Update enrollment with payment success
+      await studentService.updateEnrollment(enrollment.id, {
+        status: 'confirmed',
+        paymentDetails: {
+          amount: course.price,
+          currency: 'USD',
+          paymentStatus: 'completed'
+        },
+        payment: {
+          amount: course.price,
+          currency: 'USD',
+          status: 'completed',
+          transactionId: mockTransactionId
+        },
+        student: {
+          name: enrollment.student?.name || 'Unknown Student',
+          email: enrollment.student?.email || '',
+          phone: enrollment.student?.phone || '',
+        }
+      });
+
       return NextResponse.json({
         success: true,
-        transactionId: result.transactionid,
-        authCode: result.authcode,
+        transactionId: mockTransactionId
       });
     } else {
-      // Payment failed
       return NextResponse.json(
-        {
-          success: false,
-          error: result.responsetext,
+        { 
+          success: false, 
+          error: 'Payment processing failed',
+          details: 'The payment could not be processed. Please try again or use a different payment method.'
         },
         { status: 400 }
       );
     }
   } catch (error) {
-    console.error("Payment processing error:", error);
+    console.error('Payment processing error:', error);
     return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : "Payment processing failed",
+      { 
+        success: false, 
+        error: 'Internal server error',
+        details: 'An unexpected error occurred. Please try again later.'
       },
       { status: 500 }
     );

@@ -1,16 +1,11 @@
 import { Enrollment, PaymentDetails } from "@/types/student";
 import { Course } from "@/types/course";
 
-interface NMIResponse {
-  response: string;
-  responsetext: string;
-  authcode: string;
-  transactionid: string;
-  avsresponse: string;
-  cvvresponse: string;
-  orderid: string;
-  type: string;
-  response_code: string;
+interface PaymentResponse {
+  success: boolean;
+  transactionId?: string;
+  error?: string;
+  details?: string;
 }
 
 export const paymentService = {
@@ -18,7 +13,7 @@ export const paymentService = {
     enrollment: Enrollment,
     course: Course,
     paymentDetails: PaymentDetails
-  ): Promise<{ success: boolean; transactionId?: string; error?: string }> {
+  ): Promise<PaymentResponse> {
     try {
       const response = await fetch('/api/payment/process', {
         method: 'POST',
@@ -26,26 +21,50 @@ export const paymentService = {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          enrollment,
+          enrollment: {
+            ...enrollment,
+            student: {
+              name: enrollment.student?.name || 'Unknown Student',
+              email: enrollment.student?.email || '',
+              phone: enrollment.student?.phone || '',
+            },
+          },
           course,
           paymentDetails,
         }),
       });
 
-      if (!response.ok) {
+      const contentType = response.headers.get('content-type');
+      let result: PaymentResponse;
+
+      if (contentType?.includes('application/json')) {
+        result = await response.json();
+      } else {
         const errorText = await response.text();
+        console.error('Non-JSON response from payment API:', {
+          status: response.status,
+          statusText: response.statusText,
+          contentType,
+          body: errorText
+        });
+        throw new Error('Invalid response from payment system');
+      }
+
+      if (!response.ok) {
         console.error('Payment API Error:', {
           status: response.status,
           statusText: response.statusText,
-          body: errorText
+          error: result.error,
+          details: result.details
         });
+
         return {
           success: false,
-          error: `Payment API error: ${response.status} ${response.statusText}`
+          error: result.error || `Payment failed with status ${response.status}`,
+          details: result.details || 'Please try again or contact support'
         };
       }
 
-      const result = await response.json();
       return result;
     } catch (error) {
       console.error('Payment processing error:', {
@@ -53,9 +72,11 @@ export const paymentService = {
         message: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined
       });
+
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Payment processing failed'
+        error: error instanceof Error ? error.message : 'Payment processing failed',
+        details: 'An unexpected error occurred. Please try again or contact support.'
       };
     }
   },
@@ -65,106 +86,41 @@ export const paymentService = {
     amount: number
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const nmiApiKey = process.env.NEXT_PUBLIC_NMI_API_KEY;
-      const nmiUsername = process.env.NEXT_PUBLIC_NMI_USERNAME;
-      const nmiPassword = process.env.NEXT_PUBLIC_NMI_PASSWORD;
-
-      if (!nmiApiKey || !nmiUsername || !nmiPassword) {
-        throw new Error('NMI credentials not configured');
-      }
-
-      // Construct the refund request
-      const requestData: Record<string, string> = {
-        security_key: nmiApiKey,
-        type: 'refund',
-        transactionid: transactionId,
-        amount: amount.toString(),
-      };
-
-      // Make the API request to NMI
-      const response = await fetch(process.env.NEXT_PUBLIC_NMI_API_URL || '', {
+      const response = await fetch('/api/payment/refund', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Authorization': `Basic ${Buffer.from(`${nmiUsername}:${nmiPassword}`).toString('base64')}`,
+          'Content-Type': 'application/json',
         },
-        body: new URLSearchParams(requestData).toString(),
+        body: JSON.stringify({
+          transactionId,
+          amount,
+        }),
       });
 
       if (!response.ok) {
-        throw new Error('Payment gateway error');
-      }
-
-      const result = await response.json() as NMIResponse;
-
-      if (result.response === '1') {
-        return { success: true };
-      } else {
+        const errorText = await response.text();
+        console.error('Refund API Error:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText
+        });
         return {
           success: false,
-          error: result.responsetext,
+          error: `Refund failed: ${response.statusText}`
         };
       }
+
+      const result = await response.json();
+      return result;
     } catch (error) {
-      console.error('Refund processing error:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Refund processing failed',
-      };
-    }
-  },
-
-  async getTransactionStatus(
-    transactionId: string
-  ): Promise<{ success: boolean; status?: string; error?: string }> {
-    try {
-      const nmiApiKey = process.env.NEXT_PUBLIC_NMI_API_KEY;
-      const nmiUsername = process.env.NEXT_PUBLIC_NMI_USERNAME;
-      const nmiPassword = process.env.NEXT_PUBLIC_NMI_PASSWORD;
-
-      if (!nmiApiKey || !nmiUsername || !nmiPassword) {
-        throw new Error('NMI credentials not configured');
-      }
-
-      // Construct the status query request
-      const requestData: Record<string, string> = {
-        security_key: nmiApiKey,
-        type: 'query',
-        transactionid: transactionId,
-      };
-
-      // Make the API request to NMI
-      const response = await fetch(process.env.NEXT_PUBLIC_NMI_API_URL || '', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Authorization': `Basic ${Buffer.from(`${nmiUsername}:${nmiPassword}`).toString('base64')}`,
-        },
-        body: new URLSearchParams(requestData).toString(),
+      console.error('Refund processing error:', {
+        error,
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
       });
-
-      if (!response.ok) {
-        throw new Error('Payment gateway error');
-      }
-
-      const result = await response.json() as NMIResponse;
-
-      if (result.response === '1') {
-        return {
-          success: true,
-          status: result.type,
-        };
-      } else {
-        return {
-          success: false,
-          error: result.responsetext,
-        };
-      }
-    } catch (error) {
-      console.error('Transaction status query error:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Status query failed',
+        error: error instanceof Error ? error.message : 'Refund processing failed'
       };
     }
   }

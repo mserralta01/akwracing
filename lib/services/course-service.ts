@@ -171,4 +171,44 @@ export const courseService = {
     const docRef = doc(db, COLLECTION_NAME, id);
     await deleteDoc(docRef);
   },
+
+  async getCourseById(courseId: string): Promise<Course | null> {
+    try {
+      const courseDoc = await getDoc(doc(db, 'courses', courseId));
+      if (!courseDoc.exists()) {
+        return null;
+      }
+      return { id: courseDoc.id, ...courseDoc.data() } as Course;
+    } catch (error) {
+      console.error('Error fetching course:', error);
+      throw error;
+    }
+  },
+
+  async getCoursesByIds(courseIds: string[]): Promise<Record<string, Course>> {
+    try {
+      const courses: Record<string, Course> = {};
+      const chunks = [];
+      
+      for (let i = 0; i < courseIds.length; i += 10) {
+        chunks.push(courseIds.slice(i, i + 10));
+      }
+
+      for (const chunk of chunks) {
+        const q = query(
+          collection(db, 'courses'),
+          where('__name__', 'in', chunk)
+        );
+        const querySnapshot = await getDocs(q);
+        querySnapshot.forEach((doc) => {
+          courses[doc.id] = { id: doc.id, ...doc.data() } as Course;
+        });
+      }
+
+      return courses;
+    } catch (error) {
+      console.error('Error fetching courses:', error);
+      throw error;
+    }
+  }
 };

@@ -4,7 +4,9 @@ export interface StudentProfile {
   id: string;
   firstName: string;
   lastName: string;
+  name?: string;
   dateOfBirth: string;
+  phone: string;
   parentId?: string;
   experience?: {
     skillLevel?: string;

@@ -66,6 +66,7 @@ export const studentService = {
     try {
       const studentData = {
         ...data,
+        phone: data.phone || '',
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
       };
@@ -526,4 +527,45 @@ export const studentService = {
 
   deleteStudent,
   deleteParent,
+
+  async getStudentById(studentId: string): Promise<StudentProfile | null> {
+    try {
+      const studentDoc = await getDoc(doc(db, 'students', studentId));
+      if (!studentDoc.exists()) {
+        return null;
+      }
+      return { id: studentDoc.id, ...studentDoc.data() } as StudentProfile;
+    } catch (error) {
+      console.error('Error fetching student:', error);
+      throw error;
+    }
+  },
+
+  async getStudentsByIds(studentIds: string[]): Promise<Record<string, StudentProfile>> {
+    try {
+      const students: Record<string, StudentProfile> = {};
+      const chunks = [];
+      
+      // Firebase has a limit of 10 items in 'in' queries, so we chunk the requests
+      for (let i = 0; i < studentIds.length; i += 10) {
+        chunks.push(studentIds.slice(i, i + 10));
+      }
+
+      for (const chunk of chunks) {
+        const q = query(
+          collection(db, 'students'),
+          where('__name__', 'in', chunk)
+        );
+        const querySnapshot = await getDocs(q);
+        querySnapshot.forEach((doc) => {
+          students[doc.id] = { id: doc.id, ...doc.data() } as StudentProfile;
+        });
+      }
+
+      return students;
+    } catch (error) {
+      console.error('Error fetching students:', error);
+      throw error;
+    }
+  }
 }; 

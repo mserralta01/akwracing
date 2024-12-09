@@ -37,15 +37,21 @@ import {
   MessageSquare,
 } from "lucide-react";
 
-type ServiceEnrollment = Awaited<ReturnType<typeof enrollmentService.getAllEnrollments>>[number];
-
+type ServiceEnrollment = {
+  id: string;
+  studentId: string;
+  courseId: string;
+  status: "ACTIVE" | "COMPLETED" | "CANCELLED";
+  enrollmentDate?: Date;
+  lastAccessedDate?: Date;
+} & Partial<Enrollment>;
 const convertServiceEnrollmentToEnrollment = (serviceEnrollment: ServiceEnrollment): Enrollment => ({
-  id: serviceEnrollment.id || crypto.randomUUID(),
-  studentId: serviceEnrollment.userId || crypto.randomUUID(),
+  id: serviceEnrollment.id ?? crypto.randomUUID(),
+  studentId: serviceEnrollment.studentId ?? crypto.randomUUID(), 
   parentId: "",
-  courseId: serviceEnrollment.courseId || crypto.randomUUID(),
-  status: serviceEnrollment.status === "active" ? "confirmed" : 
-          serviceEnrollment.status === "completed" ? "completed" : "cancelled",
+  courseId: serviceEnrollment.courseId ?? crypto.randomUUID(),
+  status: serviceEnrollment.status === "ACTIVE" ? "confirmed" :
+          serviceEnrollment.status === "COMPLETED" ? "completed" : "cancelled",
   createdAt: serviceEnrollment.enrollmentDate?.toISOString() || new Date().toISOString(),
   updatedAt: serviceEnrollment.lastAccessedDate?.toISOString() || serviceEnrollment.enrollmentDate?.toISOString() || new Date().toISOString(),
   paymentDetails: {
@@ -88,7 +94,7 @@ export default function EnrollmentManagement() {
     try {
       setLoading(true);
       const data = await enrollmentService.getAllEnrollments();
-      setEnrollments(data.map(convertServiceEnrollmentToEnrollment));
+      setEnrollments(data.map((serviceEnrollment) => convertServiceEnrollmentToEnrollment(serviceEnrollment)));
     } catch (error) {
       console.error("Error loading enrollments:", error);
       toast({

@@ -1,8 +1,11 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { studentService } from "@/lib/services/student-service";
 import { ParentProfile } from "@/types/student";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Card,
   CardContent,
@@ -36,7 +39,19 @@ import {
   Phone,
   Mail,
   MapPin,
+  Trash2,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export function ParentList() {
   const router = useRouter();
@@ -45,6 +60,7 @@ export function ParentList() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedParent, setSelectedParent] = useState<ParentProfile | null>(null);
+  const [selectedParents, setSelectedParents] = useState<string[]>([]);
 
   const fetchParents = async () => {
     try {
@@ -72,6 +88,40 @@ export function ParentList() {
     const searchString = `${parent.firstName} ${parent.lastName} ${parent.email}`.toLowerCase();
     return searchString.includes(searchTerm.toLowerCase());
   });
+
+  const handleSelectParent = (parentId: string) => {
+    setSelectedParents(prev => 
+      prev.includes(parentId) 
+        ? prev.filter(id => id !== parentId)
+        : [...prev, parentId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedParents.length === filteredParents.length) {
+      setSelectedParents([]);
+    } else {
+      setSelectedParents(filteredParents.map(parent => parent.id));
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    try {
+      await Promise.all(selectedParents.map(id => studentService.deleteParent(id)));
+      setParents(prev => prev.filter(parent => !selectedParents.includes(parent.id)));
+      setSelectedParents([]);
+      toast({
+        title: "Parents deleted",
+        description: `Successfully deleted ${selectedParents.length} parents.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete some parents. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (loading) {
     return (
@@ -104,6 +154,35 @@ export function ParentList() {
                 className="pl-10"
               />
             </div>
+
+            {/* Delete Selected Button */}
+            {selectedParents.length > 0 && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive">
+                    Delete Selected ({selectedParents.length})
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Selected Parents</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete {selectedParents.length} parents? This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDeleteSelected}
+                      className="bg-red-500 hover:bg-red-700"
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+
             <Button
               onClick={() => router.push("/admin/students/parents/new")}
               className="bg-racing-red hover:bg-racing-red/90"
@@ -117,6 +196,12 @@ export function ParentList() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-[50px]">
+                    <Checkbox
+                      checked={selectedParents.length === filteredParents.length}
+                      onCheckedChange={handleSelectAll}
+                    />
+                  </TableHead>
                   <TableHead>Parent</TableHead>
                   <TableHead>Contact</TableHead>
                   <TableHead>Location</TableHead>
@@ -127,6 +212,12 @@ export function ParentList() {
               <TableBody>
                 {filteredParents.map((parent) => (
                   <TableRow key={parent.id}>
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedParents.includes(parent.id)}
+                        onCheckedChange={() => handleSelectParent(parent.id)}
+                      />
+                    </TableCell>
                     <TableCell>
                       <div className="font-medium">
                         {parent.firstName} {parent.lastName}
@@ -145,13 +236,17 @@ export function ParentList() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="text-sm">
-                        {parent.address.city}, {parent.address.state}
-                      </div>
+                      {parent.address ? (
+                        <div className="text-sm">
+                          {parent.address.street}, {parent.address.city}, {parent.address.state} {parent.address.zipCode}
+                        </div>
+                      ) : (
+                        <div className="text-muted-foreground">No address provided</div>
+                      )}
                     </TableCell>
                     <TableCell>
                       <div className="text-sm">
-                        {parent.students.length} student(s)
+                        {parent.students?.length || 0} student{parent.students?.length !== 1 ? 's' : ''}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -242,6 +337,45 @@ export function ParentList() {
                             )}
                           </DialogContent>
                         </Dialog>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <Trash2 className="h-4 w-4 text-red-500 hover:text-red-700" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Parent</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete {parent.firstName} {parent.lastName}? This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={async () => {
+                                  try {
+                                    await studentService.deleteParent(parent.id);
+                                    setParents(prev => prev.filter(p => p.id !== parent.id));
+                                    toast({
+                                      title: "Parent deleted",
+                                      description: "The parent has been successfully deleted.",
+                                    });
+                                  } catch (error) {
+                                    toast({
+                                      title: "Error",
+                                      description: "Failed to delete parent. Please try again.",
+                                      variant: "destructive",
+                                    });
+                                  }
+                                }}
+                                className="bg-red-500 hover:bg-red-700"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </TableCell>
                   </TableRow>

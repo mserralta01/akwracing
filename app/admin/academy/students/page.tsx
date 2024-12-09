@@ -49,12 +49,13 @@ export default function StudentsPage() {
     }
   };
 
-  const filteredStudents = students.filter(student => {
+  const filteredStudents = students.filter((student) => {
     const searchString = searchTerm.toLowerCase();
     return (
       student.firstName.toLowerCase().includes(searchString) ||
       student.lastName.toLowerCase().includes(searchString) ||
-      student.phone.toLowerCase().includes(searchString)
+      student.emergencyContact?.phone.toLowerCase().includes(searchString) ||
+      false
     );
   });
 
@@ -78,7 +79,7 @@ export default function StudentsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
-                <TableHead>Phone</TableHead>
+                <TableHead>Contact Phone</TableHead>
                 <TableHead>Date of Birth</TableHead>
                 <TableHead>Experience Level</TableHead>
                 <TableHead>Actions</TableHead>
@@ -103,7 +104,9 @@ export default function StudentsPage() {
                     <TableCell>
                       {student.firstName} {student.lastName}
                     </TableCell>
-                    <TableCell>{student.phone}</TableCell>
+                    <TableCell>
+                      {student.emergencyContact?.phone || "No phone"}
+                    </TableCell>
                     <TableCell>{student.dateOfBirth}</TableCell>
                     <TableCell>{student.experience?.skillLevel || "N/A"}</TableCell>
                     <TableCell>

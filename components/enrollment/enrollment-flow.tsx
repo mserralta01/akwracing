@@ -87,20 +87,21 @@ export function EnrollmentFlow({ course, onComplete }: EnrollmentFlowProps) {
     try {
       setLoading(true);
       if (!student) throw new Error("No student data found");
+      if (!student.parentId) throw new Error("Parent ID is required for enrollment");
 
-      // Update the existing parent document instead of creating a new one
+      // Update parent profile
       const updatedParent = await studentService.updateParentProfile(student.parentId, {
         ...parentData,
         students: [student.id],
       });
-      
+
       setParent(updatedParent);
 
-      // Create enrollment record
-      const enrollmentData = {
+      // Create enrollment record with type-safe parentId
+      const enrollmentData: Omit<Enrollment, "id" | "createdAt" | "updatedAt"> = {
         courseId: course.id,
         studentId: student.id,
-        parentId: student.parentId,
+        parentId: student.parentId, // Now we know this is defined
         status: "pending" as const,
         paymentDetails: {
           amount: course.price,

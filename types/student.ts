@@ -1,31 +1,30 @@
 export type EnrollmentStatus = "pending" | "confirmed" | "cancelled" | "completed";
 
-export type StudentProfile = {
+export interface StudentProfile {
   id: string;
   firstName: string;
   lastName: string;
   dateOfBirth: string;
-  phone: string;
-  parentId: string;
-  createdAt: string;
-  updatedAt: string;
-  emergencyContact?: {
-    name: string;
-    relationship: string;
-    phone: string;
-  };
+  parentId?: string;
   experience?: {
-    skillLevel: string;
-    yearsRiding: number;
+    skillLevel?: string;
+    yearsRiding?: number;
     previousTraining?: string;
   };
+  emergencyContact?: {
+    name: string;
+    phone: string;
+    relationship: string;
+  };
   medicalInformation?: {
-    conditions?: string[];
     allergies?: string[];
+    conditions?: string[];
     medications?: string[];
     notes?: string;
   };
-};
+  createdAt: string;
+  updatedAt: string;
+}
 
 export type ParentProfile = {
   id: string;

@@ -1,8 +1,18 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { studentService } from "@/lib/services/student-service";
+import { studentService, deleteStudent } from "@/lib/services/student-service";
 import { StudentProfile } from "@/types/student";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Card,
   CardContent,
@@ -36,16 +46,32 @@ import {
   Calendar,
   Phone,
   Mail,
+  Trash2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export function StudentList() {
   const router = useRouter();
   const { toast } = useToast();
   const [students, setStudents] = useState<StudentProfile[]>([]);
+  const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<StudentProfile | null>(null);
+  const [pageSize, setPageSize] = useState("25");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [parentData, setParentData] = useState<Record<string, { firstName: string; lastName: string }>>({});
 
   const fetchStudents = async () => {
     try {
@@ -65,9 +91,32 @@ export function StudentList() {
     }
   };
 
+  const fetchParentData = async (parentId: string) => {
+    try {
+      const parent = await studentService.getParent(parentId);
+      if (parent) {
+        setParentData(prev => ({
+          ...prev,
+          [parentId]: { firstName: parent.firstName, lastName: parent.lastName }
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching parent:', error);
+    }
+  };
+
   useEffect(() => {
     fetchStudents();
   }, []);
+
+  useEffect(() => {
+    // Fetch parent data for each student
+    students.forEach(student => {
+      if (student.parentId && !parentData[student.parentId]) {
+        fetchParentData(student.parentId);
+      }
+    });
+  }, [students]);
 
   const filteredStudents = students.filter(student => {
     const searchString = `${student.firstName} ${student.lastName}`.toLowerCase();
@@ -76,6 +125,60 @@ export function StudentList() {
 
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString();
+  };
+
+  const handleSelectStudent = (studentId: string) => {
+    setSelectedStudents(prev => 
+      prev.includes(studentId) 
+        ? prev.filter(id => id !== studentId)
+        : [...prev, studentId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedStudents.length === filteredStudents.length) {
+      setSelectedStudents([]);
+    } else {
+      setSelectedStudents(filteredStudents.map(student => student.id));
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    try {
+      await Promise.all(selectedStudents.map(id => deleteStudent(id)));
+      setStudents(prev => prev.filter(student => !selectedStudents.includes(student.id)));
+      setSelectedStudents([]);
+      toast({
+        title: "Students deleted",
+        description: `Successfully deleted ${selectedStudents.length} students.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete some students. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Pagination logic
+  const paginatedStudents = filteredStudents.slice(
+    (currentPage - 1) * Number(pageSize),
+    currentPage * Number(pageSize)
+  );
+
+  const totalPages = Math.ceil(filteredStudents.length / Number(pageSize));
+
+  const calculateAge = (birthDate: string): number => {
+    const today = new Date();
+    const birth = new Date(birthDate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    return age;
   };
 
   if (loading) {
@@ -98,7 +201,7 @@ export function StudentList() {
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          {/* Search and Filters */}
+          {/* Search, Filters, and Actions */}
           <div className="flex items-center gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -109,6 +212,47 @@ export function StudentList() {
                 className="pl-10"
               />
             </div>
+            
+            {/* Page Size Selector */}
+            <Select value={pageSize} onValueChange={setPageSize}>
+              <SelectTrigger className="w-[100px]">
+                <SelectValue placeholder="Page size" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="25">25</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Delete Selected Button */}
+            {selectedStudents.length > 0 && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive">
+                    Delete Selected ({selectedStudents.length})
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Selected Students</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete {selectedStudents.length} students? This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDeleteSelected}
+                      className="bg-red-500 hover:bg-red-700"
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+
             <Button
               onClick={() => router.push("/admin/students/new")}
               className="bg-racing-red hover:bg-racing-red/90"
@@ -122,36 +266,41 @@ export function StudentList() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-[50px]">
+                    <Checkbox
+                      checked={selectedStudents.length === filteredStudents.length}
+                      onCheckedChange={handleSelectAll}
+                    />
+                  </TableHead>
                   <TableHead>Student</TableHead>
-                  <TableHead>Date of Birth</TableHead>
-                  <TableHead>Emergency Contact</TableHead>
+                  <TableHead>Age</TableHead>
+                  <TableHead>Parent</TableHead>
                   <TableHead>Experience Level</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead className="w-[100px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredStudents.map((student) => (
+                {paginatedStudents.map((student) => (
                   <TableRow key={student.id}>
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedStudents.includes(student.id)}
+                        onCheckedChange={() => handleSelectStudent(student.id)}
+                      />
+                    </TableCell>
                     <TableCell>
                       <div className="font-medium">
                         {student.firstName} {student.lastName}
                       </div>
                     </TableCell>
                     <TableCell>
-                      {formatDate(student.dateOfBirth)}
+                      {calculateAge(student.dateOfBirth)}
                     </TableCell>
                     <TableCell>
                       <div className="text-sm">
-                        {student.emergencyContact ? (
-                          <>
-                            <div>{student.emergencyContact.name}</div>
-                            <div className="text-muted-foreground">
-                              {student.emergencyContact.phone}
-                            </div>
-                          </>
-                        ) : (
-                          <div className="text-muted-foreground">No emergency contact</div>
-                        )}
+                        {student.parentId && parentData[student.parentId] 
+                          ? `${parentData[student.parentId].firstName} ${parentData[student.parentId].lastName}`
+                          : "No parent assigned"}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -285,12 +434,79 @@ export function StudentList() {
                             )}
                           </DialogContent>
                         </Dialog>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <Trash2 className="h-4 w-4 text-red-500 hover:text-red-700" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Student</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete {student.firstName} {student.lastName}? This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={async () => {
+                                  try {
+                                    await deleteStudent(student.id);
+                                    setStudents(prevStudents => prevStudents.filter(s => s.id !== student.id));
+                                    toast({
+                                      title: "Student deleted",
+                                      description: "The student has been successfully deleted.",
+                                    });
+                                  } catch (error) {
+                                    toast({
+                                      title: "Error",
+                                      description: "Failed to delete student. Please try again.",
+                                      variant: "destructive",
+                                    });
+                                  }
+                                }}
+                                className="bg-red-500 hover:bg-red-700"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
+          </div>
+
+          {/* Pagination Controls */}
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-muted-foreground">
+              Showing {((currentPage - 1) * Number(pageSize)) + 1} to {Math.min(currentPage * Number(pageSize), filteredStudents.length)} of {filteredStudents.length} students
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </Button>
+              <div className="text-sm">
+                Page {currentPage} of {totalPages}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </Button>
+            </div>
           </div>
         </div>
       </CardContent>

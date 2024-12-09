@@ -3,6 +3,21 @@
 import { Suspense } from "react";
 import { StudentList } from "@/components/admin/student-list";
 import { AdminGuard } from "@/components/auth/admin-guard";
+import { deleteStudent } from "@/lib/services/student-service";
+import { useToast } from "@/components/ui/use-toast";
+import { Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 function LoadingFallback() {
   return (

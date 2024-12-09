@@ -40,6 +40,26 @@ const convertTimestampsToDates = (data: DocumentData) => {
   return result;
 };
 
+export const deleteStudent = async (studentId: string): Promise<void> => {
+  try {
+    const studentRef = doc(db, 'students', studentId);
+    await deleteDoc(studentRef);
+  } catch (error) {
+    console.error('Error deleting student:', error);
+    throw error;
+  }
+};
+
+export const deleteParent = async (parentId: string): Promise<void> => {
+  try {
+    const parentRef = doc(db, PARENTS_COLLECTION, parentId);
+    await deleteDoc(parentRef);
+  } catch (error) {
+    console.error('Error deleting parent:', error);
+    throw error;
+  }
+};
+
 export const studentService = {
   // Student Profile Operations
   async createStudent(data: Omit<StudentProfile, 'id' | 'createdAt' | 'updatedAt'>): Promise<StudentProfile> {
@@ -52,11 +72,16 @@ export const studentService = {
 
       const docRef = await addDoc(collection(db, STUDENTS_COLLECTION), studentData);
       
-      // Update parent's students array
-      const parentRef = doc(db, PARENTS_COLLECTION, data.parentId);
-      await updateDoc(parentRef, {
-        students: [...(await this.getParentProfile(data.parentId))?.students || [], docRef.id],
-      });
+      // Only update parent's students array if parentId exists
+      if (data.parentId) {
+        const parentRef = doc(db, PARENTS_COLLECTION, data.parentId);
+        const parentProfile = await this.getParentProfile(data.parentId);
+        if (parentProfile) {
+          await updateDoc(parentRef, {
+            students: [...(parentProfile.students || []), docRef.id],
+          });
+        }
+      }
 
       return {
         id: docRef.id,
@@ -498,4 +523,7 @@ export const studentService = {
       return null;
     }
   },
+
+  deleteStudent,
+  deleteParent,
 }; 

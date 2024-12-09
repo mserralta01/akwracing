@@ -6,7 +6,26 @@ export interface InputProps
   extends React.InputHTMLAttributes<HTMLInputElement> {}
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, type, ...props }, ref) => {
+  ({ className, type, onClick, ...props }, ref) => {
+    const handleClick = (e: React.MouseEvent<HTMLInputElement>) => {
+      if (
+        type === 'number' ||
+        e.currentTarget.id?.toLowerCase().includes('price') ||
+        e.currentTarget.id?.toLowerCase().includes('rate') ||
+        e.currentTarget.id?.toLowerCase().includes('stock') ||
+        e.currentTarget.id?.toLowerCase().includes('quantity') ||
+        e.currentTarget.id?.toLowerCase().includes('amount') ||
+        e.currentTarget.name?.toLowerCase().includes('price') ||
+        e.currentTarget.name?.toLowerCase().includes('rate') ||
+        e.currentTarget.name?.toLowerCase().includes('stock') ||
+        e.currentTarget.name?.toLowerCase().includes('quantity') ||
+        e.currentTarget.name?.toLowerCase().includes('amount')
+      ) {
+        e.currentTarget.select();
+      }
+      onClick?.(e);
+    };
+
     return (
       <input
         type={type}
@@ -15,6 +34,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           className
         )}
         ref={ref}
+        onClick={handleClick}
         {...props}
       />
     );

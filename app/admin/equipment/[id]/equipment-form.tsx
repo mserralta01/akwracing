@@ -10,6 +10,7 @@ import { equipmentService } from '@/lib/services/equipment-service'
 import { Equipment, Category, Brand } from '@/types/equipment'
 import { Loader2, ImageIcon, DollarSign, Clock, CalendarDays, Package, Tag, Truck, ShoppingCart } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
+import { Editor } from '@/components/ui/editor'
 import {
   Form,
   FormControl,
@@ -21,7 +22,6 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
 import {
   Select,
   SelectContent,
@@ -343,8 +343,12 @@ export default function EquipmentForm({ id }: Props) {
                           <FormItem>
                             <FormLabel>Short Description</FormLabel>
                             <FormControl>
-                              <Input {...field} />
+                              <Editor
+                                content={field.value}
+                                onChange={field.onChange}
+                              />
                             </FormControl>
+                            <FormDescription>A brief summary of the equipment (supports rich text)</FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -357,8 +361,12 @@ export default function EquipmentForm({ id }: Props) {
                           <FormItem>
                             <FormLabel>Description</FormLabel>
                             <FormControl>
-                              <Textarea {...field} className="min-h-[120px]" />
+                              <Editor
+                                content={field.value}
+                                onChange={field.onChange}
+                              />
                             </FormControl>
+                            <FormDescription>Detailed description of the equipment (supports rich text)</FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}

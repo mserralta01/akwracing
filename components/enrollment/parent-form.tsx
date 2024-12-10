@@ -3,12 +3,12 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { Course } from "@/types/course";
 import { ParentProfile } from "@/types/student";
 import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -23,87 +23,128 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+const US_STATES = [
+  { value: "AL", label: "Alabama" },
+  { value: "AK", label: "Alaska" },
+  { value: "AZ", label: "Arizona" },
+  { value: "AR", label: "Arkansas" },
+  { value: "CA", label: "California" },
+  { value: "CO", label: "Colorado" },
+  { value: "CT", label: "Connecticut" },
+  { value: "DE", label: "Delaware" },
+  { value: "FL", label: "Florida" },
+  { value: "GA", label: "Georgia" },
+  { value: "HI", label: "Hawaii" },
+  { value: "ID", label: "Idaho" },
+  { value: "IL", label: "Illinois" },
+  { value: "IN", label: "Indiana" },
+  { value: "IA", label: "Iowa" },
+  { value: "KS", label: "Kansas" },
+  { value: "KY", label: "Kentucky" },
+  { value: "LA", label: "Louisiana" },
+  { value: "ME", label: "Maine" },
+  { value: "MD", label: "Maryland" },
+  { value: "MA", label: "Massachusetts" },
+  { value: "MI", label: "Michigan" },
+  { value: "MN", label: "Minnesota" },
+  { value: "MS", label: "Mississippi" },
+  { value: "MO", label: "Missouri" },
+  { value: "MT", label: "Montana" },
+  { value: "NE", label: "Nebraska" },
+  { value: "NV", label: "Nevada" },
+  { value: "NH", label: "New Hampshire" },
+  { value: "NJ", label: "New Jersey" },
+  { value: "NM", label: "New Mexico" },
+  { value: "NY", label: "New York" },
+  { value: "NC", label: "North Carolina" },
+  { value: "ND", label: "North Dakota" },
+  { value: "OH", label: "Ohio" },
+  { value: "OK", label: "Oklahoma" },
+  { value: "OR", label: "Oregon" },
+  { value: "PA", label: "Pennsylvania" },
+  { value: "RI", label: "Rhode Island" },
+  { value: "SC", label: "South Carolina" },
+  { value: "SD", label: "South Dakota" },
+  { value: "TN", label: "Tennessee" },
+  { value: "TX", label: "Texas" },
+  { value: "UT", label: "Utah" },
+  { value: "VT", label: "Vermont" },
+  { value: "VA", label: "Virginia" },
+  { value: "WA", label: "Washington" },
+  { value: "WV", label: "West Virginia" },
+  { value: "WI", label: "Wisconsin" },
+  { value: "WY", label: "Wyoming" },
+] as const;
+
 const parentFormSchema = z.object({
+  email: z.string().email("Invalid email address"),
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
-  email: z.string().email("Please enter a valid email address"),
-  phone: z.string().min(10, "Please enter a valid phone number"),
-  relationship: z.string().min(1, "Relationship is required"),
+  phone: z.string().min(10, "Phone number must be at least 10 digits"),
   address: z.object({
     street: z.string().min(1, "Street address is required"),
     city: z.string().min(1, "City is required"),
-    state: z.string().min(1, "State is required"),
+    state: z.string().min(2, "State is required"),
     zipCode: z.string().min(5, "Valid ZIP code is required"),
-    country: z.string().min(1, "Country is required"),
   }),
 });
 
 type ParentFormData = z.infer<typeof parentFormSchema>;
 
-interface ParentFormProps {
-  onSubmit: (data: Omit<ParentProfile, "id" | "createdAt" | "updatedAt" | "userId" | "students">) => void;
-  loading?: boolean;
+export interface ParentFormProps {
+  onSubmit: (data: ParentFormData) => void;
+  loading: boolean;
+  course: Course;
+  initialValues?: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    address: {
+      street: string;
+      city: string;
+      state: string;
+      zipCode: string;
+    };
+  };
 }
 
-const formatPhoneNumber = (value: string) => {
-  if (!value) return "+1 ";
-  
-  // Remove all non-digits and any leading "1" if it exists
-  let phoneNumber = value.replace(/[^\d]/g, '');
-  if (phoneNumber.startsWith('1')) {
-    phoneNumber = phoneNumber.slice(1);
-  }
-  
-  // Format the number
-  if (phoneNumber.length === 0) return "+1 ";
-  if (phoneNumber.length <= 3) return `+1 (${phoneNumber}`;
-  if (phoneNumber.length <= 6) return `+1 (${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
-  return `+1 (${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)}`;
-};
-
-const unformatPhoneNumber = (value: string) => {
-  const digits = value.replace(/[^\d]/g, '');
-  return digits.startsWith('1') ? digits.slice(1) : digits;
-};
-
-// Add default values for parent form
-const defaultValues = {
-  firstName: "",
-  lastName: "",
-  email: "",
-  phone: "+1 ",
-  relationship: "",
-  address: {
-    street: "",
-    city: "",
-    state: "",
-    zipCode: "",
-    country: "United States",
-  },
-};
-
-export function ParentForm({ onSubmit, loading }: ParentFormProps) {
+export function ParentForm({ onSubmit, loading, course, initialValues }: ParentFormProps) {
   const form = useForm<ParentFormData>({
     resolver: zodResolver(parentFormSchema),
-    defaultValues,
-  });
-
-  const handleSubmit = (data: ParentFormData) => {
-    // Remove formatting from phone number before submitting
-    const formattedData = {
-      ...data,
-      phone: unformatPhoneNumber(data.phone),
+    defaultValues: initialValues || {
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
       address: {
-        ...data.address,
-        country: data.address.country || "United States",
+        street: "",
+        city: "",
+        state: "",
+        zipCode: "",
       },
-    };
-    onSubmit(formattedData);
-  };
+    },
+  });
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        {!initialValues?.email && (
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Input {...field} type="email" placeholder="Email address" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -112,7 +153,7 @@ export function ParentForm({ onSubmit, loading }: ParentFormProps) {
               <FormItem>
                 <FormLabel>First Name</FormLabel>
                 <FormControl>
-                  <Input {...field} />
+                  <Input {...field} placeholder="First name" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -125,66 +166,7 @@ export function ParentForm({ onSubmit, loading }: ParentFormProps) {
               <FormItem>
                 <FormLabel>Last Name</FormLabel>
                 <FormControl>
-                  <Input {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                  <Input type="email" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="phone"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Phone</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    value={formatPhoneNumber(field.value)}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      const digits = value.replace(/[^\d]/g, '');
-                      // Remove leading "1" if present and ensure max length of 10
-                      const cleanDigits = digits.startsWith('1') ? digits.slice(1) : digits;
-                      if (cleanDigits.length <= 10) {
-                        field.onChange(cleanDigits);
-                      }
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Backspace') {
-                        const input = e.target as HTMLInputElement;
-                        const selectionStart = input.selectionStart || 0;
-                        const value = field.value;
-                        
-                        // Prevent backspace if cursor is at or before "+1 "
-                        if (selectionStart <= 3) {
-                          e.preventDefault();
-                          return;
-                        }
-                        
-                        // Remove last digit
-                        field.onChange(value.slice(0, -1));
-                        e.preventDefault();
-                      }
-                    }}
-                    placeholder="+1 (555) 123-4567"
-                  />
+                  <Input {...field} placeholder="Last name" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -194,22 +176,13 @@ export function ParentForm({ onSubmit, loading }: ParentFormProps) {
 
         <FormField
           control={form.control}
-          name="relationship"
+          name="phone"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Relationship to Student</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select relationship" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="parent">Parent</SelectItem>
-                  <SelectItem value="guardian">Legal Guardian</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
+              <FormLabel>Phone</FormLabel>
+              <FormControl>
+                <Input {...field} type="tel" placeholder="Phone number" />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -222,22 +195,22 @@ export function ParentForm({ onSubmit, loading }: ParentFormProps) {
             <FormItem>
               <FormLabel>Street Address</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input {...field} placeholder="Street address" />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-12 gap-4">
           <FormField
             control={form.control}
             name="address.city"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="col-span-5">
                 <FormLabel>City</FormLabel>
                 <FormControl>
-                  <Input {...field} />
+                  <Input {...field} placeholder="City" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -247,11 +220,25 @@ export function ParentForm({ onSubmit, loading }: ParentFormProps) {
             control={form.control}
             name="address.state"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="col-span-4">
                 <FormLabel>State</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
+                <Select
+                  value={field.value}
+                  onValueChange={field.onChange}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="State" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {US_STATES.map((state) => (
+                      <SelectItem key={state.value} value={state.value}>
+                        {state.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
@@ -260,10 +247,10 @@ export function ParentForm({ onSubmit, loading }: ParentFormProps) {
             control={form.control}
             name="address.zipCode"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>ZIP Code</FormLabel>
+              <FormItem className="col-span-3">
+                <FormLabel>ZIP</FormLabel>
                 <FormControl>
-                  <Input {...field} />
+                  <Input {...field} placeholder="ZIP" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -271,38 +258,14 @@ export function ParentForm({ onSubmit, loading }: ParentFormProps) {
           />
         </div>
 
-        <FormField
-          control={form.control}
-          name="address.country"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Country</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select country" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="United States">United States</SelectItem>
-                  <SelectItem value="Canada">Canada</SelectItem>
-                  <SelectItem value="Mexico">Mexico</SelectItem>
-                  {/* Add more countries as needed */}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <Button type="submit" className="w-full" disabled={loading}>
+        <Button type="submit" className="w-full mt-6" disabled={loading}>
           {loading ? (
             <div className="flex items-center gap-2">
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-              Processing...
+              <span>Saving...</span>
             </div>
           ) : (
-            "Continue"
+            "Continue to Payment"
           )}
         </Button>
       </form>

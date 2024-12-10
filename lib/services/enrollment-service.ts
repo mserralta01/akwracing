@@ -11,6 +11,7 @@ import {
   where,
   DocumentData,
   Timestamp,
+  serverTimestamp,
 } from 'firebase/firestore'
 import { Enrollment as StudentEnrollment } from '@/types/student'
 
@@ -227,6 +228,34 @@ export class EnrollmentService {
   async deleteEnrollment(id: string): Promise<void> {
     const docRef = doc(db, this.collectionName, id)
     await deleteDoc(docRef)
+  }
+
+  async processRefund(enrollmentId: string): Promise<void> {
+    try {
+      const enrollmentRef = doc(db, "enrollments", enrollmentId);
+      const enrollmentDoc = await getDoc(enrollmentRef);
+
+      if (!enrollmentDoc.exists()) {
+        throw new Error("Enrollment not found");
+      }
+
+      const enrollmentData = enrollmentDoc.data();
+      
+      if (enrollmentData.payment?.status !== "completed") {
+        throw new Error("Only completed payments can be refunded");
+      }
+
+      // Update the payment status and add refund information
+      await updateDoc(enrollmentRef, {
+        "payment.status": "refunded",
+        "payment.refundedAt": serverTimestamp(),
+        "payment.refundId": `ref_${Date.now()}`, // You might want to generate this differently
+        updatedAt: serverTimestamp(),
+      });
+    } catch (error) {
+      console.error("Error processing refund:", error);
+      throw error;
+    }
   }
 }
 

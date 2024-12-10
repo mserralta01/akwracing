@@ -6,6 +6,7 @@ import { Calendar, Users, DollarSign } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { generateCourseSlug } from "@/lib/utils/slug";
+import { formatCurrency } from "@/lib/utils";
 
 interface CourseCardProps {
   course: Course;
@@ -86,7 +87,9 @@ export function CourseCard({ course }: CourseCardProps) {
             </div>
             <div className="flex items-center text-sm font-semibold">
               <DollarSign className="h-4 w-4 mr-2 text-racing-red" />
-              <span>${course.price}</span>
+              <div className="text-lg font-semibold">
+                {formatCurrency(course.price)}
+              </div>
             </div>
           </div>
           <Button

@@ -4,103 +4,104 @@ export interface StudentProfile {
   id: string;
   firstName: string;
   lastName: string;
-  name?: string;
   dateOfBirth: string;
-  phone: string;
-  parentId?: string;
-  experience?: {
-    skillLevel?: string;
-    yearsRiding?: number;
-    previousTraining?: string;
+  email?: string;
+  phone?: string;
+  address?: {
+    street: string;
+    city: string;
+    state: string;
+    zipCode: string;
   };
-  emergencyContact?: {
-    name: string;
-    phone: string;
-    relationship: string;
-  };
-  medicalInformation?: {
-    allergies?: string[];
-    conditions?: string[];
-    medications?: string[];
-    notes?: string;
-  };
+  parentId: string;
+  allergies?: string[];
+  skillLevel?: 'beginner' | 'intermediate' | 'advanced';
   createdAt: string;
   updatedAt: string;
 }
 
-export type ParentProfile = {
+export interface ParentProfile {
   id: string;
   userId: string;
   firstName: string;
   lastName: string;
-  phone: string;
   email: string;
-  relationship?: string;
+  phone: string;
   address: {
     street: string;
     city: string;
     state: string;
     zipCode: string;
-    country: string;
   };
   students: string[];
   createdAt: string;
   updatedAt: string;
-};
+}
 
-export type Enrollment = {
+export interface PaymentDetails {
+  cardNumber: string;
+  expiryMonth: string;
+  expiryYear: string;
+  cvv: string;
+  firstName: string;
+  lastName: string;
+  address: {
+    street: string;
+    city: string;
+    state: string;
+    zipCode: string;
+  };
+  tokenId?: string;
+}
+
+export interface PaymentToken {
   id: string;
-  studentId: string;
-  parentId: string;
-  courseId: string;
-  status: EnrollmentStatus;
+  customerId: string;
+  last4: string;
+  expiryMonth: string;
+  expiryYear: string;
+  tokenType: 'recurring' | 'one-time';
   createdAt: string;
   updatedAt: string;
+}
+
+export interface Payment {
+  id: string;
+  enrollmentId: string;
+  amount: number;
+  currency: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  paymentMethod: {
+    type: 'card' | 'bank';
+    last4: string;
+    tokenId?: string;
+  };
+  transactionId?: string;
+  error?: string;
+  metadata: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Enrollment {
+  id: string;
+  courseId: string;
+  studentId: string;
+  parentId: string;
+  status: 'pending' | 'confirmed' | 'cancelled';
   paymentDetails: {
     amount: number;
     currency: string;
-    paymentStatus: "pending" | "completed" | "failed";
+    paymentStatus: 'pending' | 'completed' | 'failed';
   };
+  payment?: Payment;
+  student?: Partial<StudentProfile>;
   notes: string[];
   communicationHistory: {
-    date: string;
-    type: "email" | "phone" | "sms";
+    type: string;
     message: string;
+    timestamp: string;
   }[];
-  student?: {
-    name: string;
-    email: string;
-    phone: string;
-  };
-  course?: {
-    title: string;
-    startDate: string;
-    endDate: string;
-  };
-  payment?: {
-    amount: number;
-    currency: string;
-    status: string;
-    transactionId?: string;
-  };
-};
-
-export type PaymentDetails = {
-  id?: string;
-  status?: string;
-  amount?: number;
-  method?: string;
-  cardNumber?: string;
-  expiryMonth?: string | number;
-  expiryYear?: string | number;
-  cvv?: string;
-  firstName?: string;
-  lastName?: string;
-  address?: {
-    street?: string;
-    city?: string;
-    state?: string;
-    zipCode?: string;
-    country?: string;
-  };
-}; 
+  createdAt?: string;
+  updatedAt?: string;
+} 

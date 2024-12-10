@@ -1,94 +1,143 @@
 import { NextResponse } from 'next/server';
-import { studentService } from '@/lib/services/student-service';
-import { Enrollment, PaymentDetails } from '@/types/student';
-import { Course } from '@/types/course';
+import { z } from 'zod';
+import { headers } from 'next/headers';
 
-interface PaymentRequestBody {
-  enrollment: Enrollment;
-  course: Course;
-  paymentDetails: PaymentDetails;
-}
+const paymentSchema = z.object({
+  enrollment: z.object({
+    id: z.string(),
+    courseId: z.string(),
+    studentId: z.string(),
+    parentId: z.string(),
+    status: z.string(),
+    paymentDetails: z.object({
+      amount: z.number(),
+      currency: z.string(),
+      paymentStatus: z.string(),
+    }),
+  }),
+  course: z.object({
+    id: z.string(),
+    title: z.string(),
+    price: z.number(),
+  }),
+  paymentDetails: z.object({
+    cardNumber: z.string(),
+    expiryMonth: z.string(),
+    expiryYear: z.string(),
+    cvv: z.string(),
+    firstName: z.string(),
+    lastName: z.string(),
+    address: z.object({
+      street: z.string(),
+      city: z.string(),
+      state: z.string(),
+      zipCode: z.string(),
+    }),
+  }),
+  tokenId: z.string().optional(),
+  paymentId: z.string(),
+});
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json() as PaymentRequestBody;
-    const { enrollment, course, paymentDetails } = body;
+    const body = await request.json();
+    const validatedData = paymentSchema.parse(body);
 
-    // Validate required fields
-    if (!enrollment?.id || !course?.id || !paymentDetails) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Missing required fields',
-          details: 'Please provide all required payment information'
-        },
-        { status: 400 }
-      );
+    const {
+      enrollment,
+      course,
+      paymentDetails,
+      tokenId,
+      paymentId,
+    } = validatedData;
+
+    // NMI API Configuration
+    const nmiUsername = process.env.NMI_USERNAME;
+    const nmiPassword = process.env.NMI_PASSWORD;
+    const nmiApiUrl = process.env.NMI_API_URL;
+
+    if (!nmiUsername || !nmiPassword || !nmiApiUrl) {
+      throw new Error('NMI configuration missing');
     }
 
-    // Validate payment details
-    if (!paymentDetails.cardNumber || !paymentDetails.expiryMonth || 
-        !paymentDetails.expiryYear || !paymentDetails.cvv) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Invalid payment details',
-          details: 'Please provide valid card information'
-        },
-        { status: 400 }
-      );
+    // Prepare NMI API request
+    const nmiRequestData = new URLSearchParams();
+    nmiRequestData.append('security_key', process.env.NMI_API_KEY || '');
+    nmiRequestData.append('type', 'sale');
+    nmiRequestData.append('amount', course.price.toString());
+    
+    if (tokenId) {
+      // Use tokenized payment method
+      nmiRequestData.append('payment_token', tokenId);
+      console.log("Using tokenized payment with tokenId:", tokenId);
+    } else {
+      // Use direct card details
+      nmiRequestData.append('ccnumber', paymentDetails.cardNumber);
+      nmiRequestData.append('ccexp', `${paymentDetails.expiryMonth.padStart(2, '0')}${paymentDetails.expiryYear.slice(-2)}`);
+      nmiRequestData.append('cvv', paymentDetails.cvv);
+      console.log("Using direct card details with expiry:", `${paymentDetails.expiryMonth.padStart(2, '0')}${paymentDetails.expiryYear.slice(-2)}`);
     }
 
-    // Process payment with your payment provider here
-    // This is a mock implementation
-    const isPaymentSuccessful = true;
-    const mockTransactionId = `TR${Date.now()}`;
+    // Add billing information
+    nmiRequestData.append('first_name', paymentDetails.firstName);
+    nmiRequestData.append('last_name', paymentDetails.lastName);
+    nmiRequestData.append('address1', paymentDetails.address.street);
+    nmiRequestData.append('city', paymentDetails.address.city);
+    nmiRequestData.append('state', paymentDetails.address.state);
+    nmiRequestData.append('zip', paymentDetails.address.zipCode);
+    nmiRequestData.append('country', 'US');
 
-    if (isPaymentSuccessful) {
-      // Update enrollment with payment success
-      await studentService.updateEnrollment(enrollment.id, {
-        status: 'confirmed',
-        paymentDetails: {
-          amount: course.price,
-          currency: 'USD',
-          paymentStatus: 'completed'
-        },
-        payment: {
-          amount: course.price,
-          currency: 'USD',
-          status: 'completed',
-          transactionId: mockTransactionId
-        },
-        student: {
-          name: enrollment.student?.name || 'Unknown Student',
-          email: enrollment.student?.email || '',
-          phone: enrollment.student?.phone || '',
-        }
-      });
+    // Add order details
+    nmiRequestData.append('orderid', paymentId);
+    nmiRequestData.append('order_description', `Course: ${course.title}`);
 
+    // Process payment through NMI
+    const nmiResponse = await fetch(nmiApiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: nmiRequestData.toString(),
+    });
+
+    const responseText = await nmiResponse.text();
+    const responseParams = new URLSearchParams(responseText);
+
+    // Log the raw response from NMI for debugging
+    console.log('NMI Raw Response:', responseText);
+
+    if (responseParams.get('response') === '1') {
+      // Payment successful
       return NextResponse.json({
         success: true,
-        transactionId: mockTransactionId
+        transactionId: responseParams.get('transactionid'),
+        authCode: responseParams.get('authcode'),
+        avsResponse: responseParams.get('avsresponse'),
+        cvvResponse: responseParams.get('cvvresponse'),
       });
     } else {
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Payment processing failed',
-          details: 'The payment could not be processed. Please try again or use a different payment method.'
-        },
-        { status: 400 }
-      );
+      // Payment failed
+      return NextResponse.json({
+        success: false,
+        error: responseParams.get('responsetext'),
+        details: `Error Code: ${responseParams.get('response_code')}`,
+      }, { status: 400 });
     }
   } catch (error) {
     console.error('Payment processing error:', error);
-    return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Internal server error',
-        details: 'An unexpected error occurred. Please try again later.'
-      },
-      { status: 500 }
-    );
+    
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({
+        success: false,
+        error: 'Invalid payment data',
+        details: error.errors,
+      }, { status: 400 });
+    }
+
+    return NextResponse.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Payment processing failed',
+      details: 'An unexpected error occurred',
+    }, { status: 500 });
   }
 } 

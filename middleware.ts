@@ -6,7 +6,12 @@ export function middleware(request: NextRequest) {
   console.log("Accessing path:", request.nextUrl.pathname)
 
   // Your middleware logic here
-  return NextResponse.next()
+  const response = NextResponse.next()
+  response.headers.set('Access-Control-Allow-Origin', '*')
+  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+
+  return response
 }
 
 export const config = {

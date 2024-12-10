@@ -19,14 +19,7 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"],
-      "@/components/*": ["./components/*"],
-      "@/lib/*": ["./lib/*"],
-      "@/types/*": ["./types/*"],
-      "@/utils/*": ["./utils/*"],
-      "@/hooks/*": ["./hooks/*"],
-      "@/styles/*": ["./styles/*"],
-      "@/config/*": ["./config/*"]
+      "@/*": ["./*"]
     },
     "baseUrl": ".",
     "types": ["react-day-picker"]

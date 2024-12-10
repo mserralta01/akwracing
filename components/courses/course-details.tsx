@@ -19,7 +19,14 @@ import {
 import { format } from "date-fns";
 import { EnrollmentFlow } from "@/components/enrollment/enrollment-flow";
 import { motion } from "framer-motion";
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { 
+  Dialog, 
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { formatCurrency } from "@/lib/utils";
 
 interface CourseDetailsProps {
   initialCourse: Course;
@@ -111,11 +118,13 @@ export function CourseDetails({ initialCourse }: CourseDetailsProps) {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="sticky top-24"
           >
-            <div className="bg-card rounded-lg shadow-lg p-6 space-y-6">
+            <Card className="p-6 space-y-6">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-lg font-semibold">Price</span>
-                  <span className="text-2xl font-bold">${initialCourse.price}</span>
+                  <span className="text-2xl font-bold">
+                    {formatCurrency(initialCourse.price)}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between text-sm text-muted-foreground">
                   <span>Duration</span>
@@ -144,16 +153,16 @@ export function CourseDetails({ initialCourse }: CourseDetailsProps) {
 
               <Dialog open={isEnrollmentOpen} onOpenChange={setIsEnrollmentOpen}>
                 <DialogTrigger asChild>
-                  <Button className="w-full bg-racing-red hover:bg-racing-red/90">
+                  <Button 
+                    size="lg"
+                    className="w-full bg-racing-red hover:bg-racing-red/90 text-white"
+                  >
                     Enroll Now
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[800px]">
+                <DialogContent className="sm:max-w-[600px]">
                   <DialogHeader>
                     <DialogTitle>Course Enrollment</DialogTitle>
-                    <DialogDescription>
-                      Complete the enrollment process for {initialCourse.title}
-                    </DialogDescription>
                   </DialogHeader>
                   <EnrollmentFlow 
                     course={initialCourse} 
@@ -161,7 +170,7 @@ export function CourseDetails({ initialCourse }: CourseDetailsProps) {
                   />
                 </DialogContent>
               </Dialog>
-            </div>
+            </Card>
           </motion.div>
         </div>
       </motion.div>

@@ -5,20 +5,24 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Course } from "@/types/course";
-import { Enrollment, ParentProfile, PaymentDetails } from "@/types/student";
+import { Enrollment, StudentProfile, ParentProfile, PaymentToken } from "@/types/student";
 import { paymentService } from "@/lib/services/payment-service";
 import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Lock, CreditCard, Shield } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 import {
   Select,
   SelectContent,
@@ -26,30 +30,34 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useToast } from "@/components/ui/use-toast";
-import { CreditCard, Lock } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+
+const MONTHS = [
+  { value: "01", label: "January" },
+  { value: "02", label: "February" },
+  { value: "03", label: "March" },
+  { value: "04", label: "April" },
+  { value: "05", label: "May" },
+  { value: "06", label: "June" },
+  { value: "07", label: "July" },
+  { value: "08", label: "August" },
+  { value: "09", label: "September" },
+  { value: "10", label: "October" },
+  { value: "11", label: "November" },
+  { value: "12", label: "December" },
+];
 
 const paymentFormSchema = z.object({
   cardNumber: z.string().min(15).max(16),
-  expiryMonth: z.string().min(2).max(2),
+  expiryMonth: z.string()
+    .min(1)
+    .max(2)
+    .refine((val) => {
+      const num = parseInt(val);
+      return !isNaN(num) && num > 0 && num <= 12;
+    }, "Month must be between 1 and 12"),
   expiryYear: z.string().min(2).max(2),
   cvv: z.string().min(3).max(4),
-  sameAsParent: z.boolean().default(true),
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  address: z.object({
-    street: z.string().min(1, "Street address is required"),
-    city: z.string().min(1, "City is required"),
-    state: z.string().min(1, "State is required"),
-    zipCode: z.string().min(5, "Valid ZIP code is required"),
-  }),
+  savePaymentMethod: z.boolean().default(false),
 });
 
 type PaymentFormData = z.infer<typeof paymentFormSchema>;
@@ -61,12 +69,6 @@ interface PaymentFormProps {
   onSuccess: (transactionId: string) => void;
   onError: (error: string) => void;
 }
-
-type PaymentNotificationState = {
-  status: "success" | "error" | "pending" | null;
-  message: string;
-  details?: string;
-};
 
 const formatCreditCard = (value: string) => {
   if (!value) return value;
@@ -94,56 +96,15 @@ export function PaymentForm({
 }: PaymentFormProps) {
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
-  const [showErrorDialog, setShowErrorDialog] = useState(false);
-  const [errorDetails, setErrorDetails] = useState<{
-    title: string;
-    message: string;
-    suggestion?: string;
-  }>({
-    title: 'Error',
-    message: '',
-  });
-
-  const getPaymentErrorMessage = (error: string): {
-    title: string;
-    message: string;
-    suggestion?: string;
-  } => {
-    if (error.includes('card')) {
-      return {
-        title: 'Card Error',
-        message: error,
-        suggestion: 'Please check your card details and try again.'
-      };
-    }
-    if (error.includes('payment')) {
-      return {
-        title: 'Payment Error',
-        message: error,
-        suggestion: 'Please try again or use a different payment method.'
-      };
-    }
-    return {
-      title: 'Error',
-      message: error,
-      suggestion: 'Please try again or contact support.'
-    };
-  };
+  const [savedCards, setSavedCards] = useState<PaymentToken[]>([]);
+  const [selectedCard, setSelectedCard] = useState<string | null>(null);
 
   const defaultValues = {
     cardNumber: '',
     expiryMonth: '',
     expiryYear: '',
     cvv: '',
-    sameAsParent: true,
-    firstName: parent.firstName,
-    lastName: parent.lastName,
-    address: {
-      street: parent.address.street,
-      city: parent.address.city,
-      state: parent.address.state,
-      zipCode: parent.address.zipCode,
-    },
+    savePaymentMethod: false,
   };
 
   const form = useForm<PaymentFormData>({
@@ -151,353 +112,326 @@ export function PaymentForm({
     defaultValues,
   });
 
-  const sameAsParent = form.watch("sameAsParent");
-
   useEffect(() => {
-    if (sameAsParent) {
-      form.setValue("firstName", parent.firstName);
-      form.setValue("lastName", parent.lastName);
-      form.setValue("address.street", parent.address.street);
-      form.setValue("address.city", parent.address.city);
-      form.setValue("address.state", parent.address.state);
-      form.setValue("address.zipCode", parent.address.zipCode);
-    }
-  }, [sameAsParent, parent, form]);
+    const loadSavedCards = async () => {
+      try {
+        const cards = await paymentService.getStoredPaymentMethods(parent.id);
+        setSavedCards(cards);
+      } catch (error) {
+        console.error('Error loading saved cards:', error);
+      }
+    };
+    loadSavedCards();
+  }, [parent.id]);
 
-  const handlePaymentSubmit = async (data: PaymentFormData) => {
+  const handleSubmit = async (data: PaymentFormData) => {
+    console.log("Form data in handleSubmit:", data);
+
     try {
       setIsProcessing(true);
 
-      const paymentDetails: PaymentDetails = {
-        cardNumber: data.cardNumber,
+      const paymentDetails = {
+        cardNumber: data.cardNumber.replace(/\s/g, ''),
         expiryMonth: data.expiryMonth,
         expiryYear: data.expiryYear,
         cvv: data.cvv,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        address: {
-          street: data.address.street,
-          city: data.address.city,
-          state: data.address.state,
-          zipCode: data.address.zipCode,
-        },
+        firstName: parent.firstName,
+        lastName: parent.lastName,
+        address: parent.address,
       };
 
-      const result = await paymentService.processPayment(enrollment, course, paymentDetails);
+      const options = {
+        shouldTokenize: data.savePaymentMethod,
+        customerId: parent.id,
+        savePaymentMethod: data.savePaymentMethod,
+      };
+
+      const result = await paymentService.processPayment(
+        enrollment,
+        course,
+        paymentDetails,
+        options
+      );
 
       if (result.success && result.transactionId) {
+        toast({
+          title: "Payment Successful",
+          description: "Your payment has been processed successfully.",
+        });
         onSuccess(result.transactionId);
       } else {
-        const errorInfo = getPaymentErrorMessage(result.error || "Payment processing failed");
-        setErrorDetails(errorInfo);
-        setShowErrorDialog(true);
+        toast({
+          variant: "destructive",
+          title: "Payment Failed",
+          description: result.error || "Payment processing failed. Please try again.",
+        });
         onError(result.error || "Payment processing failed");
       }
     } catch (error) {
       console.error("Payment error:", error);
       const errorMessage = error instanceof Error ? error.message : "Payment processing failed";
-      const errorInfo = getPaymentErrorMessage(errorMessage);
-      setErrorDetails(errorInfo);
-      setShowErrorDialog(true);
+      toast({
+        variant: "destructive",
+        title: "Payment Error",
+        description: errorMessage,
+      });
       onError(errorMessage);
     } finally {
       setIsProcessing(false);
     }
   };
 
-  return (
-    <>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(handlePaymentSubmit)} className="space-y-6">
-          <div className="rounded-lg border p-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5 text-muted-foreground" />
-                <h3 className="font-semibold">Payment Details</h3>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Lock className="h-4 w-4" />
-                Secure Payment
-              </div>
-            </div>
+  const handleSavedCardPayment = async (tokenId: string) => {
+    try {
+      setIsProcessing(true);
+      setSelectedCard(tokenId);
 
-            <div className="grid gap-4">
-              <FormField
-                control={form.control}
-                name="cardNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Card Number</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="1234 5678 9012 3456"
-                        {...field}
-                        value={formatCreditCard(field.value)}
-                        onChange={(e) => {
-                          const value = e.target.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-                          if (value.length <= 16) {
+      const paymentDetails = {
+        tokenId,
+        cardNumber: '',
+        expiryMonth: '',
+        expiryYear: '',
+        cvv: '',
+        firstName: parent.firstName,
+        lastName: parent.lastName,
+        address: parent.address,
+      };
+
+      const result = await paymentService.processPayment(
+        enrollment,
+        course,
+        paymentDetails,
+        { customerId: parent.id }
+      );
+
+      if (result.success && result.transactionId) {
+        toast({
+          title: "Payment Successful",
+          description: "Your payment has been processed successfully.",
+        });
+        onSuccess(result.transactionId);
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Payment Failed",
+          description: result.error || "Payment processing failed. Please try again.",
+        });
+        onError(result.error || "Payment processing failed");
+      }
+    } catch (error) {
+      console.error("Saved card payment error:", error);
+      const errorMessage = error instanceof Error ? error.message : "Payment processing failed";
+      toast({
+        variant: "destructive",
+        title: "Payment Error",
+        description: errorMessage,
+      });
+      onError(errorMessage);
+    } finally {
+      setIsProcessing(false);
+      setSelectedCard(null);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {savedCards.length > 0 && (
+        <Card className="p-4">
+          <div className="space-y-4">
+            {savedCards.map((card) => (
+              <motion.div
+                key={card.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center justify-between p-4 border rounded-lg hover:border-primary transition-colors"
+              >
+                <div className="flex items-center space-x-4">
+                  <CreditCard className="h-6 w-6 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">•••• {card.last4}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Expires {card.expiryMonth}/{card.expiryYear}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => handleSavedCardPayment(card.id)}
+                  disabled={isProcessing}
+                >
+                  {isProcessing && selectedCard === card.id ? (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="flex items-center space-x-2"
+                    >
+                      <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      <span>Processing...</span>
+                    </motion.div>
+                  ) : (
+                    "Pay with this card"
+                  )}
+                </Button>
+              </motion.div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="cardNumber"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Card Number</FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <Input
+                      className="pl-10"
+                      placeholder="1234 5678 9012 3456"
+                      {...field}
+                      value={formatCreditCard(field.value)}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+                        if (value.length <= 16) {
+                          field.onChange(value);
+                        }
+                      }}
+                    />
+                    <Lock className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <div className="grid grid-cols-3 gap-4">
+            <FormField
+              control={form.control}
+              name="expiryMonth"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Month</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="MM"
+                      maxLength={2}
+                      {...field}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, '');
+                        if (value.length <= 2) {
+                          const num = parseInt(value);
+                          if (!value || (num > 0 && num <= 12)) {
                             field.onChange(value);
                           }
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid grid-cols-3 gap-4">
-                <FormField
-                  control={form.control}
-                  name="expiryMonth"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Month</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value || ""}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="MM" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {Array.from({ length: 12 }, (_, i) => {
-                            const month = (i + 1).toString().padStart(2, "0");
-                            return (
-                              <SelectItem key={month} value={month}>
-                                {month}
-                              </SelectItem>
-                            );
-                          })}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="expiryYear"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Year</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value || ""}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="YY" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {Array.from({ length: 10 }, (_, i) => {
-                            const year = (new Date().getFullYear() + i)
-                              .toString()
-                              .slice(-2);
-                            return (
-                              <SelectItem key={year} value={year}>
-                                {year}
-                              </SelectItem>
-                            );
-                          })}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="cvv"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>CVV</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="123"
-                          {...field}
-                          value={field.value}
-                          onChange={(e) => {
-                            const value = e.target.value.replace(/\D/g, '');
-                            if (value.length <= 4) {
-                              field.onChange(value);
-                            }
-                          }}
-                          type="password"
-                          maxLength={4}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </div>
+                        }
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="expiryYear"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Year</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="YY"
+                      maxLength={2}
+                      {...field}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, '');
+                        if (value.length <= 2) {
+                          field.onChange(value);
+                        }
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="cvv"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>CVV</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="password"
+                      placeholder="123"
+                      maxLength={4}
+                      {...field}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, '');
+                        if (value.length <= 4) {
+                          field.onChange(value);
+                        }
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
 
-          <div className="rounded-lg border p-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <h3 className="font-semibold">Billing Information</h3>
-              </div>
-              <FormField
-                control={form.control}
-                name="sameAsParent"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center space-x-2 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormLabel className="text-sm font-normal">
-                      Same as Parent
-                    </FormLabel>
-                  </FormItem>
-                )}
-              />
-            </div>
+          <FormField
+            control={form.control}
+            name="savePaymentMethod"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <FormLabel>Save payment method for future use</FormLabel>
+                </div>
+              </FormItem>
+            )}
+          />
 
-            <div className="grid gap-4">
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="firstName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>First Name</FormLabel>
-                      <FormControl>
-                        <Input {...field} disabled={sameAsParent} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="lastName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Last Name</FormLabel>
-                      <FormControl>
-                        <Input {...field} disabled={sameAsParent} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={form.control}
-                name="address.street"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Street Address</FormLabel>
-                    <FormControl>
-                      <Input {...field} disabled={sameAsParent} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid grid-cols-3 gap-4">
-                <FormField
-                  control={form.control}
-                  name="address.city"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>City</FormLabel>
-                      <FormControl>
-                        <Input {...field} disabled={sameAsParent} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="address.state"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>State</FormLabel>
-                      <FormControl>
-                        <Input {...field} disabled={sameAsParent} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="address.zipCode"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>ZIP Code</FormLabel>
-                      <FormControl>
-                        <Input {...field} disabled={sameAsParent} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between text-lg font-semibold">
-              <span>Total Amount:</span>
-              <span>{course.price}</span>
-            </div>
-
+          <div className="pt-4">
             <Button
               type="submit"
-              className="w-full bg-racing-red hover:bg-racing-red/90"
+              className="w-full"
               disabled={isProcessing}
             >
               {isProcessing ? (
-                <div className="flex items-center gap-2">
-                  <span className="loading loading-spinner"></span>
-                  Processing...
-                </div>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="flex items-center space-x-2"
+                >
+                  <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  <span>Processing Payment...</span>
+                </motion.div>
               ) : (
-                `Complete Payment - ${course.price}`
+                <span className="flex items-center space-x-2">
+                  <Shield className="h-4 w-4" />
+                  <span>Pay ${course.price}</span>
+                </span>
               )}
             </Button>
           </div>
         </form>
       </Form>
 
-      <Dialog open={showErrorDialog} onOpenChange={setShowErrorDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{errorDetails.title}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="font-medium">{errorDetails.message}</div>
-            {errorDetails.suggestion && (
-              <div className="text-sm text-muted-foreground">{errorDetails.suggestion}</div>
-            )}
-            <Button 
-              onClick={() => setShowErrorDialog(false)}
-              className="w-full"
-            >
-              Close
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
+      <div className="flex items-center justify-center space-x-2 text-sm text-muted-foreground">
+        <Lock className="h-4 w-4" />
+        <span>Payments are secure and encrypted</span>
+      </div>
+    </div>
   );
 } 

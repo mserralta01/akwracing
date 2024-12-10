@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Enrollment } from "@/types/student";
+import { Enrollment, StudentProfile } from "@/types/student";
+import { Course } from "@/types/course";
 import { enrollmentService } from "@/lib/services/enrollment-service";
+import { courseService } from "@/lib/services/course-service";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -31,10 +33,14 @@ import {
   ChevronDown,
   Trash2,
   Calendar,
-  Search 
+  Search,
+  RefreshCcw,
+  Globe,
+  ArrowUpDown
 } from "lucide-react";
 import { DateRange } from "react-day-picker";
-import { format, subDays, startOfYear } from "date-fns";
+import { format, subDays, startOfYear, parseISO } from "date-fns";
+import { formatInTimeZone } from 'date-fns-tz';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -71,6 +77,18 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
+import { paymentService } from "@/lib/services/payment-service";
+import { useTimezone } from '@/contexts/timezone-context';
+import { ColumnDef } from "@tanstack/react-table";
+import { DataTable } from "@/components/ui/data-table";
 
 const ITEMS_PER_PAGE = 25;
 
@@ -83,12 +101,36 @@ interface PaymentSummary {
   successRate: number;
 }
 
+interface EnrollmentWithCourse extends Enrollment {
+  id: string;
+  courseId: string;
+  studentId: string;
+  parentId?: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  course?: Course | null;
+  student?: {
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    phone?: string;
+  };
+  payment?: {
+    amount?: number;
+    status?: string;
+    transactionId?: string;
+  };
+}
+
 export default function PaymentsPage() {
-  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
-  const [filteredEnrollments, setFilteredEnrollments] = useState<Enrollment[]>([]);
+  const [enrollments, setEnrollments] = useState<EnrollmentWithCourse[]>([]);
+  const [filteredEnrollments, setFilteredEnrollments] = useState<EnrollmentWithCourse[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [selectedEnrollment, setSelectedEnrollment] = useState<Enrollment | null>(null);
+  const [refundLoading, setRefundLoading] = useState(false);
+  const [selectedEnrollment, setSelectedEnrollment] = useState<EnrollmentWithCourse | null>(null);
+  const [refundEnrollment, setRefundEnrollment] = useState<EnrollmentWithCourse | null>(null);
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: subDays(new Date(), 30),
     to: new Date(),
@@ -105,8 +147,17 @@ export default function PaymentsPage() {
     pendingPayments: 0,
     successRate: 0,
   });
+  const [showDetails, setShowDetails] = useState(false);
 
   const { toast } = useToast();
+  const { timezone: contextTimezone, formatDateTime } = useTimezone();
+
+  const timezoneAbbreviations: Record<string, string> = {
+    'America/New_York': 'EST',
+    'America/Los_Angeles': 'PST',
+    'America/Denver': 'MST',
+    'America/Chicago': 'CST'
+  };
 
   useEffect(() => {
     loadEnrollments();
@@ -116,11 +167,23 @@ export default function PaymentsPage() {
     filterEnrollments();
   }, [enrollments, dateRange, searchTerm, studentFilter, courseFilter]);
 
+  // Load enrollments with course data
   const loadEnrollments = async () => {
     try {
       setLoading(true);
       const data = await enrollmentService.getAllEnrollments();
-      setEnrollments(data);
+      const enrollmentsWithCourses = await Promise.all(
+        data.map(async (enrollment) => {
+          try {
+            const course = await courseService.getCourse(enrollment.courseId);
+            return { ...enrollment, course: course || null };
+          } catch (error) {
+            console.error(`Error loading course for enrollment ${enrollment.id}:`, error);
+            return { ...enrollment, course: null };
+          }
+        })
+      );
+      setEnrollments(enrollmentsWithCourses);
     } catch (error) {
       console.error("Error loading enrollments:", error);
       toast({
@@ -171,7 +234,7 @@ export default function PaymentsPage() {
     }
   };
 
-  const calculateSummary = (enrollments: Enrollment[]): PaymentSummary => {
+  const calculateSummary = (enrollments: EnrollmentWithCourse[]): PaymentSummary => {
     const summary = enrollments.reduce(
       (acc, enrollment) => {
         acc.totalPayments++;
@@ -211,7 +274,8 @@ export default function PaymentsPage() {
     // Date range filter
     if (dateRange?.from && dateRange?.to) {
       filtered = filtered.filter((enrollment) => {
-        const paymentDate = new Date(enrollment.createdAt);
+        const paymentDate = enrollment.createdAt ? new Date(enrollment.createdAt) : null;
+        if (!paymentDate) return false;
         return (
           paymentDate >= dateRange.from! &&
           paymentDate <= dateRange.to!
@@ -223,17 +287,22 @@ export default function PaymentsPage() {
     if (searchTerm) {
       const search = searchTerm.toLowerCase();
       filtered = filtered.filter(
-        (enrollment) =>
-          enrollment.student?.name?.toLowerCase().includes(search) ||
-          enrollment.course?.title?.toLowerCase().includes(search) ||
-          enrollment.payment?.transactionId?.toLowerCase().includes(search)
+        (enrollment) => {
+          const studentName = `${enrollment.student?.firstName || ''} ${enrollment.student?.lastName || ''}`.toLowerCase();
+          return studentName.includes(search) ||
+            enrollment.course?.title?.toLowerCase().includes(search) ||
+            enrollment.payment?.transactionId?.toLowerCase().includes(search);
+        }
       );
     }
 
     // Student filter
     if (studentFilter && studentFilter !== 'all') {
       filtered = filtered.filter(
-        (enrollment) => enrollment.student?.name === studentFilter
+        (enrollment) => {
+          const studentName = `${enrollment.student?.firstName || ''} ${enrollment.student?.lastName || ''}`;
+          return studentName === studentFilter;
+        }
       );
     }
 
@@ -270,18 +339,22 @@ export default function PaymentsPage() {
     }
   };
 
-  // Get unique, non-null student names and course titles
-  const uniqueStudentNames = Array.from(
+  // Get unique student names for filter
+  const getUniqueStudents = () => Array.from(
     new Set(
       enrollments
-        .map((e) => e.student?.name)
+        .map((e) => {
+          if (!e.student?.firstName || !e.student?.lastName) return null;
+          return `${e.student.firstName} ${e.student.lastName}`;
+        })
         .filter((name): name is string => {
           return typeof name === 'string' && name.trim() !== '';
         })
     )
   ).sort();
 
-  const uniqueCourseTitles = Array.from(
+  // Get unique course titles for filter
+  const getUniqueCourses = () => Array.from(
     new Set(
       enrollments
         .map((e) => e.course?.title)
@@ -302,424 +375,512 @@ export default function PaymentsPage() {
     setCurrentPage(page);
   };
 
+  const handleRefund = async (enrollment: EnrollmentWithCourse) => {
+    if (!enrollment.payment?.transactionId || !enrollment.payment?.amount) {
+      toast({
+        title: "Error",
+        description: "Missing payment information",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setRefundLoading(true);
+      
+      // Call your payment service's refund method
+      const response = await fetch('/api/payment/refund', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          transactionId: enrollment.payment.transactionId,
+          amount: enrollment.payment.amount,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Refund failed');
+      }
+
+      toast({
+        title: "Success",
+        description: "Payment refunded successfully",
+      });
+
+      // Reload enrollments to get updated status
+      await loadEnrollments();
+    } catch (error) {
+      console.error("Error processing refund:", error);
+      toast({
+        title: "Error",
+        description: "Failed to process refund",
+        variant: "destructive",
+      });
+    } finally {
+      setRefundLoading(false);
+    }
+  };
+
+  // Get customer name from payment details
+  const getCustomerName = (enrollment: EnrollmentWithCourse): string => {
+    const student = enrollment.student;
+    if (!student) return "Unknown";
+    return `${student.firstName || ''} ${student.lastName || ''}`.trim() || "Unknown";
+  };
+
+  const columns: ColumnDef<EnrollmentWithCourse>[] = [
+    {
+      accessorKey: "createdAt",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Date/Time
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        );
+      },
+      cell: ({ row }) => {
+        const dateTime = formatDateTime(row.original.createdAt);
+        return (
+          <div className="flex flex-col">
+            <span>{dateTime.formattedDate}</span>
+            <span className="text-sm text-gray-500">{dateTime.formattedTime}</span>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "student",
+      header: "Student",
+      cell: ({ row }) => getCustomerName(row.original),
+    },
+    {
+      accessorKey: "course",
+      header: "Course",
+      cell: ({ row }) => row.original.course?.title || "Unknown Course",
+    },
+    {
+      accessorKey: "payment.amount",
+      header: "Amount",
+      cell: ({ row }) => (
+        <div className="text-right">
+          ${(row.original.payment?.amount || 0).toFixed(2)}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "payment.status",
+      header: "Status",
+      cell: ({ row }) => (
+        <Badge className={getPaymentStatusColor(row.original.payment?.status || "")}>
+          {row.original.payment?.status || "Unknown"}
+        </Badge>
+      ),
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+          {row.original.payment?.status === "completed" ? (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  className="text-red-600 hover:text-red-800 hover:bg-red-100"
+                >
+                  <RefreshCcw className="h-4 w-4 mr-2" />
+                  Refund
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Process Refund</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to process a refund for this payment?
+                    This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => handleRefund(row.original)}
+                    disabled={refundLoading}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    {refundLoading ? "Processing..." : "Confirm Refund"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          ) : (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-red-600 hover:text-red-800 hover:bg-red-100"
+                  disabled={deleteLoading}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Payment Record</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete this payment record?
+                    This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => handleDelete(row.original.id)}
+                    disabled={deleteLoading}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    {deleteLoading ? "Deleting..." : "Delete"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+        </div>
+      ),
+    },
+  ];
+
   return (
-    <div className="container mx-auto py-8">
-      {/* Summary Cards */}
-      <div className="flex items-center gap-4 mb-6">
-        <Card className="flex-1 border-none shadow-none bg-blue-50">
-          <CardContent className="p-4">
-            <div className="flex justify-between items-center">
-              <div>
-                <div className="flex items-center gap-2">
-                  <Banknote className="h-4 w-4 text-blue-600" />
-                  <p className="text-sm font-medium text-blue-600">Total Payments</p>
-                </div>
-                <div className="mt-1">
-                  <div className="text-2xl font-bold text-blue-700">{summary.totalPayments}</div>
-                  <p className="text-sm text-blue-600/80">
-                    ${summary.totalAmount.toFixed(2)} Total
-                  </p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="flex-1 border-none shadow-none bg-emerald-50">
-          <CardContent className="p-4">
-            <div className="flex justify-between items-center">
-              <div>
-                <div className="flex items-center gap-2">
-                  <div className="flex gap-1">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                    <XCircle className="h-4 w-4 text-red-600" />
-                  </div>
-                  <p className="text-sm font-medium text-emerald-600">Success Rate</p>
-                </div>
-                <div className="mt-1">
-                  <div className="text-2xl font-bold text-emerald-700">{summary.successRate.toFixed(1)}%</div>
-                  <p className="text-sm text-emerald-600/80">
-                    {summary.successfulPayments} of {summary.totalPayments}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="flex-1 border-none shadow-none bg-amber-50">
-          <CardContent className="p-4">
-            <div className="flex justify-between items-center">
-              <div>
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-amber-600" />
-                  <p className="text-sm font-medium text-amber-600">Pending</p>
-                </div>
-                <div className="mt-1">
-                  <div className="text-2xl font-bold text-amber-700">{summary.pendingPayments}</div>
-                  <p className="text-sm text-amber-600/80">
-                    Awaiting completion
-                  </p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="flex-1 border-none shadow-none bg-purple-50">
-          <CardContent className="p-4">
-            <div className="flex justify-between items-center">
-              <div>
-                <div className="flex items-center gap-2">
-                  <CalendarRange className="h-4 w-4 text-purple-600" />
-                  <p className="text-sm font-medium text-purple-600">Date Range</p>
-                </div>
-                <div className="mt-1">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-8 px-2 text-purple-700 hover:text-purple-800 hover:bg-purple-100 font-normal"
-                      >
-                        {dateRange?.from ? (
-                          dateRange.to ? (
-                            <>
-                              {format(dateRange.from, "LLL dd")} -{" "}
-                              {format(dateRange.to, "LLL dd, y")}
-                              <ChevronDown className="ml-2 h-4 w-4" />
-                            </>
-                          ) : (
-                            format(dateRange.from, "LLL dd, y")
-                          )
-                        ) : (
-                          <span>Pick a date</span>
-                        )}
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-auto p-2">
-                      <div className="flex gap-2 mb-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1 text-purple-700 hover:text-purple-800 hover:bg-purple-100"
-                          onClick={() => handleDatePreset('mtd')}
-                        >
-                          MTD
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1 text-purple-700 hover:text-purple-800 hover:bg-purple-100"
-                          onClick={() => handleDatePreset('ytd')}
-                        >
-                          YTD
-                        </Button>
-                      </div>
-                      <DropdownMenuSeparator />
-                      <div className="mt-2">
-                        <DateRangePicker
-                          value={dateRange}
-                          onChange={setDateRange}
-                        />
-                      </div>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </div>
-              <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center">
-                <CalendarRange className="h-4 w-4 text-purple-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filters */}
-      <div className="flex gap-4 mb-6">
-        <div className="flex-1">
-          <Input
-            placeholder="Search payments..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="max-w-sm"
-          />
-        </div>
-        <Select value={studentFilter} onValueChange={setStudentFilter}>
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="Filter by Student" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Students</SelectItem>
-            {uniqueStudentNames.map(name => (
-              <SelectItem key={name} value={name}>
-                {name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={courseFilter} onValueChange={setCourseFilter}>
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="Filter by Course" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Courses</SelectItem>
-            {uniqueCourseTitles.map(title => (
-              <SelectItem key={title} value={title}>
-                {title}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Main Content */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Payments List */}
-        <div className="md:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Payments</CardTitle>
-              <CardDescription>View and manage course payments</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Student</TableHead>
-                    <TableHead>Course</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {loading ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center">
-                        Loading...
-                      </TableCell>
-                    </TableRow>
-                  ) : filteredEnrollments.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center">
-                        No payments found
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    paginatedEnrollments.map((enrollment) => (
-                      <TableRow key={enrollment.id}>
-                        <TableCell>{enrollment.student?.name || "Unknown Student"}</TableCell>
-                        <TableCell>{enrollment.course?.title || "Unknown Course"}</TableCell>
-                        <TableCell>
-                          ${enrollment.payment?.amount?.toFixed(2) || "0.00"}{" "}
-                          {enrollment.payment?.currency || "USD"}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant="secondary"
-                            className={getPaymentStatusColor(enrollment.payment?.status || "pending")}
-                          >
-                            {enrollment.payment?.status || "pending"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setSelectedEnrollment(enrollment)}
-                          >
-                            View Details
-                          </Button>
-                          {enrollment.payment?.status !== "completed" && (
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="text-red-600 hover:text-red-800 hover:bg-red-100"
-                                  disabled={deleteLoading}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete Payment Record?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Are you sure you want to delete this payment record? This action cannot be undone.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => handleDelete(enrollment.id)}
-                                    className="bg-red-600 hover:bg-red-700 text-white"
-                                    disabled={deleteLoading}
-                                  >
-                                    {deleteLoading ? "Deleting..." : "Delete"}
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-              
-              {/* Pagination */}
-              {filteredEnrollments.length > 0 && (
-                <div className="mt-4 flex justify-center">
-                  <Pagination>
-                    <PaginationContent>
-                      <PaginationItem>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-                          disabled={currentPage === 1}
-                        >
-                          Previous
-                        </Button>
-                      </PaginationItem>
-                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                        <PaginationItem key={page}>
-                          <Button
-                            variant={currentPage === page ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => handlePageChange(page)}
-                          >
-                            {page}
-                          </Button>
-                        </PaginationItem>
-                      ))}
-                      <PaginationItem>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
-                          disabled={currentPage === totalPages}
-                        >
-                          Next
-                        </Button>
-                      </PaginationItem>
-                    </PaginationContent>
-                  </Pagination>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Payment Details */}
-        <div className="md:col-span-1">
-          <Card>
-            <CardHeader>
-              <CardTitle>Payment Details</CardTitle>
-              <CardDescription>
-                {selectedEnrollment ? "View payment details" : "Select a payment to view details"}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {selectedEnrollment ? (
-                <div className="space-y-6">
+    <div className="container mx-auto py-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Payments</CardTitle>
+          <CardDescription>View and manage payment records</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {/* Summary Cards */}
+          <div className="flex items-center gap-4 mb-6">
+            <Card className="flex-1 border-none shadow-none bg-blue-50">
+              <CardContent className="p-4">
+                <div className="flex justify-between items-center">
                   <div>
-                    <h3 className="text-lg font-semibold mb-4">Student Information</h3>
-                    <dl className="grid grid-cols-1 gap-4">
-                      <div>
-                        <dt className="text-sm font-medium text-muted-foreground">Name</dt>
-                        <dd>{selectedEnrollment.student?.name || "Unknown"}</dd>
-                      </div>
-                      <div>
-                        <dt className="text-sm font-medium text-muted-foreground">Email</dt>
-                        <dd>{selectedEnrollment.student?.email || selectedEnrollment.student?.name ? selectedEnrollment.student?.email : "N/A"}</dd>
-                      </div>
-                      <div>
-                        <dt className="text-sm font-medium text-muted-foreground">Phone</dt>
-                        <dd>{selectedEnrollment.student?.phone || "N/A"}</dd>
-                      </div>
-                    </dl>
+                    <div className="flex items-center gap-2">
+                      <Banknote className="h-4 w-4 text-blue-600" />
+                      <p className="text-sm font-medium text-blue-600">Total Payments</p>
+                    </div>
+                    <div className="mt-1">
+                      <div className="text-2xl font-bold text-blue-700">{summary.totalPayments}</div>
+                      <p className="text-sm text-blue-600/80">
+                        ${summary.totalAmount.toFixed(2)} Total
+                      </p>
+                    </div>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
 
-                  <div className="border-t pt-6">
-                    <h3 className="text-lg font-semibold mb-4">Course Information</h3>
-                    <dl className="grid grid-cols-1 gap-4">
-                      <div>
-                        <dt className="text-sm font-medium text-muted-foreground">Course</dt>
-                        <dd>{selectedEnrollment.course?.title || "Unknown Course"}</dd>
+            <Card className="flex-1 border-none shadow-none bg-emerald-50">
+              <CardContent className="p-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex gap-1">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                        <XCircle className="h-4 w-4 text-red-600" />
                       </div>
-                      <div>
-                        <dt className="text-sm font-medium text-muted-foreground">Dates</dt>
-                        <dd>
-                          {selectedEnrollment.course?.startDate
-                            ? new Date(selectedEnrollment.course.startDate).toLocaleDateString()
-                            : "N/A"}{" "}
-                          -{" "}
-                          {selectedEnrollment.course?.endDate
-                            ? new Date(selectedEnrollment.course.endDate).toLocaleDateString()
-                            : "N/A"}
-                        </dd>
-                      </div>
-                    </dl>
+                      <p className="text-sm font-medium text-emerald-600">Success Rate</p>
+                    </div>
+                    <div className="mt-1">
+                      <div className="text-2xl font-bold text-emerald-700">{summary.successRate.toFixed(1)}%</div>
+                      <p className="text-sm text-emerald-600/80">
+                        {summary.successfulPayments} of {summary.totalPayments}
+                      </p>
+                    </div>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
 
-                  <div className="border-t pt-6">
-                    <h3 className="text-lg font-semibold mb-4">Payment Information</h3>
-                    <dl className="grid grid-cols-1 gap-4">
-                      <div>
-                        <dt className="text-sm font-medium text-muted-foreground">Amount</dt>
-                        <dd>
-                          ${selectedEnrollment.payment?.amount?.toFixed(2) || "0.00"}{" "}
-                          {selectedEnrollment.payment?.currency || "USD"}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt className="text-sm font-medium text-muted-foreground">Status</dt>
-                        <dd>
-                          <Badge
-                            variant="secondary"
-                            className={getPaymentStatusColor(
-                              selectedEnrollment.payment?.status || "pending"
-                            )}
+            <Card className="flex-1 border-none shadow-none bg-amber-50">
+              <CardContent className="p-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-amber-600" />
+                      <p className="text-sm font-medium text-amber-600">Pending</p>
+                    </div>
+                    <div className="mt-1">
+                      <div className="text-2xl font-bold text-amber-700">{summary.pendingPayments}</div>
+                      <p className="text-sm text-amber-600/80">
+                        Awaiting completion
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="flex-1 border-none shadow-none bg-purple-50">
+              <CardContent className="p-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <CalendarRange className="h-4 w-4 text-purple-600" />
+                      <p className="text-sm font-medium text-purple-600">Date Range</p>
+                    </div>
+                    <div className="mt-1">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 px-2 text-purple-700 hover:text-purple-800 hover:bg-purple-100 font-normal"
                           >
-                            {selectedEnrollment.payment?.status || "pending"}
-                          </Badge>
-                        </dd>
-                      </div>
-                      {selectedEnrollment.payment?.transactionId && (
-                        <div>
-                          <dt className="text-sm font-medium text-muted-foreground">
-                            Transaction ID
-                          </dt>
-                          <dd>{selectedEnrollment.payment.transactionId}</dd>
-                        </div>
-                      )}
-                    </dl>
+                            {dateRange?.from ? (
+                              dateRange.to ? (
+                                <>
+                                  {format(dateRange.from, "LLL dd")} -{" "}
+                                  {format(dateRange.to, "LLL dd, y")}
+                                  <ChevronDown className="ml-2 h-4 w-4" />
+                                </>
+                              ) : (
+                                format(dateRange.from, "LLL dd, y")
+                              )
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-auto p-2">
+                          <div className="flex gap-2 mb-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex-1 text-purple-700 hover:text-purple-800 hover:bg-purple-100"
+                              onClick={() => handleDatePreset('mtd')}
+                            >
+                              MTD
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex-1 text-purple-700 hover:text-purple-800 hover:bg-purple-100"
+                              onClick={() => handleDatePreset('ytd')}
+                            >
+                              YTD
+                            </Button>
+                          </div>
+                          <DropdownMenuSeparator />
+                          <div className="mt-2">
+                            <DateRangePicker
+                              value={dateRange}
+                              onChange={setDateRange}
+                            />
+                          </div>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
+                  <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center">
+                    <CalendarRange className="h-4 w-4 text-purple-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-                  {selectedEnrollment.notes && selectedEnrollment.notes.length > 0 && (
-                    <div className="border-t pt-6">
-                      <h3 className="text-lg font-semibold mb-4">Notes</h3>
-                      <ul className="list-disc pl-5 space-y-2">
-                        {selectedEnrollment.notes.map((note, index) => (
-                          <li key={index}>{note}</li>
-                        ))}
-                      </ul>
+          {/* Filters */}
+          <div className="flex gap-4 mb-6">
+            <div className="flex-1">
+              <Input
+                placeholder="Search payments..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="max-w-sm"
+              />
+            </div>
+            <Select value={studentFilter} onValueChange={setStudentFilter}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Filter by Student" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Students</SelectItem>
+                {getUniqueStudents().map(name => (
+                  <SelectItem key={name} value={name}>
+                    {name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={courseFilter} onValueChange={setCourseFilter}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Filter by Course" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Courses</SelectItem>
+                {getUniqueCourses().map(title => (
+                  <SelectItem key={title} value={title}>
+                    {title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Main Content */}
+          <DataTable
+            columns={columns}
+            data={paginatedEnrollments}
+            initialSorting={[
+              {
+                id: "createdAt",
+                desc: true
+              }
+            ]}
+          />
+          
+          {/* Pagination */}
+          {filteredEnrollments.length > 0 && (
+            <div className="mt-4 flex justify-center">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      Previous
+                    </Button>
+                  </PaginationItem>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <PaginationItem key={page}>
+                      <Button
+                        variant={currentPage === page ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => handlePageChange(page)}
+                      >
+                        {page}
+                      </Button>
+                    </PaginationItem>
+                  ))}
+                  <PaginationItem>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                      disabled={currentPage === totalPages}
+                    >
+                      Next
+                    </Button>
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog open={showDetails} onOpenChange={setShowDetails}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Payment Details</DialogTitle>
+            <DialogDescription>
+              View detailed payment information
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedEnrollment && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-semibold mb-4">Student Information</h3>
+                <dl className="grid grid-cols-1 gap-4">
+                  <div>
+                    <dt className="text-sm font-medium text-muted-foreground">Name</dt>
+                    <dd>
+                      {`${selectedEnrollment.student?.firstName || ''} ${selectedEnrollment.student?.lastName || ''}`}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm font-medium text-muted-foreground">Email</dt>
+                    <dd>{selectedEnrollment.student?.email || "N/A"}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm font-medium text-muted-foreground">Phone</dt>
+                    <dd>{selectedEnrollment.student?.phone || "N/A"}</dd>
+                  </div>
+                </dl>
+              </div>
+
+              <Separator />
+
+              <div>
+                <h3 className="text-lg font-semibold mb-4">Course Information</h3>
+                <dl className="grid grid-cols-1 gap-4">
+                  <div>
+                    <dt className="text-sm font-medium text-muted-foreground">Course</dt>
+                    <dd>{selectedEnrollment.course?.title || "Unknown Course"}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm font-medium text-muted-foreground">Dates</dt>
+                    <dd>
+                      {selectedEnrollment.course?.startDate
+                        ? format(new Date(selectedEnrollment.course.startDate), "MMM dd, yyyy")
+                        : "N/A"}{" "}
+                      -{" "}
+                      {selectedEnrollment.course?.endDate
+                        ? format(new Date(selectedEnrollment.course.endDate), "MMM dd, yyyy")
+                        : "N/A"}
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+
+              <Separator />
+
+              <div>
+                <h3 className="text-lg font-semibold mb-4">Payment Information</h3>
+                <dl className="grid grid-cols-1 gap-4">
+                  <div>
+                    <dt className="text-sm font-medium text-muted-foreground">Amount</dt>
+                    <dd>${(selectedEnrollment.payment?.amount || 0).toFixed(2)}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm font-medium text-muted-foreground">Status</dt>
+                    <dd>
+                      <Badge className={getPaymentStatusColor(selectedEnrollment.payment?.status || "")}>
+                        {selectedEnrollment.payment?.status || "Unknown"}
+                      </Badge>
+                    </dd>
+                  </div>
+                  {selectedEnrollment.payment?.transactionId && (
+                    <div>
+                      <dt className="text-sm font-medium text-muted-foreground">Transaction ID</dt>
+                      <dd>{selectedEnrollment.payment.transactionId}</dd>
                     </div>
                   )}
-                </div>
-              ) : (
-                <div className="text-center text-muted-foreground">
-                  Select a payment to view details
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+                  <div>
+                    <dt className="text-sm font-medium text-muted-foreground">Date</dt>
+                    <dd>
+                      {selectedEnrollment.createdAt
+                        ? format(new Date(selectedEnrollment.createdAt), "MMM dd, yyyy h:mm a")
+                        : "N/A"}
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 } 

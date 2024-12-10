@@ -1,131 +1,101 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
-import { User, onAuthStateChanged, signOut as firebaseSignOut, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebase";
-import { signInWithGoogle } from "@/lib/auth";
-import { userService, UserDocument } from "@/lib/services/user-service";
+import {
+  createContext,
+  ReactNode,
+  useState,
+  useEffect,
+  useContext,
+} from 'react';
+import { auth, googleAuthProvider, db } from '@/lib/firebase';
+import {
+  signInWithPopup,
+  signOut as firebaseSignOut,
+  onAuthStateChanged,
+  User as FirebaseUser,
+} from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { UserSettings } from '@/types/user';
 
-interface AuthContextType {
-  user: User | null;
-  userDoc: UserDocument | null;
-  isAdmin: boolean;
-  loading: boolean;
-  signIn: (email: string, password: string) => Promise<User>;
-  signUp: (email: string, password: string) => Promise<User>;
-  signInWithGoogle: () => Promise<void>;
-  signOut: () => Promise<void>;
+export interface User extends FirebaseUser {
+  settings?: UserSettings;
 }
 
-const AuthContext = createContext<AuthContextType>({
+type AuthContextType = {
+  user: User | null;
+  loading: boolean;
+  error: string | null;
+  signInWithGoogle: () => Promise<void>;
+  signOut: () => Promise<void>;
+};
+
+export const AuthContext = createContext<AuthContextType>({
   user: null,
-  userDoc: null,
-  isAdmin: false,
-  loading: true,
-  signIn: async () => { throw new Error("Not implemented"); },
-  signUp: async () => { throw new Error("Not implemented"); },
+  loading: false,
+  error: null,
   signInWithGoogle: async () => {},
   signOut: async () => {},
 });
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [userDoc, setUserDoc] = useState<UserDocument | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setUser(user);
-      
-      if (user) {
-        // Get or create user document
-        let doc = await userService.getUserDocument(user.uid);
-        if (!doc) {
-          doc = await userService.createUserDocument(user);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        const userDocRef = doc(db, 'users', firebaseUser.uid);
+        const userDoc = await getDoc(userDocRef);
+
+        let settings: UserSettings | undefined;
+        if (userDoc.exists()) {
+          settings = userDoc.data().settings as UserSettings;
+        } else {
+          // Create a new user document if it doesn't exist
+          const newUserDoc = {
+            uid: firebaseUser.uid,
+            email: firebaseUser.email,
+            displayName: firebaseUser.displayName,
+            photoURL: firebaseUser.photoURL,
+            // Add other fields as needed
+          };
+          await setDoc(userDocRef, newUserDoc);
         }
-        setUserDoc(doc);
-        setIsAdmin(doc.role === "admin");
+
+        const userWithSettings: User = {
+          ...firebaseUser,
+          settings,
+        };
+        setUser(userWithSettings);
       } else {
-        setUserDoc(null);
-        setIsAdmin(false);
+        setUser(null);
       }
-      
       setLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
 
-  const handleSignIn = async (email: string, password: string) => {
-    const { user } = await signInWithEmailAndPassword(auth, email, password);
-    if (user) {
-      // Get or create user document
-      let doc = await userService.getUserDocument(user.uid);
-      if (!doc) {
-        doc = await userService.createUserDocument(user);
-      }
-      setUserDoc(doc);
-      setIsAdmin(doc.role === "admin");
-    }
-    return user;
-  };
-
-  const handleSignUp = async (email: string, password: string) => {
-    const { user } = await createUserWithEmailAndPassword(auth, email, password);
-    if (user) {
-      // Create user document
-      const doc = await userService.createUserDocument(user);
-      setUserDoc(doc);
-      setIsAdmin(doc.role === "admin");
-    }
-    return user;
-  };
-
-  const handleSignInWithGoogle = async () => {
+  const signInWithGoogle = async () => {
     try {
-      const user = await signInWithGoogle(auth);
-      if (user) {
-        // Get or create user document
-        let doc = await userService.getUserDocument(user.uid);
-        if (!doc) {
-          doc = await userService.createUserDocument(user);
-        }
-        setUserDoc(doc);
-        setIsAdmin(doc.role === "admin");
-      }
-    } catch (error) {
-      console.error("Error signing in with Google:", error);
+      await signInWithPopup(auth, googleAuthProvider);
+    } catch (error: any) {
+      setError(error.message);
     }
   };
 
-  const handleSignOut = async () => {
+  const signOut = async () => {
     try {
       await firebaseSignOut(auth);
-      setUser(null);
-      setUserDoc(null);
-      setIsAdmin(false);
-    } catch (error) {
-      console.error("Error signing out:", error);
+    } catch (error: any) {
+      setError(error.message);
     }
   };
 
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        userDoc,
-        isAdmin,
-        loading,
-        signIn: handleSignIn,
-        signUp: handleSignUp,
-        signInWithGoogle: handleSignInWithGoogle,
-        signOut: handleSignOut,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
-}
+  const value = { user, loading, error, signInWithGoogle, signOut };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
 
 export const useAuth = () => useContext(AuthContext);

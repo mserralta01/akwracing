@@ -1,6 +1,7 @@
 import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { User } from "firebase/auth";
+import { UserSettings } from "@/types/user";
 
 export type UserRole = "admin" | "instructor" | "parent" | "student";
 
@@ -73,5 +74,10 @@ export const userService = {
       console.error("Error checking admin status:", error);
       return false;
     }
+  },
+
+  async updateUserSettings(userId: string, settings: UserSettings): Promise<void> {
+    const userRef = doc(db, "users", userId);
+    await updateDoc(userRef, { settings });
   },
 }; 

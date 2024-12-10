@@ -2,17 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { studentService, deleteStudent } from "@/lib/services/student-service";
+import { studentService } from "@/lib/services/student-service";
 import { StudentProfile } from "@/types/student";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Card,
   CardContent,
@@ -43,35 +36,36 @@ import {
   Search,
   FileText,
   User,
-  Calendar,
   Phone,
   Mail,
+  MapPin,
   Trash2,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
-  AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialogFooter
 } from "@/components/ui/alert-dialog";
 
 export function StudentList() {
   const router = useRouter();
   const { toast } = useToast();
   const [students, setStudents] = useState<StudentProfile[]>([]);
-  const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedStudent, setSelectedStudent] = useState<StudentProfile | null>(null);
-  const [pageSize, setPageSize] = useState("25");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [parentData, setParentData] = useState<Record<string, { firstName: string; lastName: string }>>({});
+  const [selectedStudent, setSelectedStudent] = useState<StudentProfile | null>(
+    null
+  );
+  const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
 
   const fetchStudents = async () => {
     try {
@@ -80,7 +74,7 @@ export function StudentList() {
       const allStudents = await studentService.getAllStudents();
       setStudents(allStudents);
     } catch (error) {
-      console.error('Error fetching students:', error);
+      console.error("Error fetching students:", error);
       toast({
         title: "Error",
         description: "Failed to fetch students",
@@ -91,46 +85,20 @@ export function StudentList() {
     }
   };
 
-  const fetchParentData = async (parentId: string) => {
-    try {
-      const parent = await studentService.getParent(parentId);
-      if (parent) {
-        setParentData(prev => ({
-          ...prev,
-          [parentId]: { firstName: parent.firstName, lastName: parent.lastName }
-        }));
-      }
-    } catch (error) {
-      console.error('Error fetching parent:', error);
-    }
-  };
-
   useEffect(() => {
     fetchStudents();
   }, []);
 
-  useEffect(() => {
-    // Fetch parent data for each student
-    students.forEach(student => {
-      if (student.parentId && !parentData[student.parentId]) {
-        fetchParentData(student.parentId);
-      }
-    });
-  }, [students]);
-
-  const filteredStudents = students.filter(student => {
-    const searchString = `${student.firstName} ${student.lastName}`.toLowerCase();
+  const filteredStudents = students.filter((student) => {
+    const searchString =
+      `${student.firstName} ${student.lastName} ${student.email} ${student.dateOfBirth}`.toLowerCase();
     return searchString.includes(searchTerm.toLowerCase());
   });
 
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString();
-  };
-
   const handleSelectStudent = (studentId: string) => {
-    setSelectedStudents(prev => 
-      prev.includes(studentId) 
-        ? prev.filter(id => id !== studentId)
+    setSelectedStudents((prev) =>
+      prev.includes(studentId)
+        ? prev.filter((id) => id !== studentId)
         : [...prev, studentId]
     );
   };
@@ -139,14 +107,18 @@ export function StudentList() {
     if (selectedStudents.length === filteredStudents.length) {
       setSelectedStudents([]);
     } else {
-      setSelectedStudents(filteredStudents.map(student => student.id));
+      setSelectedStudents(filteredStudents.map((student) => student.id));
     }
   };
 
   const handleDeleteSelected = async () => {
     try {
-      await Promise.all(selectedStudents.map(id => deleteStudent(id)));
-      setStudents(prev => prev.filter(student => !selectedStudents.includes(student.id)));
+      await Promise.all(
+        selectedStudents.map((id) => studentService.deleteStudent(id))
+      );
+      setStudents((prev) =>
+        prev.filter((student) => !selectedStudents.includes(student.id))
+      );
       setSelectedStudents([]);
       toast({
         title: "Students deleted",
@@ -159,26 +131,6 @@ export function StudentList() {
         variant: "destructive",
       });
     }
-  };
-
-  // Pagination logic
-  const paginatedStudents = filteredStudents.slice(
-    (currentPage - 1) * Number(pageSize),
-    currentPage * Number(pageSize)
-  );
-
-  const totalPages = Math.ceil(filteredStudents.length / Number(pageSize));
-
-  const calculateAge = (birthDate: string): number => {
-    const today = new Date();
-    const birth = new Date(birthDate);
-    let age = today.getFullYear() - birth.getFullYear();
-    const monthDiff = today.getMonth() - birth.getMonth();
-    
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-      age--;
-    }
-    return age;
   };
 
   if (loading) {
@@ -197,11 +149,13 @@ export function StudentList() {
     <Card>
       <CardHeader>
         <CardTitle>Students</CardTitle>
-        <CardDescription>Manage student profiles and enrollments</CardDescription>
+        <CardDescription>
+          Manage student profiles and their enrollments
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          {/* Search, Filters, and Actions */}
+          {/* Search and Filters */}
           <div className="flex items-center gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -212,18 +166,6 @@ export function StudentList() {
                 className="pl-10"
               />
             </div>
-            
-            {/* Page Size Selector */}
-            <Select value={pageSize} onValueChange={setPageSize}>
-              <SelectTrigger className="w-[100px]">
-                <SelectValue placeholder="Page size" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="25">25</SelectItem>
-                <SelectItem value="50">50</SelectItem>
-                <SelectItem value="100">100</SelectItem>
-              </SelectContent>
-            </Select>
 
             {/* Delete Selected Button */}
             {selectedStudents.length > 0 && (
@@ -237,7 +179,8 @@ export function StudentList() {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Delete Selected Students</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Are you sure you want to delete {selectedStudents.length} students? This action cannot be undone.
+                      Are you sure you want to delete {selectedStudents.length}{" "}
+                      students? This action cannot be undone.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -268,19 +211,22 @@ export function StudentList() {
                 <TableRow>
                   <TableHead className="w-[50px]">
                     <Checkbox
-                      checked={selectedStudents.length === filteredStudents.length}
+                      checked={
+                        selectedStudents.length === filteredStudents.length
+                      }
                       onCheckedChange={handleSelectAll}
                     />
                   </TableHead>
                   <TableHead>Student</TableHead>
-                  <TableHead>Age</TableHead>
-                  <TableHead>Parent</TableHead>
-                  <TableHead>Experience Level</TableHead>
-                  <TableHead className="w-[100px]">Actions</TableHead>
+                  <TableHead>Contact</TableHead>
+                  <TableHead>Date of Birth</TableHead>
+                  <TableHead>Address</TableHead>
+                  <TableHead>Allergies</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedStudents.map((student) => (
+                {filteredStudents.map((student) => (
                   <TableRow key={student.id}>
                     <TableCell>
                       <Checkbox
@@ -294,20 +240,48 @@ export function StudentList() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {calculateAge(student.dateOfBirth)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        {student.parentId && parentData[student.parentId] 
-                          ? `${parentData[student.parentId].firstName} ${parentData[student.parentId].lastName}`
-                          : "No parent assigned"}
+                      <div className="text-sm space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Mail className="h-4 w-4 text-muted-foreground" />
+                          {student.email}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Phone className="h-4 w-4 text-muted-foreground" />
+                          {student.phone}
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      {student.experience?.skillLevel && (
-                        <Badge>
-                          {student.experience.skillLevel}
+                      {student.dateOfBirth ? (
+                        <div className="text-sm">
+                          {new Date(student.dateOfBirth).toLocaleDateString()}
+                        </div>
+                      ) : (
+                        <div className="text-muted-foreground">N/A</div>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {student.address ? (
+                        <div className="text-sm space-y-1">
+                          <div>{student.address.street}</div>
+                          <div>
+                            {student.address.city}, {student.address.state}{" "}
+                            {student.address.zipCode}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-muted-foreground">
+                          No address provided
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {student.allergies && student.allergies.length > 0 ? (
+                        <Badge variant="secondary">
+                          {student.allergies.join(", ")}
                         </Badge>
+                      ) : (
+                        <span className="text-muted-foreground">None</span>
                       )}
                     </TableCell>
                     <TableCell>
@@ -335,97 +309,69 @@ export function StudentList() {
                                   <div>
                                     <Label>Name</Label>
                                     <div className="mt-1">
-                                      {selectedStudent.firstName} {selectedStudent.lastName}
+                                      {selectedStudent.firstName}{" "}
+                                      {selectedStudent.lastName}
                                     </div>
                                   </div>
                                   <div>
-                                    <Label>Date of Birth</Label>
-                                    <div className="mt-1">
-                                      {formatDate(selectedStudent.dateOfBirth)}
+                                    <Label>Contact</Label>
+                                    <div className="mt-1 space-y-1">
+                                      <div className="flex items-center gap-2">
+                                        <Mail className="h-4 w-4 text-muted-foreground" />
+                                        {selectedStudent.email}
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <Phone className="h-4 w-4 text-muted-foreground" />
+                                        {selectedStudent.phone}
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
 
                                 <div>
-                                  <Label>Emergency Contact</Label>
+                                  <Label>Address</Label>
                                   <div className="mt-1 space-y-1">
-                                    {selectedStudent.emergencyContact ? (
-                                      <>
-                                        <div>{selectedStudent.emergencyContact.name}</div>
-                                        <div>{selectedStudent.emergencyContact.phone}</div>
-                                        <div className="text-sm text-muted-foreground">
-                                          {selectedStudent.emergencyContact.relationship}
-                                        </div>
-                                      </>
-                                    ) : (
-                                      <div className="text-muted-foreground">No emergency contact</div>
-                                    )}
+                                    <div>{selectedStudent.address?.street}</div>
+                                    <div>
+                                      {selectedStudent.address?.city},{" "}
+                                      {selectedStudent.address?.state}{" "}
+                                      {selectedStudent.address?.zipCode}
+                                    </div>
                                   </div>
                                 </div>
 
-                                {selectedStudent.medicalInformation && (
-                                  <div>
-                                    <Label>Medical Information</Label>
-                                    <div className="mt-1 space-y-2">
-                                      {selectedStudent.medicalInformation?.allergies && selectedStudent.medicalInformation.allergies.length > 0 && (
-                                        <div>
-                                          <span className="font-medium">Allergies: </span>
-                                          {selectedStudent.medicalInformation.allergies.join(", ")}
-                                        </div>
-                                      )}
-                                      {selectedStudent.medicalInformation?.conditions && selectedStudent.medicalInformation.conditions.length > 0 && (
-                                        <div>
-                                          <span className="font-medium">Medical Conditions: </span>
-                                          {selectedStudent.medicalInformation.conditions.join(", ")}
-                                        </div>
-                                      )}
-                                      {selectedStudent.medicalInformation?.medications && selectedStudent.medicalInformation.medications.length > 0 && (
-                                        <div>
-                                          <span className="font-medium">Medications: </span>
-                                          {selectedStudent.medicalInformation.medications.join(", ")}
-                                        </div>
-                                      )}
-                                      {selectedStudent.medicalInformation?.notes && (
-                                        <div>
-                                          <span className="font-medium">Notes: </span>
-                                          {selectedStudent.medicalInformation.notes}
-                                        </div>
-                                      )}
-                                    </div>
+                                <div>
+                                  <Label>Date of Birth</Label>
+                                  <div className="mt-1">
+                                    {selectedStudent.dateOfBirth}
                                   </div>
-                                )}
+                                </div>
 
-                                {selectedStudent.experience && (
-                                  <div>
-                                    <Label>Experience</Label>
-                                    <div className="mt-1 space-y-2">
-                                      <div>
-                                        <span className="font-medium">Skill Level: </span>
-                                        {selectedStudent.experience.skillLevel}
-                                      </div>
-                                      <div>
-                                        <span className="font-medium">Years of Experience: </span>
-                                        {selectedStudent.experience.yearsRiding}
-                                      </div>
-                                      {selectedStudent.experience.previousTraining && (
-                                        <div>
-                                          <span className="font-medium">Previous Training: </span>
-                                          {selectedStudent.experience.previousTraining}
-                                        </div>
-                                      )}
-                                    </div>
+                                <div>
+                                  <Label>Allergies</Label>
+                                  <div className="mt-1">
+                                    {selectedStudent.allergies?.join(", ") ||
+                                      "No allergies"}
                                   </div>
-                                )}
+                                </div>
 
                                 <div className="flex justify-end gap-2">
                                   <Button
                                     variant="outline"
-                                    onClick={() => router.push(`/admin/students/${student.id}/edit`)}
+                                    onClick={() =>
+                                      router.push(
+                                        `/admin/students/${student.id}/edit`
+                                      )
+                                    }
                                   >
                                     Edit Profile
                                   </Button>
                                   <Button
-                                    onClick={() => router.push(`/admin/students/${student.id}/enrollments`)}
+                                    onClick={() =>
+                                      router.push(
+                                        `/admin/students/${student.id}/enrollments`
+                                      )
+                                    }
                                   >
                                     View Enrollments
                                   </Button>
@@ -444,7 +390,9 @@ export function StudentList() {
                             <AlertDialogHeader>
                               <AlertDialogTitle>Delete Student</AlertDialogTitle>
                               <AlertDialogDescription>
-                                Are you sure you want to delete {student.firstName} {student.lastName}? This action cannot be undone.
+                                Are you sure you want to delete{" "}
+                                {student.firstName} {student.lastName}? This
+                                action cannot be undone.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
@@ -452,16 +400,22 @@ export function StudentList() {
                               <AlertDialogAction
                                 onClick={async () => {
                                   try {
-                                    await deleteStudent(student.id);
-                                    setStudents(prevStudents => prevStudents.filter(s => s.id !== student.id));
+                                    await studentService.deleteStudent(
+                                      student.id
+                                    );
+                                    setStudents((prev) =>
+                                      prev.filter((s) => s.id !== student.id)
+                                    );
                                     toast({
                                       title: "Student deleted",
-                                      description: "The student has been successfully deleted.",
+                                      description:
+                                        "The student has been successfully deleted.",
                                     });
                                   } catch (error) {
                                     toast({
                                       title: "Error",
-                                      description: "Failed to delete student. Please try again.",
+                                      description:
+                                        "Failed to delete student. Please try again.",
                                       variant: "destructive",
                                     });
                                   }
@@ -479,34 +433,6 @@ export function StudentList() {
                 ))}
               </TableBody>
             </Table>
-          </div>
-
-          {/* Pagination Controls */}
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">
-              Showing {((currentPage - 1) * Number(pageSize)) + 1} to {Math.min(currentPage * Number(pageSize), filteredStudents.length)} of {filteredStudents.length} students
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                disabled={currentPage === 1}
-              >
-                Previous
-              </Button>
-              <div className="text-sm">
-                Page {currentPage} of {totalPages}
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                disabled={currentPage === totalPages}
-              >
-                Next
-              </Button>
-            </div>
           </div>
         </div>
       </CardContent>

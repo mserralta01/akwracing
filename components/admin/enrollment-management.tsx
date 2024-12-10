@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Enrollment, EnrollmentStatus } from "@/types/student";
+import { StudentProfile } from "@/types/student";
+import { CourseFormData } from "@/types/course";
+import { EnrollmentStatus, EnrollmentWithRelations, BaseEnrollment } from "@/types/enrollment";
 import { enrollmentService } from "@/lib/services/enrollment-service";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,59 +41,19 @@ import {
 
 type ServiceEnrollmentStatus = "ACTIVE" | "COMPLETED" | "CANCELLED";
 
-type ServiceEnrollment = {
+interface ServiceEnrollment {
   id: string;
   studentId: string;
   courseId: string;
   status: ServiceEnrollmentStatus;
   enrollmentDate?: Date;
   lastAccessedDate?: Date;
-};
-
-const convertEnrollmentStatusToService = (status: EnrollmentStatus): ServiceEnrollmentStatus => {
-  switch (status) {
-    case "confirmed":
-      return "ACTIVE";
-    case "completed":
-      return "COMPLETED";
-    case "cancelled":
-    case "pending":
-      return "CANCELLED";
-  }
-};
-
-const convertServiceStatusToEnrollment = (status: ServiceEnrollmentStatus): EnrollmentStatus => {
-  switch (status) {
-    case "ACTIVE":
-      return "confirmed";
-    case "COMPLETED":
-      return "completed";
-    case "CANCELLED":
-      return "cancelled";
-  }
-};
-
-const convertServiceEnrollmentToEnrollment = (serviceEnrollment: ServiceEnrollment): Enrollment => ({
-  id: serviceEnrollment.id ?? crypto.randomUUID(),
-  studentId: serviceEnrollment.studentId ?? crypto.randomUUID(), 
-  parentId: "",
-  courseId: serviceEnrollment.courseId ?? crypto.randomUUID(),
-  status: convertServiceStatusToEnrollment(serviceEnrollment.status),
-  createdAt: serviceEnrollment.enrollmentDate?.toISOString() || new Date().toISOString(),
-  updatedAt: serviceEnrollment.lastAccessedDate?.toISOString() || serviceEnrollment.enrollmentDate?.toISOString() || new Date().toISOString(),
-  paymentDetails: {
-    amount: 0,
-    currency: "USD",
-    paymentStatus: "pending",
-  },
-  notes: [],
-  communicationHistory: []
-});
+}
 
 export default function EnrollmentManagement() {
-  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [enrollments, setEnrollments] = useState<EnrollmentWithRelations[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedEnrollment, setSelectedEnrollment] = useState<Enrollment | null>(null);
+  const [selectedEnrollment, setSelectedEnrollment] = useState<EnrollmentWithRelations | null>(null);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -100,12 +62,46 @@ export default function EnrollmentManagement() {
       try {
         setLoading(true);
         const data = await enrollmentService.getAllEnrollments();
-        setEnrollments(data);
+        const enrichedEnrollments: EnrollmentWithRelations[] = data.map((enrollment: BaseEnrollment) => {
+          const studentData = enrollment.student ? {
+            ...enrollment.student,
+            id: enrollment.student.id,
+            name: `${enrollment.student.firstName} ${enrollment.student.lastName}`,
+            email: enrollment.student.email,
+            phone: enrollment.student.phone,
+            firstName: enrollment.student.firstName,
+            lastName: enrollment.student.lastName,
+            dateOfBirth: enrollment.student.dateOfBirth,
+            parentId: enrollment.student.parentId,
+            createdAt: enrollment.student.createdAt || new Date().toISOString(),
+            updatedAt: enrollment.student.updatedAt || new Date().toISOString(),
+          } : undefined;
+
+          const courseData = enrollment.courseDetails ? {
+            ...enrollment.courseDetails,
+            status: enrollment.courseDetails.status,
+            instructorId: enrollment.courseDetails.instructorId,
+            availableSpots: enrollment.courseDetails.availableSpots,
+            imageUrl: enrollment.courseDetails.imageUrl,
+            location: enrollment.courseDetails.location,
+            featured: enrollment.courseDetails.featured,
+          } : undefined;
+
+          return {
+            ...enrollment,
+            student: studentData,
+            courseDetails: courseData,
+            createdAt: enrollment.createdAt || new Date().toISOString(),
+            updatedAt: enrollment.updatedAt || new Date().toISOString(),
+          } as EnrollmentWithRelations;
+        });
+        
+        setEnrollments(enrichedEnrollments);
       } catch (error) {
         console.error("Error loading enrollments:", error);
         toast({
           title: "Error",
-          description: "Failed to load enrollments. Please try again.",
+          description: "Failed to load enrollments",
           variant: "destructive",
         });
       } finally {
@@ -153,7 +149,7 @@ export default function EnrollmentManagement() {
                     enrollments.map((enrollment) => (
                       <TableRow key={enrollment.id}>
                         <TableCell>{enrollment.student?.name || "Unknown Student"}</TableCell>
-                        <TableCell>{enrollment.course?.title || "Unknown Course"}</TableCell>
+                        <TableCell>{enrollment.courseDetails?.title || "Unknown Course"}</TableCell>
                         <TableCell>
                           <Badge
                             variant="secondary"
@@ -223,17 +219,17 @@ export default function EnrollmentManagement() {
                     <dl className="grid grid-cols-1 gap-4">
                       <div>
                         <dt className="text-sm font-medium text-muted-foreground">Course</dt>
-                        <dd>{selectedEnrollment.course?.title || "Unknown Course"}</dd>
+                        <dd>{selectedEnrollment.courseDetails?.title || "Unknown Course"}</dd>
                       </div>
                       <div>
                         <dt className="text-sm font-medium text-muted-foreground">Dates</dt>
                         <dd>
-                          {selectedEnrollment.course?.startDate
-                            ? new Date(selectedEnrollment.course.startDate).toLocaleDateString()
+                          {selectedEnrollment.courseDetails?.startDate
+                            ? new Date(selectedEnrollment.courseDetails.startDate).toLocaleDateString()
                             : "N/A"}{" "}
                           -{" "}
-                          {selectedEnrollment.course?.endDate
-                            ? new Date(selectedEnrollment.course.endDate).toLocaleDateString()
+                          {selectedEnrollment.courseDetails?.endDate
+                            ? new Date(selectedEnrollment.courseDetails.endDate).toLocaleDateString()
                             : "N/A"}
                         </dd>
                       </div>
@@ -265,8 +261,8 @@ export default function EnrollmentManagement() {
                       <div>
                         <dt className="text-sm font-medium text-muted-foreground">Amount</dt>
                         <dd>
-                          ${selectedEnrollment.payment?.amount?.toFixed(2) || "0.00"}{" "}
-                          {selectedEnrollment.payment?.currency || "USD"}
+                          ${selectedEnrollment.paymentDetails?.amount?.toFixed(2) || "0.00"}{" "}
+                          {selectedEnrollment.paymentDetails?.currency || "USD"}
                         </dd>
                       </div>
                       <div>
@@ -275,23 +271,17 @@ export default function EnrollmentManagement() {
                           <Badge
                             variant="secondary"
                             className={
-                              selectedEnrollment.payment?.status === "completed"
+                              selectedEnrollment.paymentDetails?.paymentStatus === "completed"
                                 ? "bg-green-100 text-green-800"
-                                : selectedEnrollment.payment?.status === "pending"
+                                : selectedEnrollment.paymentDetails?.paymentStatus === "pending"
                                 ? "bg-yellow-100 text-yellow-800"
                                 : "bg-red-100 text-red-800"
                             }
                           >
-                            {selectedEnrollment.payment?.status || "Unknown"}
+                            {selectedEnrollment.paymentDetails?.paymentStatus || "Unknown"}
                           </Badge>
                         </dd>
                       </div>
-                      {selectedEnrollment.payment?.transactionId && (
-                        <div>
-                          <dt className="text-sm font-medium text-muted-foreground">Transaction ID</dt>
-                          <dd>{selectedEnrollment.payment.transactionId}</dd>
-                        </div>
-                      )}
                     </dl>
                   </div>
 

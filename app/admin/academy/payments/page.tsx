@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Enrollment, StudentProfile } from "@/types/student";
 import { Course } from "@/types/course";
+import { Payment, PaymentStatus, PaymentSummary, PaymentMethodType } from "@/types/payment";
 import { enrollmentService } from "@/lib/services/enrollment-service";
 import { courseService } from "@/lib/services/course-service";
 import { Button } from "@/components/ui/button";
@@ -92,25 +93,13 @@ import { DataTable } from "@/components/ui/data-table";
 
 const ITEMS_PER_PAGE = 25;
 
-interface Payment {
-  id: string;
-  enrollmentId: string;
-  amount: number;
-  currency: string;
-  status: PaymentStatus;
-  paymentMethod: string;
-  transactionId: string;
-  createdAt: string;
-  updatedAt?: string;
-}
-
-interface EnrollmentWithCourse extends Omit<Enrollment, 'parentId' | 'createdAt' | 'status' | 'payment'> {
+interface EnrollmentWithCourse {
   id: string;
   courseId: string;
   studentId: string;
   parentId?: string;
   status: string;
-  createdAt: string;
+  createdAt?: string;
   updatedAt?: string;
   course?: Course | null;
   student?: {
@@ -119,18 +108,8 @@ interface EnrollmentWithCourse extends Omit<Enrollment, 'parentId' | 'createdAt'
     email?: string;
     phone?: string;
   };
-  payment?: Partial<Payment>;
-}
-
-type PaymentStatus = 'pending' | 'completed' | 'failed' | 'processing' | 'refunded';
-
-interface PaymentSummary {
-  totalPayments: number;
-  totalAmount: number;
-  successfulPayments: number;
-  failedPayments: number;
-  pendingPayments: number;
-  successRate: number;
+  payment?: Payment;
+  paymentDetails?: any;
 }
 
 export default function PaymentsPage() {
@@ -186,10 +165,68 @@ export default function PaymentsPage() {
         data.map(async (enrollment) => {
           try {
             const course = await courseService.getCourse(enrollment.courseId);
-            return { ...enrollment, course: course || null };
+
+            // Create a Payment object, handling cases where enrollment.payment might be undefined
+            const payment: Payment = {
+              id: crypto.randomUUID(),
+              studentId: enrollment.studentId,
+              courseId: enrollment.courseId,
+              enrollmentId: enrollment.id,
+              amount: enrollment.payment?.amount || 0,
+              currency: enrollment.payment?.currency || "USD",
+              status: (enrollment.payment?.status || "pending") as PaymentStatus,
+              paymentMethod: "unknown",
+              transactionId: enrollment.payment?.transactionId,
+              metadata: {
+                courseId: enrollment.courseId,
+                courseName: course?.title || "Unknown Course",
+              },
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            };
+
+            return {
+              ...enrollment,
+              course,
+              student: enrollment.student,
+              courseDetails: enrollment.courseDetails,
+              payment: payment, // Assign the created Payment object
+              paymentDetails: null,
+              notes: enrollment.notes,
+              communicationHistory: enrollment.communicationHistory,
+            };
           } catch (error) {
-            console.error(`Error loading course for enrollment ${enrollment.id}:`, error);
-            return { ...enrollment, course: null };
+            console.error(
+              `Error loading course for enrollment ${enrollment.id}:`,
+              error
+            );
+            const payment: Payment = {
+              id: "default-id",
+              studentId: enrollment.studentId,
+              courseId: enrollment.courseId,
+              enrollmentId: enrollment.id,
+              amount: 0,
+              currency: "USD",
+              status: "pending",
+              paymentMethod: "unknown",
+              transactionId: undefined,
+              metadata: {
+                courseId: enrollment.courseId,
+                courseName: "Unknown Course",
+              },
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            };
+            return {
+              ...enrollment,
+              course: null,
+              student: enrollment.student,
+              courseDetails: enrollment.courseDetails,
+              payment: payment,
+              paymentDetails: null,
+              notes: enrollment.notes,
+              communicationHistory: enrollment.communicationHistory,
+            };
           }
         })
       );
@@ -417,9 +454,22 @@ export default function PaymentsPage() {
       }
 
       // Update the enrollment's payment status to "refunded"
-      const updatedPayment: Partial<Payment> = {
-        ...enrollment.payment,
-        status: "refunded" as PaymentStatus
+      const updatedPayment: Payment = {
+        id: enrollment.payment.id,
+        enrollmentId: enrollment.id,
+        studentId: enrollment.studentId,
+        courseId: enrollment.courseId,
+        amount: enrollment.payment.amount,
+        currency: enrollment.payment.currency,
+        status: "refunded",
+        paymentMethod: enrollment.payment.paymentMethod,
+        transactionId: enrollment.payment.transactionId,
+        metadata: enrollment.payment.metadata || {
+          courseId: enrollment.courseId,
+          courseName: enrollment.course?.title || 'Unknown Course'
+        },
+        createdAt: enrollment.payment.createdAt,
+        updatedAt: new Date().toISOString()
       };
 
       await enrollmentService.updateEnrollment(enrollment.id, {
@@ -450,6 +500,58 @@ export default function PaymentsPage() {
     const student = enrollment.student;
     if (!student) return "Unknown";
     return `${student.firstName || ''} ${student.lastName || ''}`.trim() || "Unknown";
+  };
+
+  const handlePaymentUpdate = async (enrollment: EnrollmentWithCourse, newStatus: PaymentStatus) => {
+    if (!enrollment.payment) {
+      toast({
+        title: "Error",
+        description: "No payment information found",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setRefundLoading(true);
+      const updatedPayment: Payment = {
+        id: enrollment.payment.id,
+        enrollmentId: enrollment.id,
+        studentId: enrollment.studentId,
+        courseId: enrollment.courseId,
+        amount: enrollment.payment.amount,
+        currency: enrollment.payment.currency,
+        status: newStatus,
+        paymentMethod: enrollment.payment.paymentMethod,
+        transactionId: enrollment.payment.transactionId,
+        metadata: enrollment.payment.metadata || {
+          courseId: enrollment.courseId,
+          courseName: enrollment.course?.title || 'Unknown Course'
+        },
+        createdAt: enrollment.payment.createdAt,
+        updatedAt: new Date().toISOString()
+      };
+
+      await enrollmentService.updateEnrollment(enrollment.id, {
+        payment: updatedPayment
+      });
+
+      toast({
+        title: "Success",
+        description: "Payment status updated successfully",
+      });
+
+      await loadEnrollments(); // Reload the list
+    } catch (error) {
+      console.error("Error updating payment status:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update payment status",
+        variant: "destructive",
+      });
+    } finally {
+      setRefundLoading(false);
+    }
   };
 
   const columns: ColumnDef<EnrollmentWithCourse>[] = [

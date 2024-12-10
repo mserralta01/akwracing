@@ -1,107 +1,109 @@
-export type EnrollmentStatus = "pending" | "confirmed" | "cancelled" | "completed";
+import { Timestamp } from 'firebase/firestore';
+import { Course } from './course';
 
 export interface StudentProfile {
   id: string;
   firstName: string;
   lastName: string;
   dateOfBirth: string;
-  email?: string;
-  phone?: string;
-  address?: {
-    street: string;
-    city: string;
-    state: string;
-    zipCode: string;
-  };
-  parentId: string;
-  allergies?: string[];
-  skillLevel?: 'beginner' | 'intermediate' | 'advanced';
-  createdAt: string;
-  updatedAt: string;
+  email: string;
+  phone: string;
+  racingExperience?: string;
+  medicalConditions?: string;
+  parentGuardianName?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  parentId?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface ParentProfile {
   id: string;
-  userId: string;
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
-  address: {
-    street: string;
-    city: string;
-    state: string;
-    zipCode: string;
-  };
-  students: string[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface PaymentDetails {
-  cardNumber: string;
-  expiryMonth: string;
-  expiryYear: string;
-  cvv: string;
-  firstName: string;
-  lastName: string;
-  address: {
-    street: string;
-    city: string;
-    state: string;
-    zipCode: string;
-  };
-  tokenId?: string;
-}
-
-export interface PaymentToken {
-  id: string;
-  customerId: string;
-  last4: string;
-  expiryMonth: string;
-  expiryYear: string;
-  tokenType: 'recurring' | 'one-time';
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Payment {
-  id: string;
-  enrollmentId: string;
-  amount: number;
-  currency: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-  paymentMethod: {
-    type: 'card' | 'bank';
-    last4: string;
-    tokenId?: string;
-  };
-  transactionId?: string;
-  error?: string;
-  metadata: Record<string, any>;
-  createdAt: string;
-  updatedAt: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Enrollment {
   id: string;
-  courseId: string;
   studentId: string;
-  parentId: string;
-  status: 'pending' | 'confirmed' | 'cancelled';
+  courseId: string;
   paymentDetails: {
     amount: number;
     currency: string;
     paymentStatus: 'pending' | 'completed' | 'failed';
   };
   payment?: Payment;
-  student?: Partial<StudentProfile>;
-  notes: string[];
-  communicationHistory: {
+  status: 'pending' | 'confirmed' | 'cancelled';
+  createdAt: string;
+  updatedAt: string;
+  student?: StudentProfile;
+  courseDetails?: Course;
+}
+
+export interface EnrollmentWithRelations extends Enrollment {
+  student: StudentProfile;
+  courseDetails: Course;
+}
+
+export interface BaseEnrollment {
+  id: string;
+  studentId: string;
+  courseId: string;
+  paymentDetails: {
+    amount: number;
+    currency: string;
+    paymentStatus: 'pending' | 'completed' | 'failed';
+  };
+  payment?: Payment;
+  status: 'pending' | 'confirmed' | 'cancelled';
+  createdAt: string;
+  updatedAt: string;
+  student?: StudentProfile;
+  courseDetails?: Course;
+}
+
+export type EnrollmentStatus = 'pending' | 'confirmed' | 'cancelled';
+
+export interface Payment {
+  id: string;
+  enrollmentId: string;
+  amount: number;
+  currency: string;
+  paymentMethod: {
     type: string;
-    message: string;
-    timestamp: string;
-  }[];
-  createdAt?: string;
-  updatedAt?: string;
+    last4: string;
+  };
+  status: 'pending' | 'completed' | 'failed';
+  transactionId?: string;
+  createdAt: string;
+  updatedAt: string;
+  metadata?: {
+    courseId?: string;
+    courseName?: string;
+  };
+}
+
+export interface PaymentToken {
+  id: string;
+  object: string;
+  card: {
+    brand: string;
+    exp_month: number;
+    exp_year: number;
+    last4: string;
+  };
+  client_ip: string;
+  created: number;
+  livemode: boolean;
+  type: string;
+  used: boolean;
 } 

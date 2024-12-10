@@ -299,7 +299,6 @@ export function ParentList() {
                                     <div>
                                       {selectedParent.address.city}, {selectedParent.address.state} {selectedParent.address.zipCode}
                                     </div>
-                                    <div>{selectedParent.address.country}</div>
                                   </div>
                                 </div>
 

@@ -14,6 +14,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore'
 import { Enrollment as StudentEnrollment } from '@/types/student'
+import { BaseEnrollment, EnrollmentWithRelations } from "@/types/enrollment";
 
 interface StudentData {
   name: string;
@@ -108,7 +109,7 @@ export class EnrollmentService {
     return courseSnap.data() as CourseData;
   }
 
-  async getAllEnrollments(): Promise<Enrollment[]> {
+  async getAllEnrollments(): Promise<BaseEnrollment[]> {
     try {
       const querySnapshot = await getDocs(collection(db, this.collectionName));
       
@@ -134,7 +135,7 @@ export class EnrollmentService {
             student: studentData,
             course: courseData || { title: 'Unknown Course' },
             payment: data.payment,
-          } as Enrollment;
+          } as BaseEnrollment;
         })
       );
 

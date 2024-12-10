@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { StudentProfile } from "@/types/user";
+import { StudentProfile } from "@/types/student";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -54,7 +54,7 @@ export default function StudentsPage() {
     return (
       student.firstName.toLowerCase().includes(searchString) ||
       student.lastName.toLowerCase().includes(searchString) ||
-      student.emergencyContact?.phone.toLowerCase().includes(searchString) ||
+      student.phone?.toLowerCase().includes(searchString) ||
       false
     );
   });
@@ -79,9 +79,9 @@ export default function StudentsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
-                <TableHead>Contact Phone</TableHead>
+                <TableHead>Phone</TableHead>
                 <TableHead>Date of Birth</TableHead>
-                <TableHead>Experience Level</TableHead>
+                <TableHead>Skill Level</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -105,10 +105,10 @@ export default function StudentsPage() {
                       {student.firstName} {student.lastName}
                     </TableCell>
                     <TableCell>
-                      {student.emergencyContact?.phone || "No phone"}
+                      {student.phone || "No phone"}
                     </TableCell>
                     <TableCell>{student.dateOfBirth}</TableCell>
-                    <TableCell>{student.experience?.skillLevel || "N/A"}</TableCell>
+                    <TableCell>{student.skillLevel || "N/A"}</TableCell>
                     <TableCell>
                       <Button variant="outline" size="sm">
                         View Details

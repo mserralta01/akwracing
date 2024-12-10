@@ -56,8 +56,9 @@ export default function ReportsPage() {
       
       // Filter enrollments by date range
       const filtered = allEnrollments.filter((enrollment) => {
-        const enrollmentDate = new Date(enrollment.createdAt);
+        const enrollmentDate = enrollment.createdAt ? new Date(enrollment.createdAt) : null;
         return (
+          enrollmentDate !== null &&
           (!date.from || enrollmentDate >= date.from) &&
           (!date.to || enrollmentDate <= date.to)
         );

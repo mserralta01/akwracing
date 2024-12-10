@@ -248,9 +248,11 @@ export function PaymentForm({
                 <div className="flex items-center space-x-4">
                   <CreditCard className="h-6 w-6 text-muted-foreground" />
                   <div>
-                    <p className="font-medium">•••• {card.last4}</p>
+                    <p className="font-medium">
+                      •••• {card.card.last4}
+                    </p>
                     <p className="text-sm text-muted-foreground">
-                      Expires {card.expiryMonth}/{card.expiryYear}
+                      Expires {card.card.exp_month}/{card.card.exp_year}
                     </p>
                   </div>
                 </div>

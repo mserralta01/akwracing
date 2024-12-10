@@ -92,7 +92,7 @@ const parentFormSchema = z.object({
 type ParentFormData = z.infer<typeof parentFormSchema>;
 
 export interface ParentFormProps {
-  onSubmit: (data: ParentFormData) => void;
+  onSubmit: (data: ParentProfile) => void;
   loading: boolean;
   course: Course;
   initialValues?: {
@@ -109,7 +109,12 @@ export interface ParentFormProps {
   };
 }
 
-export function ParentForm({ onSubmit, loading, course, initialValues }: ParentFormProps) {
+export function ParentForm({
+  onSubmit,
+  loading,
+  course,
+  initialValues,
+}: ParentFormProps) {
   const form = useForm<ParentFormData>({
     resolver: zodResolver(parentFormSchema),
     defaultValues: initialValues || {
@@ -126,25 +131,27 @@ export function ParentForm({ onSubmit, loading, course, initialValues }: ParentF
     },
   });
 
+  async function handleSubmit(data: ParentFormData) {
+    const parentId = crypto.randomUUID();
+
+    const parentData: ParentProfile = {
+      id: parentId,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email,
+      phone: data.phone,
+      address: data.address,
+      students: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    onSubmit(parentData);
+  }
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        {!initialValues?.email && (
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                  <Input {...field} type="email" placeholder="Email address" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
-
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -153,7 +160,7 @@ export function ParentForm({ onSubmit, loading, course, initialValues }: ParentF
               <FormItem>
                 <FormLabel>First Name</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder="First name" />
+                  <Input placeholder="John" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -166,14 +173,26 @@ export function ParentForm({ onSubmit, loading, course, initialValues }: ParentF
               <FormItem>
                 <FormLabel>Last Name</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder="Last name" />
+                  <Input placeholder="Doe" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
         </div>
-
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input placeholder="john.doe@example.com" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <FormField
           control={form.control}
           name="phone"
@@ -181,36 +200,34 @@ export function ParentForm({ onSubmit, loading, course, initialValues }: ParentF
             <FormItem>
               <FormLabel>Phone</FormLabel>
               <FormControl>
-                <Input {...field} type="tel" placeholder="Phone number" />
+                <Input placeholder="123-456-7890" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-
         <FormField
           control={form.control}
           name="address.street"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Street Address</FormLabel>
+              <FormLabel>Address</FormLabel>
               <FormControl>
-                <Input {...field} placeholder="Street address" />
+                <Input placeholder="123 Main St" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-
-        <div className="grid grid-cols-12 gap-4">
+        <div className="grid grid-cols-3 gap-4">
           <FormField
             control={form.control}
             name="address.city"
             render={({ field }) => (
-              <FormItem className="col-span-5">
+              <FormItem>
                 <FormLabel>City</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder="City" />
+                  <Input placeholder="Anytown" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -220,25 +237,11 @@ export function ParentForm({ onSubmit, loading, course, initialValues }: ParentF
             control={form.control}
             name="address.state"
             render={({ field }) => (
-              <FormItem className="col-span-4">
+              <FormItem>
                 <FormLabel>State</FormLabel>
-                <Select
-                  value={field.value}
-                  onValueChange={field.onChange}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="State" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {US_STATES.map((state) => (
-                      <SelectItem key={state.value} value={state.value}>
-                        {state.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <FormControl>
+                  <Input placeholder="CA" {...field} />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
@@ -247,25 +250,24 @@ export function ParentForm({ onSubmit, loading, course, initialValues }: ParentF
             control={form.control}
             name="address.zipCode"
             render={({ field }) => (
-              <FormItem className="col-span-3">
-                <FormLabel>ZIP</FormLabel>
+              <FormItem>
+                <FormLabel>Zip Code</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder="ZIP" />
+                  <Input placeholder="12345" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
         </div>
-
-        <Button type="submit" className="w-full mt-6" disabled={loading}>
+        <Button type="submit" disabled={loading}>
           {loading ? (
             <div className="flex items-center gap-2">
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-              <span>Saving...</span>
+              <span>Submitting...</span>
             </div>
           ) : (
-            "Continue to Payment"
+            "Submit"
           )}
         </Button>
       </form>

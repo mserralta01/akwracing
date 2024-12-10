@@ -13,8 +13,8 @@ import {
   Timestamp,
   serverTimestamp,
 } from 'firebase/firestore'
-import { Enrollment as StudentEnrollment } from '@/types/student'
-import { BaseEnrollment, EnrollmentWithRelations } from "@/types/enrollment";
+import { Enrollment as StudentEnrollment, StudentProfile } from '@/types/student'
+import { Course } from "@/types/course";
 
 interface StudentData {
   name: string;
@@ -109,7 +109,7 @@ export class EnrollmentService {
     return courseSnap.data() as CourseData;
   }
 
-  async getAllEnrollments(): Promise<BaseEnrollment[]> {
+  async getAllEnrollments(): Promise<Enrollment[]> {
     try {
       const querySnapshot = await getDocs(collection(db, this.collectionName));
       
@@ -122,24 +122,16 @@ export class EnrollmentService {
           const courseData = await this.fetchCourseData(data.courseId);
 
           return {
+            ...data,
             id: doc.id,
-            studentId: data.studentId,
-            parentId: data.parentId,
-            courseId: data.courseId,
-            status: data.status,
-            createdAt: data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
-            updatedAt: data.updatedAt?.toDate?.()?.toISOString() || new Date().toISOString(),
-            paymentDetails: data.paymentDetails,
-            notes: data.notes || [],
-            communicationHistory: data.communicationHistory || [],
-            student: studentData,
-            course: courseData || { title: 'Unknown Course' },
-            payment: data.payment,
-          } as BaseEnrollment;
+            student: studentData as unknown as StudentProfile,
+            courseDetails: courseData as unknown as Course,
+            payment: null,
+          } as Enrollment;
         })
       );
 
-      return enrollments;
+      return enrollments as Enrollment[];
     } catch (error) {
       console.error('Error in getAllEnrollments:', error);
       throw error;
@@ -169,9 +161,9 @@ export class EnrollmentService {
       paymentDetails: data.paymentDetails,
       notes: data.notes || [],
       communicationHistory: data.communicationHistory || [],
-      student: studentData,
-      course: courseData || { title: 'Unknown Course' },
-      payment: data.payment,
+      student: studentData as unknown as StudentProfile,
+      courseDetails: courseData as unknown as Course,
+      payment: data.payment || null,
     } as Enrollment
   }
 
@@ -198,16 +190,16 @@ export class EnrollmentService {
           paymentDetails: data.paymentDetails,
           notes: data.notes || [],
           communicationHistory: data.communicationHistory || [],
-          student: studentData,
-          course: courseData || { title: 'Unknown Course' },
-          payment: data.payment,
+          student: studentData as unknown as StudentProfile,
+          courseDetails: courseData as unknown as Course,
+          payment: data.payment || null,
         } as Enrollment
       })
     )
     return enrollments
   }
 
-  async createEnrollment(enrollment: Omit<Enrollment, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
+  async createEnrollment(enrollment: Omit<Enrollment, 'id' | 'createdAt' | 'updatedAt'>): Promise<Enrollment> {
     const now = Timestamp.now()
     const enrollmentData = {
       ...enrollment,
@@ -215,7 +207,25 @@ export class EnrollmentService {
       updatedAt: now,
     }
     const docRef = await addDoc(collection(db, this.collectionName), enrollmentData)
-    return docRef.id
+    
+    const studentData = await this.fetchStudentData(enrollmentData.studentId)
+    const courseData = await this.fetchCourseData(enrollmentData.courseId)
+
+    return {
+      id: docRef.id,
+      studentId: enrollmentData.studentId,
+      parentId: enrollmentData.parentId,
+      courseId: enrollmentData.courseId,
+      status: enrollmentData.status,
+      createdAt: now.toDate().toISOString(),
+      updatedAt: now.toDate().toISOString(),
+      paymentDetails: enrollmentData.paymentDetails,
+      notes: enrollmentData.notes || [],
+      communicationHistory: enrollmentData.communicationHistory || [],
+      student: studentData as unknown as StudentProfile,
+      courseDetails: courseData as unknown as Course,
+      payment: enrollmentData.payment || null,
+    } as Enrollment
   }
 
   async updateEnrollment(id: string, data: Partial<Omit<Enrollment, 'id' | 'createdAt'>>): Promise<void> {

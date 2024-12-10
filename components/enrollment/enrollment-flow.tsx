@@ -102,7 +102,10 @@ export function EnrollmentFlow({ course, onComplete }: EnrollmentFlowProps) {
         // If there's no enrollment yet, create one
         if (!enrollment) {
           const tempStudentId = crypto.randomUUID();
-          const enrollmentData: Omit<Enrollment, "id" | "createdAt" | "updatedAt"> = {
+          const enrollmentData: Omit<
+            Enrollment,
+            "id" | "createdAt" | "updatedAt"
+          > = {
             courseId: course.id,
             studentId: tempStudentId,
             parentId: user.uid,
@@ -114,9 +117,14 @@ export function EnrollmentFlow({ course, onComplete }: EnrollmentFlowProps) {
             },
             notes: [],
             communicationHistory: [],
+            payment: null,
+            student: {} as StudentProfile,
+            courseDetails: {} as Course,
           };
 
-          const createdEnrollment = await studentService.createEnrollment(enrollmentData);
+          const createdEnrollment = await studentService.createEnrollment(
+            enrollmentData
+          );
           setEnrollment(createdEnrollment);
         }
         
@@ -216,28 +224,24 @@ export function EnrollmentFlow({ course, onComplete }: EnrollmentFlowProps) {
     });
   };
 
-  const handleParentSubmit = async (parentData: Omit<ParentProfile, "id" | "createdAt" | "updatedAt" | "userId" | "students">) => {
+  const handleParentSubmit = async (data: ParentProfile) => {
     try {
       setLoading(true);
-      
       const parentId = user?.uid || crypto.randomUUID();
-      const now = Timestamp.now();
-      const timestamp = now.toDate().toISOString();
-      
-      const parentProfile: ParentProfile = {
+
+      const parent: ParentProfile = {
+        ...data,
         id: parentId,
-        userId: parentId,
-        ...parentData,
-        students: [],
-        createdAt: timestamp,
-        updatedAt: timestamp,
       };
-      
-      await setDoc(doc(db, "parents", parentId), parentProfile);
-      setParent(parentProfile);
+
+      await setDoc(doc(db, "parents", parentId), parent);
+      setParent(parent);
 
       const tempStudentId = crypto.randomUUID();
-      const enrollmentData: Omit<Enrollment, "id" | "createdAt" | "updatedAt"> = {
+      const enrollmentData: Omit<
+        Enrollment,
+        "id" | "createdAt" | "updatedAt"
+      > = {
         courseId: course.id,
         studentId: tempStudentId,
         parentId: parentId,
@@ -249,16 +253,22 @@ export function EnrollmentFlow({ course, onComplete }: EnrollmentFlowProps) {
         },
         notes: [],
         communicationHistory: [],
+        payment: null,
+        student: {} as StudentProfile,
+        courseDetails: {} as Course,
       };
 
-      const createdEnrollment = await studentService.createEnrollment(enrollmentData);
+      const createdEnrollment = await studentService.createEnrollment(
+        enrollmentData
+      );
       setEnrollment(createdEnrollment);
+
       setCurrentStep("payment");
     } catch (error) {
       console.error("Error creating parent:", error);
       toast({
         title: "Error",
-        description: "Failed to create parent profile",
+        description: "Failed to create parent. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -429,18 +439,23 @@ export function EnrollmentFlow({ course, onComplete }: EnrollmentFlowProps) {
               onSubmit={handleParentSubmit}
               loading={loading}
               course={course}
-              initialValues={user ? {
-                firstName: user.displayName?.split(' ')[0] || '',
-                lastName: user.displayName?.split(' ').slice(1).join(' ') || '',
-                email: user.email || '',
-                phone: '',
-                address: {
-                  street: '',
-                  city: '',
-                  state: '',
-                  zipCode: '',
-                },
-              } : undefined}
+              initialValues={
+                user
+                  ? {
+                      firstName: user.displayName?.split(" ")[0] || "",
+                      lastName:
+                        user.displayName?.split(" ").slice(1).join(" ") || "",
+                      email: user.email || "",
+                      phone: "",
+                      address: {
+                        street: "",
+                        city: "",
+                        state: "",
+                        zipCode: "",
+                      },
+                    }
+                  : undefined
+              }
             />
           )}
 

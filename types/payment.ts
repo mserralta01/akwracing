@@ -1,4 +1,9 @@
-export type PaymentStatus = 'pending' | 'completed' | 'failed' | 'processing' | 'refunded';
+export type PaymentStatus =
+  | "pending"
+  | "completed"
+  | "failed"
+  | "processing"
+  | "refunded";
 
 export type PaymentMethodType = 'card' | 'bank' | 'unknown';
 
@@ -16,7 +21,10 @@ export interface Payment {
   amount: number;
   currency: string;
   status: PaymentStatus;
-  paymentMethod: PaymentMethodType;
+  paymentMethod: PaymentMethodType | {
+    type: string;
+    last4: string;
+  };
   metadata?: {
     courseId: string;
     courseName: string;

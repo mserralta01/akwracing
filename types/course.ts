@@ -1,7 +1,5 @@
 import { EquipmentRequirement } from "./equipment";
 
-export type CourseLevel = "Beginner" | "Intermediate" | "Advanced";
-
 export type PreloadedFile = {
   preview: string;
   name: string;
@@ -11,28 +9,30 @@ export type PreloadedFile = {
 
 export type CourseFormData = {
   title: string;
-  shortDescription: string;
-  longDescription: string;
-  level: CourseLevel;
+  description: string;
+  content: string;
   price: number;
-  duration: number;
   startDate: string;
   endDate: string;
-  maxStudents: number;
-  availableSpots: number;
-  imageUrl: string | null;
-  instructorId?: string;
-  location: string;
-  featured: boolean;
-  equipmentRequirements?: EquipmentRequirement[];
 };
 
-export type Course = CourseFormData & {
+export interface Course {
   id: string;
-  slug: string;
+  title: string;
+  description: string;
+  content: string;
+  price: number;
+  startDate: string;
+  endDate: string;
   createdAt: string;
   updatedAt: string;
-};
+  status: "draft" | "published" | "archived";
+  instructorId: string;
+  availableSpots: number;
+  imageUrl: string;
+  location: string;
+  featured: boolean;
+}
 
 export interface Registration {
   id: string;

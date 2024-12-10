@@ -263,10 +263,9 @@ export function StudentList() {
                     <TableCell>
                       {student.address ? (
                         <div className="text-sm space-y-1">
-                          <div>{student.address.street}</div>
+                          <div>{student.address}</div>
                           <div>
-                            {student.address.city}, {student.address.state}{" "}
-                            {student.address.zipCode}
+                            {student.city}, {student.state} {student.zipCode}
                           </div>
                         </div>
                       ) : (
@@ -330,14 +329,20 @@ export function StudentList() {
 
                                 <div>
                                   <Label>Address</Label>
-                                  <div className="mt-1 space-y-1">
-                                    <div>{selectedStudent.address?.street}</div>
-                                    <div>
-                                      {selectedStudent.address?.city},{" "}
-                                      {selectedStudent.address?.state}{" "}
-                                      {selectedStudent.address?.zipCode}
+                                  {selectedStudent?.address ? (
+                                    <div className="mt-1 space-y-1">
+                                      <div>{selectedStudent.address}</div>
+                                      <div>
+                                        {selectedStudent.city},{" "}
+                                        {selectedStudent.state}{" "}
+                                        {selectedStudent.zipCode}
+                                      </div>
                                     </div>
-                                  </div>
+                                  ) : (
+                                    <div className="text-muted-foreground">
+                                      No address provided
+                                    </div>
+                                  )}
                                 </div>
 
                                 <div>

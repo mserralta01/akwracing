@@ -1,5 +1,6 @@
 import { StudentProfile } from "./student";
 import { CourseFormData } from "./course";
+import { Payment, PaymentStatus } from "./payment";
 
 export type EnrollmentStatus = "pending" | "confirmed" | "cancelled" | "completed";
 
@@ -30,9 +31,9 @@ export interface BaseEnrollment {
   paymentDetails: {
     amount: number;
     currency: string;
-    paymentStatus: 'pending' | 'completed' | 'failed';
+    paymentStatus: PaymentStatus;
   };
-  payment?: EnrollmentPayment;
+  payment?: Payment | EnrollmentPayment;
   notes: string[];
   communicationHistory: any[];
 }
@@ -70,7 +71,7 @@ export interface EnrollmentWithRelations extends Omit<BaseEnrollment, 'student'>
   paymentDetails: {
     amount: number;
     currency: string;
-    paymentStatus: 'pending' | 'completed' | 'failed';
+    paymentStatus: PaymentStatus;
   };
-  payment?: EnrollmentPayment;
+  payment?: Payment | EnrollmentPayment;
 } 

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from "date-fns";
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Filter, Clock, MapPin } from "lucide-react";
 import { motion } from "framer-motion";
-import { Course, CourseLevel } from "@/types/course";
+import { Course } from "@/types/course";
 import { instructorService } from "@/lib/services/instructor-service";
 import { courseService } from "@/lib/services/course-service";
 import { Button } from "@/components/ui/button";
@@ -23,12 +23,9 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
-import { ClassNames } from "react-day-picker";
-import { DayPicker } from "react-day-picker";
 import { useRouter } from "next/navigation";
 
 type Filter = {
-  level?: CourseLevel | "all";
   location?: string;
   instructorId?: string;
 };
@@ -44,7 +41,6 @@ export default function CalendarPage() {
   const [instructorNames, setInstructorNames] = useState<Map<string, string>>(new Map());
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<Filter>({
-    level: "all",
     location: "all",
     instructorId: "all",
   });
@@ -98,19 +94,6 @@ export default function CalendarPage() {
     name: instructorNames.get(id) || 'Unknown Instructor'
   }));
 
-  const getLevelColor = (level: CourseLevel) => {
-    switch (level) {
-      case "Beginner":
-        return "bg-emerald-500 text-white hover:bg-emerald-600";
-      case "Intermediate":
-        return "bg-yellow-500 text-white hover:bg-yellow-600";
-      case "Advanced":
-        return "bg-racing-red text-white hover:bg-red-600";
-      default:
-        return "bg-gray-500 text-white hover:bg-gray-600";
-    }
-  };
-
   const filteredCourses = courses.filter(course => {
     const courseDate = new Date(course.startDate);
     const monthStart = startOfMonth(date);
@@ -120,7 +103,6 @@ export default function CalendarPage() {
     if (courseDate < monthStart || courseDate > monthEnd) return false;
     
     // Then apply user filters
-    if (filters.level !== "all" && course.level !== filters.level) return false;
     if (filters.location !== "all" && course.location !== filters.location) return false;
     if (filters.instructorId !== "all" && course.instructorId !== filters.instructorId) return false;
     
@@ -163,24 +145,6 @@ export default function CalendarPage() {
             <Card className="border-0 shadow-xl bg-white/95 backdrop-blur-sm">
               <CardHeader className="space-y-4 border-b border-gray-100 pb-6">
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Select
-                    value={filters.level}
-                    onValueChange={(value: CourseLevel | "all") => 
-                      setFilters(prev => ({ ...prev, level: value }))
-                    }
-                  >
-                    <SelectTrigger className="w-[180px] bg-white">
-                      <Filter className="w-4 h-4 mr-2 text-racing-red" />
-                      <SelectValue placeholder="Filter by level" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Levels</SelectItem>
-                      <SelectItem value="Beginner">Beginner</SelectItem>
-                      <SelectItem value="Intermediate">Intermediate</SelectItem>
-                      <SelectItem value="Advanced">Advanced</SelectItem>
-                    </SelectContent>
-                  </Select>
-
                   <Select
                     value={filters.location}
                     onValueChange={(value) => setFilters(prev => ({ ...prev, location: value }))}
@@ -283,7 +247,6 @@ export default function CalendarPage() {
                                 <div
                                   className={cn(
                                     "text-xs p-2 rounded cursor-pointer shadow-sm transition-all duration-200",
-                                    getLevelColor(course.level as CourseLevel),
                                     "hover:scale-[1.02] hover:shadow-md"
                                   )}
                                   onClick={() => router.push(`/courses/${course.id}`)}
@@ -294,7 +257,7 @@ export default function CalendarPage() {
                               <HoverCardContent className="w-80 p-4 shadow-xl">
                                 <div className="space-y-2">
                                   <h4 className="text-sm font-semibold">{course.title}</h4>
-                                  <p className="text-sm text-gray-600">{course.shortDescription}</p>
+                                  <p className="text-sm text-gray-600">{course.description}</p>
                                   <div className="flex items-center text-xs text-gray-500">
                                     <Clock className="mr-1 h-3 w-3" />
                                     {format(new Date(course.startDate), "h:mm a")}

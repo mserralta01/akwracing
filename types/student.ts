@@ -1,5 +1,6 @@
 import { Timestamp } from 'firebase/firestore';
 import { Course } from './course';
+import { PaymentMethodType, PaymentStatus } from "./payment";
 
 export interface StudentProfile {
   id: string;
@@ -16,6 +17,12 @@ export interface StudentProfile {
   parentId?: string;
   createdAt?: string;
   updatedAt?: string;
+  skillLevel?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  allergies?: string[];
 }
 
 export interface ParentProfile {
@@ -24,12 +31,15 @@ export interface ParentProfile {
   lastName: string;
   email: string;
   phone: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  zipCode?: string;
+  address?: {
+    street: string;
+    city: string;
+    state: string;
+    zipCode: string;
+  };
   createdAt?: string;
   updatedAt?: string;
+  students: string[];
 }
 
 export interface Enrollment {
@@ -41,34 +51,20 @@ export interface Enrollment {
     currency: string;
     paymentStatus: 'pending' | 'completed' | 'failed';
   };
-  payment?: Payment;
+  payment: Payment | null;
   status: 'pending' | 'confirmed' | 'cancelled';
   createdAt: string;
   updatedAt: string;
-  student?: StudentProfile;
-  courseDetails?: Course;
+  student: StudentProfile;
+  courseDetails: Course;
+  parentId: string;
+  notes: string[];
+  communicationHistory: any[];
 }
 
 export interface EnrollmentWithRelations extends Enrollment {
   student: StudentProfile;
   courseDetails: Course;
-}
-
-export interface BaseEnrollment {
-  id: string;
-  studentId: string;
-  courseId: string;
-  paymentDetails: {
-    amount: number;
-    currency: string;
-    paymentStatus: 'pending' | 'completed' | 'failed';
-  };
-  payment?: Payment;
-  status: 'pending' | 'confirmed' | 'cancelled';
-  createdAt: string;
-  updatedAt: string;
-  student?: StudentProfile;
-  courseDetails?: Course;
 }
 
 export type EnrollmentStatus = 'pending' | 'confirmed' | 'cancelled';
@@ -78,11 +74,11 @@ export interface Payment {
   enrollmentId: string;
   amount: number;
   currency: string;
-  paymentMethod: {
+  paymentMethod: PaymentMethodType | {
     type: string;
     last4: string;
   };
-  status: 'pending' | 'completed' | 'failed';
+  status: PaymentStatus;
   transactionId?: string;
   createdAt: string;
   updatedAt: string;

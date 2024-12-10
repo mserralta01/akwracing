@@ -238,7 +238,8 @@ export function ParentList() {
                     <TableCell>
                       {parent.address ? (
                         <div className="text-sm">
-                          {parent.address.street}, {parent.address.city}, {parent.address.state} {parent.address.zipCode}
+                          {parent.address.street}, {parent.address.city},{" "}
+                          {parent.address.state} {parent.address.zipCode}
                         </div>
                       ) : (
                         <div className="text-muted-foreground">No address provided</div>
@@ -246,7 +247,8 @@ export function ParentList() {
                     </TableCell>
                     <TableCell>
                       <div className="text-sm">
-                        {parent.students?.length || 0} student{parent.students?.length !== 1 ? 's' : ''}
+                        {parent.students?.length || 0} student
+                        {parent.students?.length !== 1 ? "s" : ""}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -294,28 +296,42 @@ export function ParentList() {
 
                                 <div>
                                   <Label>Address</Label>
-                                  <div className="mt-1 space-y-1">
-                                    <div>{selectedParent.address.street}</div>
-                                    <div>
-                                      {selectedParent.address.city}, {selectedParent.address.state} {selectedParent.address.zipCode}
+                                  {selectedParent?.address ? (
+                                    <div className="mt-1 space-y-1">
+                                      <div>
+                                        {selectedParent.address.street}
+                                      </div>
+                                      <div>
+                                        {selectedParent.address.city},{" "}
+                                        {selectedParent.address.state}{" "}
+                                        {selectedParent.address.zipCode}
+                                      </div>
                                     </div>
-                                  </div>
+                                  ) : (
+                                    <div className="mt-1 text-muted-foreground">
+                                      No address provided
+                                    </div>
+                                  )}
                                 </div>
 
                                 <div>
                                   <Label>Students</Label>
                                   <div className="mt-2 space-y-2">
-                                    {selectedParent.students.map((studentId) => (
-                                      <Button
-                                        key={studentId}
-                                        variant="outline"
-                                        className="w-full justify-start"
-                                        onClick={() => router.push(`/admin/students/${studentId}`)}
-                                      >
-                                        <User className="h-4 w-4 mr-2" />
-                                        View Student Profile
-                                      </Button>
-                                    ))}
+                                    {selectedParent &&
+                                      selectedParent.students.map(
+                                        (studentId: string) => (
+                                          <Button
+                                            key={studentId}
+                                            variant="outline"
+                                            className="w-full justify-start"
+                                            onClick={() => router.push(`/admin/students/${studentId}`)}
+                                          >
+                                            <User className="h-4 w-4 mr-2" />
+                                            View Student Profile
+                                          </Button>
+                                        )
+                                      )
+                                    }
                                   </div>
                                 </div>
 

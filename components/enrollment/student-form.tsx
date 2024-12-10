@@ -18,6 +18,8 @@ import { Input } from "@/components/ui/input";
 const studentFormSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
+  email: z.string().email("Invalid email address"),
+  dateOfBirth: z.string().min(1, "Date of birth is required"),
   phone: z.string().min(10, "Valid phone number is required"),
 });
 
@@ -58,6 +60,8 @@ export function StudentForm({ onSubmit, loading, course }: StudentFormProps) {
   const defaultValues = {
     firstName: "",
     lastName: "",
+    email: "",
+    dateOfBirth: "",
     phone: "+1 ",
   };
 
@@ -68,8 +72,14 @@ export function StudentForm({ onSubmit, loading, course }: StudentFormProps) {
 
   const handleSubmit = (data: StudentFormData) => {
     // Remove formatting from phone number before submitting
-    const formattedData = {
-      ...data,
+    const formattedData: Omit<
+      StudentProfile,
+      "id" | "createdAt" | "updatedAt" | "parentId"
+    > = {
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email,
+      dateOfBirth: data.dateOfBirth,
       phone: unformatPhoneNumber(data.phone),
     };
     onSubmit(formattedData);
@@ -113,6 +123,34 @@ export function StudentForm({ onSubmit, loading, course }: StudentFormProps) {
             )}
           />
         </div>
+
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input type="email" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="dateOfBirth"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Date of Birth</FormLabel>
+              <FormControl>
+                <Input type="date" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <FormField
           control={form.control}

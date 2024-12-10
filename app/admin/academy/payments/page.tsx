@@ -175,7 +175,11 @@ export default function PaymentsPage() {
               amount: enrollment.payment?.amount || 0,
               currency: enrollment.payment?.currency || "USD",
               status: (enrollment.payment?.status || "pending") as PaymentStatus,
-              paymentMethod: "unknown",
+              paymentMethod:
+                enrollment.payment &&
+                (enrollment.payment as Payment).paymentMethod
+                  ? (enrollment.payment as Payment).paymentMethod
+                  : { type: "unknown", last4: "" },
               transactionId: enrollment.payment?.transactionId,
               metadata: {
                 courseId: enrollment.courseId,
@@ -208,7 +212,11 @@ export default function PaymentsPage() {
               amount: 0,
               currency: "USD",
               status: "pending",
-              paymentMethod: "unknown",
+              paymentMethod:
+                enrollment.payment &&
+                (enrollment.payment as Payment).paymentMethod
+                  ? (enrollment.payment as Payment).paymentMethod
+                  : { type: "unknown", last4: "" },
               transactionId: undefined,
               metadata: {
                 courseId: enrollment.courseId,
@@ -456,24 +464,31 @@ export default function PaymentsPage() {
       // Update the enrollment's payment status to "refunded"
       const updatedPayment: Payment = {
         id: enrollment.payment.id,
-        enrollmentId: enrollment.id,
-        studentId: enrollment.studentId,
-        courseId: enrollment.courseId,
+        studentId: enrollment.payment.studentId,
+        courseId: enrollment.payment.courseId,
+        enrollmentId: enrollment.payment.enrollmentId,
         amount: enrollment.payment.amount,
         currency: enrollment.payment.currency,
-        status: "refunded",
-        paymentMethod: enrollment.payment.paymentMethod,
+        status: "refunded" as PaymentStatus,
+        paymentMethod: enrollment.payment.paymentMethod
+          ? typeof enrollment.payment.paymentMethod === 'string'
+            ? enrollment.payment.paymentMethod as PaymentMethodType
+            : {
+                type: enrollment.payment.paymentMethod.type,
+                last4: enrollment.payment.paymentMethod.last4,
+              }
+          : { type: 'unknown', last4: '' },
         transactionId: enrollment.payment.transactionId,
         metadata: enrollment.payment.metadata || {
           courseId: enrollment.courseId,
-          courseName: enrollment.course?.title || 'Unknown Course'
+          courseName: enrollment.course?.title || "Unknown Course",
         },
         createdAt: enrollment.payment.createdAt,
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       };
 
       await enrollmentService.updateEnrollment(enrollment.id, {
-        payment: updatedPayment
+        payment: updatedPayment,
       });
 
       toast({
@@ -516,24 +531,31 @@ export default function PaymentsPage() {
       setRefundLoading(true);
       const updatedPayment: Payment = {
         id: enrollment.payment.id,
-        enrollmentId: enrollment.id,
-        studentId: enrollment.studentId,
-        courseId: enrollment.courseId,
+        studentId: enrollment.payment.studentId,
+        courseId: enrollment.payment.courseId,
+        enrollmentId: enrollment.payment.enrollmentId,
         amount: enrollment.payment.amount,
         currency: enrollment.payment.currency,
         status: newStatus,
-        paymentMethod: enrollment.payment.paymentMethod,
+        paymentMethod: enrollment.payment.paymentMethod
+          ? typeof enrollment.payment.paymentMethod === 'string'
+            ? enrollment.payment.paymentMethod as PaymentMethodType
+            : {
+                type: enrollment.payment.paymentMethod.type,
+                last4: enrollment.payment.paymentMethod.last4,
+              }
+          : { type: 'unknown', last4: '' },
         transactionId: enrollment.payment.transactionId,
         metadata: enrollment.payment.metadata || {
           courseId: enrollment.courseId,
-          courseName: enrollment.course?.title || 'Unknown Course'
+          courseName: enrollment.course?.title || "Unknown Course",
         },
         createdAt: enrollment.payment.createdAt,
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       };
 
       await enrollmentService.updateEnrollment(enrollment.id, {
-        payment: updatedPayment
+        payment: updatedPayment,
       });
 
       toast({

@@ -92,23 +92,26 @@ import { DataTable } from "@/components/ui/data-table";
 
 const ITEMS_PER_PAGE = 25;
 
-interface PaymentSummary {
-  totalPayments: number;
-  totalAmount: number;
-  successfulPayments: number;
-  failedPayments: number;
-  pendingPayments: number;
-  successRate: number;
+interface Payment {
+  id: string;
+  enrollmentId: string;
+  amount: number;
+  currency: string;
+  status: PaymentStatus;
+  paymentMethod: string;
+  transactionId: string;
+  createdAt: string;
+  updatedAt?: string;
 }
 
-interface EnrollmentWithCourse extends Enrollment {
+interface EnrollmentWithCourse extends Omit<Enrollment, 'parentId' | 'createdAt' | 'status' | 'payment'> {
   id: string;
   courseId: string;
   studentId: string;
   parentId?: string;
   status: string;
   createdAt: string;
-  updatedAt: string;
+  updatedAt?: string;
   course?: Course | null;
   student?: {
     firstName?: string;
@@ -116,11 +119,18 @@ interface EnrollmentWithCourse extends Enrollment {
     email?: string;
     phone?: string;
   };
-  payment?: {
-    amount?: number;
-    status?: string;
-    transactionId?: string;
-  };
+  payment?: Partial<Payment>;
+}
+
+type PaymentStatus = 'pending' | 'completed' | 'failed' | 'processing' | 'refunded';
+
+interface PaymentSummary {
+  totalPayments: number;
+  totalAmount: number;
+  successfulPayments: number;
+  failedPayments: number;
+  pendingPayments: number;
+  successRate: number;
 }
 
 export default function PaymentsPage() {
@@ -229,6 +239,8 @@ export default function PaymentsPage() {
         return "bg-yellow-100 text-yellow-800";
       case "failed":
         return "bg-red-100 text-red-800";
+      case "refunded":
+        return "bg-red-600 text-white";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -404,6 +416,16 @@ export default function PaymentsPage() {
         throw new Error('Refund failed');
       }
 
+      // Update the enrollment's payment status to "refunded"
+      const updatedPayment: Partial<Payment> = {
+        ...enrollment.payment,
+        status: "refunded" as PaymentStatus
+      };
+
+      await enrollmentService.updateEnrollment(enrollment.id, {
+        payment: updatedPayment
+      });
+
       toast({
         title: "Success",
         description: "Payment refunded successfully",
@@ -478,7 +500,11 @@ export default function PaymentsPage() {
       header: "Status",
       cell: ({ row }) => (
         <Badge className={getPaymentStatusColor(row.original.payment?.status || "")}>
-          {row.original.payment?.status || "Unknown"}
+          {row.original.payment?.status === "completed" 
+            ? "Completed" 
+            : row.original.payment?.status === "refunded"
+            ? "Refunded"
+            : row.original.payment?.status || "Unknown"}
         </Badge>
       ),
     },
@@ -491,9 +517,9 @@ export default function PaymentsPage() {
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button 
-                  variant="ghost" 
+                  variant="destructive" 
                   size="sm"
-                  className="text-red-600 hover:text-red-800 hover:bg-red-100"
+                  className="text-white"
                 >
                   <RefreshCcw className="h-4 w-4 mr-2" />
                   Refund

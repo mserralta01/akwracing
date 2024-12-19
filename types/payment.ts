@@ -35,8 +35,25 @@ export interface Payment {
   updatedAt: string;
 }
 
+export interface PaymentToken {
+  id: string;
+  customerId: string;
+  object: string;
+  card: {
+    last4: string;
+    exp_month: string;
+    exp_year: string;
+    brand?: string;
+  };
+  client_ip: string;
+  created: number;
+  livemode: boolean;
+  type: string;
+  used: boolean;
+}
+
 export interface PaymentDetails {
-  // Card payment fields (optional for enrollment)
+  // Card payment fields
   cardNumber?: string;
   expiryMonth?: string;
   expiryYear?: string;
@@ -51,10 +68,10 @@ export interface PaymentDetails {
   };
   tokenId?: string;
   
-  // Enrollment payment fields
-  amount: number;
-  currency: string;
-  paymentStatus: PaymentStatus;
+  // Payment fields (optional during tokenization, required during payment processing)
+  amount?: number;
+  currency?: string;
+  paymentStatus?: PaymentStatus;
 }
 
 export interface PaymentSummary {
@@ -77,4 +94,4 @@ export interface EnrollmentPayment {
   transactionId?: string;
   createdAt: string;
   updatedAt: string;
-} 
+}

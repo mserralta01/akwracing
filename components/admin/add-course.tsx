@@ -15,13 +15,9 @@ import {
 import { FileUpload } from "@/components/ui/file-upload";
 import { courseService } from "@/lib/services/course-service";
 import { useToast } from "@/components/ui/use-toast";
-import { CourseFormData, CourseLevel } from "@/types/course";
+import { NewCourse, CourseLevel } from "@/types/course";
 import { instructorService } from "@/lib/services/instructor-service";
 import { Instructor } from "@/types/instructor";
-
-type NewCourse = Omit<CourseFormData, 'imageUrl'> & {
-  photo: File | undefined;
-};
 
 export function AddCourse() {
   const router = useRouter();
@@ -30,8 +26,10 @@ export function AddCourse() {
   const [newCourse, setNewCourse] = useState<NewCourse>({
     title: "",
     shortDescription: "",
-    location: "",
     longDescription: "",
+    description: "",
+    content: "",
+    location: "",
     price: 0,
     duration: 1,
     level: "Beginner",
@@ -42,6 +40,11 @@ export function AddCourse() {
     availableSpots: 0,
     featured: false,
     instructorId: "",
+    status: "draft",
+    imageUrl: "",
+    equipmentRequirements: [],
+    providedEquipment: [],
+    requiredEquipment: [],
   });
   const [instructors, setInstructors] = useState<Instructor[]>([]);
 
@@ -63,14 +66,11 @@ export function AddCourse() {
     setLoading(true);
 
     try {
-      const courseFormData: CourseFormData = {
-        ...newCourse,
-        imageUrl: null,
-      };
-
-      delete (courseFormData as any).photo;
-
-      const result = await courseService.createCourse(courseFormData, newCourse.photo);
+      const { photo, ...courseData } = newCourse;
+      const result = await courseService.createCourse({
+        ...courseData,
+        imageUrl: "",
+      }, photo);
 
       if (!result.id) {
         toast({
@@ -126,6 +126,18 @@ export function AddCourse() {
           placeholder="Long Description"
           value={newCourse.longDescription}
           onChange={(e) => setNewCourse({ ...newCourse, longDescription: e.target.value })}
+          required
+        />
+        <Textarea
+          placeholder="Description"
+          value={newCourse.description}
+          onChange={(e) => setNewCourse({ ...newCourse, description: e.target.value })}
+          required
+        />
+        <Textarea
+          placeholder="Content"
+          value={newCourse.content}
+          onChange={(e) => setNewCourse({ ...newCourse, content: e.target.value })}
           required
         />
         <Input

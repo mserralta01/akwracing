@@ -6,8 +6,8 @@ import { BenefitsSection } from "@/components/sections/benefits";
 import { ProgramsSection } from "@/components/sections/programs";
 import { TeamSection } from "@/components/sections/team";
 import { FacilitiesSection } from "@/components/sections/facilities";
-import { SafetySection } from "@/components/sections/safety";
 import { ContactSection } from "@/components/sections/contact";
+import Partners from "@/components/sections/partners";
 
 export default function HomePage() {
   return (
@@ -31,9 +31,9 @@ export default function HomePage() {
         <AboutSection />
         <BenefitsSection />
         <ProgramsSection />
+        <Partners />
         <TeamSection />
         <FacilitiesSection />
-        <SafetySection />
         <ContactSection />
       </div>
 

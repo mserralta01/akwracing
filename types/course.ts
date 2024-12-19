@@ -7,18 +7,13 @@ export type PreloadedFile = {
   type: string;
 };
 
-export type CourseFormData = {
-  title: string;
-  description: string;
-  content: string;
-  price: number;
-  startDate: string;
-  endDate: string;
-};
+export type CourseLevel = "Beginner" | "Intermediate" | "Advanced";
 
 export interface Course {
   id: string;
   title: string;
+  shortDescription: string;
+  longDescription: string;
   description: string;
   content: string;
   price: number;
@@ -32,7 +27,25 @@ export interface Course {
   imageUrl: string;
   location: string;
   featured: boolean;
+  level: CourseLevel;
+  duration: number;
+  maxStudents: number;
+  slug: string;
+  equipmentRequirements: EquipmentRequirement[];
 }
+
+export type CourseFormData = Omit<Course, "id" | "slug" | "createdAt" | "updatedAt"> & {
+  photo?: File;
+  imageUrl?: string;
+  providedEquipment?: string[];
+  requiredEquipment?: string[];
+};
+
+export type CourseUpdateData = Partial<Omit<Course, "id" | "slug" | "createdAt" | "updatedAt">> & {
+  imageUrl?: string;
+};
+
+export type NewCourse = CourseFormData;
 
 export interface Registration {
   id: string;

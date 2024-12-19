@@ -30,7 +30,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Course, CourseLevel, PreloadedFile } from "@/types/course";
+import { Course, CourseLevel, PreloadedFile, CourseUpdateData } from "@/types/course";
 import { Equipment } from "@/types/equipment";
 import { courseService } from "@/lib/services/course-service";
 import { equipmentService } from "@/lib/services/equipment-service";
@@ -54,7 +54,7 @@ const formSchema = z.object({
   endDate: z.string().min(1, "End date is required"),
   maxStudents: z.number().min(1, "Maximum students must be at least 1"),
   availableSpots: z.number().min(0, "Available spots cannot be negative"),
-  imageUrl: z.string().nullable(),
+  imageUrl: z.string().optional(),
   instructorId: z.string().optional(),
   location: z.string().min(1, "Location is required"),
   featured: z.boolean().default(false),
@@ -188,7 +188,7 @@ export default function CourseForm({ initialData }: CourseFormProps) {
         })),
       ] : [];
 
-      const courseData = {
+      const courseData: CourseUpdateData = {
         ...data,
         equipmentRequirements,
         startDate: new Date(data.startDate).toISOString(),
@@ -207,7 +207,7 @@ export default function CourseForm({ initialData }: CourseFormProps) {
         });
       } else {
         await courseService.createCourse(
-          courseData,
+          courseData as any,
           selectedImage || undefined
         );
         toast({

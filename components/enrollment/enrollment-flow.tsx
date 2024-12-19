@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { Course } from "@/types/course";
-import { Enrollment, StudentProfile, ParentProfile, Payment } from "@/types/student";
+import { StudentProfile, ParentProfile } from "@/types/student";
+import { BaseEnrollment } from "@/types/enrollment";
+import { Payment } from "@/types/payment";
 import { StudentForm } from "@/components/enrollment/student-form";
 import { ParentForm } from "@/components/enrollment/parent-form";
 import { PaymentForm } from "@/components/payment/payment-form";
@@ -12,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { Check, CreditCard, UserCircle, Users, ArrowRight, Mail } from "lucide-react";
-import { doc, setDoc, getDoc, Timestamp } from "firebase/firestore";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
@@ -22,14 +24,9 @@ import type { User as FirebaseUser } from "firebase/auth";
 
 type EnrollmentStep = "auth" | "parent" | "payment" | "student" | "confirmation";
 
-interface EnrollmentFlowProps {
-  course: Course;
-  onComplete: () => void;
-}
-
 interface EnrollmentState {
   step: EnrollmentStep;
-  enrollment: Enrollment | null;
+  enrollment: BaseEnrollment | null;
   parent: ParentProfile | null;
   student: StudentProfile | null;
 }
@@ -44,10 +41,10 @@ const steps = [
   { id: "confirmation", label: "Complete", icon: Check },
 ] as const;
 
-export function EnrollmentFlow({ course, onComplete }: EnrollmentFlowProps) {
+export function EnrollmentFlow({ course, onComplete }: { course: Course; onComplete: () => void }) {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState<EnrollmentStep>("auth");
-  const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
+  const [enrollment, setEnrollment] = useState<BaseEnrollment | null>(null);
   const [student, setStudent] = useState<StudentProfile | null>(null);
   const [parent, setParent] = useState<ParentProfile | null>(null);
   const [loading, setLoading] = useState(false);
@@ -103,7 +100,7 @@ export function EnrollmentFlow({ course, onComplete }: EnrollmentFlowProps) {
         if (!enrollment) {
           const tempStudentId = crypto.randomUUID();
           const enrollmentData: Omit<
-            Enrollment,
+            BaseEnrollment,
             "id" | "createdAt" | "updatedAt"
           > = {
             courseId: course.id,
@@ -117,7 +114,7 @@ export function EnrollmentFlow({ course, onComplete }: EnrollmentFlowProps) {
             },
             notes: [],
             communicationHistory: [],
-            payment: null,
+            payment: undefined,
             student: {} as StudentProfile,
             courseDetails: {} as Course,
           };
@@ -178,6 +175,8 @@ export function EnrollmentFlow({ course, onComplete }: EnrollmentFlowProps) {
 
       const payment: Payment = {
         id: paymentId,
+        studentId: enrollment.studentId,
+        courseId: enrollment.courseId,
         enrollmentId: enrollment.id,
         amount: enrollment.paymentDetails.amount,
         currency: enrollment.paymentDetails.currency,
@@ -186,11 +185,11 @@ export function EnrollmentFlow({ course, onComplete }: EnrollmentFlowProps) {
           type: "card",
           last4: "****",
         },
-        transactionId,
         metadata: {
           courseId: course.id,
           courseName: course.title,
         },
+        transactionId,
         createdAt: now,
         updatedAt: now,
       };
@@ -239,7 +238,7 @@ export function EnrollmentFlow({ course, onComplete }: EnrollmentFlowProps) {
 
       const tempStudentId = crypto.randomUUID();
       const enrollmentData: Omit<
-        Enrollment,
+        BaseEnrollment,
         "id" | "createdAt" | "updatedAt"
       > = {
         courseId: course.id,
@@ -253,7 +252,7 @@ export function EnrollmentFlow({ course, onComplete }: EnrollmentFlowProps) {
         },
         notes: [],
         communicationHistory: [],
-        payment: null,
+        payment: undefined,
         student: {} as StudentProfile,
         courseDetails: {} as Course,
       };
@@ -501,4 +500,4 @@ export function EnrollmentFlow({ course, onComplete }: EnrollmentFlowProps) {
       </Card>
     </div>
   );
-} 
+}

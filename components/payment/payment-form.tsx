@@ -5,7 +5,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Course } from "@/types/course";
-import { Enrollment, StudentProfile, ParentProfile, PaymentToken } from "@/types/student";
+import { StudentProfile, ParentProfile } from "@/types/student";
+import { BaseEnrollment } from "@/types/enrollment";
+import { PaymentToken } from "@/types/payment";
 import { paymentService } from "@/lib/services/payment-service";
 import { Button } from "@/components/ui/button";
 import {
@@ -64,7 +66,7 @@ type PaymentFormData = z.infer<typeof paymentFormSchema>;
 
 interface PaymentFormProps {
   course: Course;
-  enrollment: Enrollment;
+  enrollment: BaseEnrollment;
   parent: ParentProfile;
   onSuccess: (transactionId: string) => void;
   onError: (error: string) => void;
@@ -253,6 +255,7 @@ export function PaymentForm({
                     </p>
                     <p className="text-sm text-muted-foreground">
                       Expires {card.card.exp_month}/{card.card.exp_year}
+                      {card.card.brand && ` - ${card.card.brand}`}
                     </p>
                   </div>
                 </div>
@@ -436,4 +439,4 @@ export function PaymentForm({
       </div>
     </div>
   );
-} 
+}

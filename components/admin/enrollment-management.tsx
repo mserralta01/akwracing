@@ -62,7 +62,7 @@ export default function EnrollmentManagement() {
       try {
         setLoading(true);
         const data = await enrollmentService.getAllEnrollments();
-        const enrichedEnrollments: EnrollmentWithRelations[] = data.map((enrollment: BaseEnrollment) => {
+        const enrichedEnrollments: EnrollmentWithRelations[] = data.map((enrollment) => {
           const studentData = enrollment.student ? {
             ...enrollment.student,
             id: enrollment.student.id,
@@ -322,4 +322,4 @@ export default function EnrollmentManagement() {
       </div>
     </div>
   );
-} 
+}

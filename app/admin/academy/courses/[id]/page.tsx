@@ -6,16 +6,15 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { DeleteCourseButton } from '@/components/admin/delete-course-button';
 
-interface PageParams {
-    id: string;
-}
+type PageProps = {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+};
 
-interface PageProps {
-    params: PageParams;
-}
-
-export default async function CoursePage({ params }: PageProps) {
-  const course = await courseService.getCourse(params.id);
+export default async function CoursePage({ params, searchParams }: PageProps) {
+  const resolvedParams = await params;
+  const resolvedSearchParams = await searchParams;
+  const course = await courseService.getCourse(resolvedParams.id);
   const { instructors } = await instructorService.getInstructors();
 
   if (course === null) {

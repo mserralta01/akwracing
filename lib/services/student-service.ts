@@ -14,9 +14,10 @@ import {
   setDoc,
 } from 'firebase/firestore';
 import { db } from '../firebase';
-import { StudentProfile, ParentProfile, Enrollment, EnrollmentStatus } from '@/types/student';
+import { StudentProfile, ParentProfile } from '@/types/student';
+import { BaseEnrollment, EnrollmentStatus } from '@/types/enrollment';
 import { auth } from '../firebase';
-import { Course } from "@/types/course";
+import { Course } from '@/types/course';
 
 const STUDENTS_COLLECTION = 'students';
 const PARENTS_COLLECTION = 'parents';
@@ -228,7 +229,7 @@ export const studentService = {
   },
 
   // Enrollment Operations
-  async createEnrollment(data: Omit<Enrollment, 'id' | 'createdAt' | 'updatedAt'>): Promise<Enrollment> {
+  async createEnrollment(data: Omit<BaseEnrollment, 'id' | 'createdAt' | 'updatedAt'>): Promise<BaseEnrollment> {
     try {
       const enrollmentData = {
         ...data,
@@ -240,14 +241,14 @@ export const studentService = {
       return {
         id: docRef.id,
         ...convertTimestampsToDates(enrollmentData),
-      } as Enrollment;
+      } as BaseEnrollment;
     } catch (error) {
       console.error('Error creating enrollment:', error);
       throw error;
     }
   },
 
-  async getEnrollment(id: string): Promise<Enrollment | null> {
+  async getEnrollment(id: string): Promise<BaseEnrollment | null> {
     try {
       const enrollmentRef = doc(db, ENROLLMENTS_COLLECTION, id);
       const enrollmentSnap = await getDoc(enrollmentRef);
@@ -259,7 +260,7 @@ export const studentService = {
       return {
         id: enrollmentSnap.id,
         ...convertTimestampsToDates(enrollmentSnap.data()),
-      } as Enrollment;
+      } as BaseEnrollment;
     } catch (error) {
       console.error('Error fetching enrollment:', error);
       return null;
@@ -279,7 +280,7 @@ export const studentService = {
     }
   },
 
-  async getEnrollmentsByCourse(courseId: string): Promise<Enrollment[]> {
+  async getEnrollmentsByCourse(courseId: string): Promise<BaseEnrollment[]> {
     try {
       const q = query(
         collection(db, ENROLLMENTS_COLLECTION),
@@ -291,14 +292,14 @@ export const studentService = {
       return querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...convertTimestampsToDates(doc.data()),
-      })) as Enrollment[];
+      })) as BaseEnrollment[];
     } catch (error) {
       console.error('Error fetching course enrollments:', error);
       return [];
     }
   },
 
-  async getEnrollmentsByParent(parentId: string): Promise<Enrollment[]> {
+  async getEnrollmentsByParent(parentId: string): Promise<BaseEnrollment[]> {
     try {
       const q = query(
         collection(db, ENROLLMENTS_COLLECTION),
@@ -310,14 +311,14 @@ export const studentService = {
       return querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...convertTimestampsToDates(doc.data()),
-      })) as Enrollment[];
+      })) as BaseEnrollment[];
     } catch (error) {
       console.error('Error fetching parent enrollments:', error);
       return [];
     }
   },
 
-  async getEnrollmentsByStudent(studentId: string): Promise<Enrollment[]> {
+  async getEnrollmentsByStudent(studentId: string): Promise<BaseEnrollment[]> {
     try {
       const q = query(
         collection(db, ENROLLMENTS_COLLECTION),
@@ -329,7 +330,7 @@ export const studentService = {
       return querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...convertTimestampsToDates(doc.data()),
-      })) as Enrollment[];
+      })) as BaseEnrollment[];
     } catch (error) {
       console.error('Error fetching student enrollments:', error);
       return [];
@@ -358,7 +359,7 @@ export const studentService = {
 
   async addCommunicationRecord(
     enrollmentId: string,
-    communication: Omit<NonNullable<Enrollment['communicationHistory']>[0], 'id' | 'timestamp'>
+    communication: Omit<NonNullable<BaseEnrollment['communicationHistory']>[0], 'id' | 'timestamp'>
   ): Promise<void> {
     try {
       const enrollmentRef = doc(db, ENROLLMENTS_COLLECTION, enrollmentId);
@@ -421,7 +422,7 @@ export const studentService = {
     }
   },
 
-  async getAllEnrollments(): Promise<Enrollment[]> {
+  async getAllEnrollments(): Promise<BaseEnrollment[]> {
     try {
       const q = query(
         collection(db, ENROLLMENTS_COLLECTION),
@@ -432,7 +433,7 @@ export const studentService = {
       return querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...convertTimestampsToDates(doc.data()),
-      })) as Enrollment[];
+      })) as BaseEnrollment[];
     } catch (error) {
       console.error('Error fetching all enrollments:', error);
       return [];
@@ -441,7 +442,7 @@ export const studentService = {
 
   async updateEnrollment(
     enrollmentId: string,
-    data: Partial<Omit<Enrollment, 'id' | 'createdAt' | 'updatedAt'>>
+    data: Partial<Omit<BaseEnrollment, 'id' | 'createdAt' | 'updatedAt'>>
   ): Promise<void> {
     try {
       const enrollmentRef = doc(db, ENROLLMENTS_COLLECTION, enrollmentId);
@@ -568,4 +569,4 @@ export const studentService = {
       throw error;
     }
   }
-}; 
+};

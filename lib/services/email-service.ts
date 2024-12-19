@@ -1,4 +1,5 @@
-import { Enrollment, StudentProfile, ParentProfile } from '@/types/student';
+import { StudentProfile, ParentProfile } from '@/types/student';
+import { BaseEnrollment } from '@/types/enrollment';
 import { Course } from '@/types/course';
 
 type EmailTemplate = 
@@ -10,7 +11,7 @@ type EmailTemplate =
   | 'lead_nurture';
 
 interface EmailData {
-  enrollment?: Enrollment;
+  enrollment?: BaseEnrollment;
   course?: Course;
   student?: StudentProfile;
   parent?: ParentProfile;
@@ -61,7 +62,7 @@ export const emailService = {
   },
 
   async sendEnrollmentConfirmation(
-    enrollment: Enrollment,
+    enrollment: BaseEnrollment,
     course: Course,
     student: StudentProfile,
     parent: ParentProfile
@@ -75,7 +76,7 @@ export const emailService = {
   },
 
   async sendPaymentConfirmation(
-    enrollment: Enrollment,
+    enrollment: BaseEnrollment,
     course: Course,
     parent: ParentProfile
   ): Promise<boolean> {
@@ -87,7 +88,7 @@ export const emailService = {
   },
 
   async sendPaymentFailed(
-    enrollment: Enrollment,
+    enrollment: BaseEnrollment,
     course: Course,
     parent: ParentProfile
   ): Promise<boolean> {
@@ -99,7 +100,7 @@ export const emailService = {
   },
 
   async sendCourseReminder(
-    enrollment: Enrollment,
+    enrollment: BaseEnrollment,
     course: Course,
     student: StudentProfile,
     parent: ParentProfile
@@ -146,4 +147,4 @@ export const emailService = {
       return false;
     }
   },
-}; 
+};

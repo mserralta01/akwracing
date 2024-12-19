@@ -27,6 +27,7 @@ export interface StudentProfile {
 
 export interface ParentProfile {
   id: string;
+  userId?: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -102,4 +103,4 @@ export interface PaymentToken {
   livemode: boolean;
   type: string;
   used: boolean;
-} 
+}

@@ -1,4 +1,5 @@
-import { Enrollment, PaymentDetails, PaymentToken } from "@/types/student";
+import { BaseEnrollment } from "@/types/enrollment";
+import { PaymentDetails, PaymentToken } from "@/types/payment";
 import { Course } from "@/types/course";
 import { db } from "@/lib/firebase";
 import { collection, doc, setDoc, updateDoc, getDoc, getDocs, query, where } from "firebase/firestore";
@@ -34,7 +35,7 @@ export const paymentService = {
     console.log("paymentDetails before sending to API:", paymentDetails);
 
     // Format expiry date if necessary (example for MMYY format)
-    const formattedExpiry = `${paymentDetails.expiryMonth.padStart(2, '0')}${paymentDetails.expiryYear.slice(-2)}`;
+    const formattedExpiry = `${paymentDetails.expiryMonth?.padStart(2, '0')}${paymentDetails.expiryYear?.slice(-2)}`;
     console.log("Formatted expiry date:", formattedExpiry);
 
     try {
@@ -44,8 +45,8 @@ export const paymentService = {
         body: JSON.stringify({
           paymentDetails: {
             ...paymentDetails,
-            expiryMonth: paymentDetails.expiryMonth.padStart(2, '0'), // Ensure 2 digits
-            expiryYear: paymentDetails.expiryYear.slice(-2), // Ensure last 2 digits
+            expiryMonth: paymentDetails.expiryMonth?.padStart(2, '0'), // Ensure 2 digits
+            expiryYear: paymentDetails.expiryYear?.slice(-2), // Ensure last 2 digits
           },
           customerId
         }),
@@ -63,7 +64,7 @@ export const paymentService = {
         const tokenDoc = {
           id: result.tokenId,
           customerId,
-          last4: paymentDetails.cardNumber.slice(-4),
+          last4: paymentDetails.cardNumber?.slice(-4),
           expiryMonth: paymentDetails.expiryMonth,
           expiryYear: paymentDetails.expiryYear,
           tokenType: 'recurring',
@@ -96,7 +97,7 @@ export const paymentService = {
   },
 
   async processPayment(
-    enrollment: Enrollment,
+    enrollment: BaseEnrollment,
     course: Course,
     paymentDetails: PaymentDetails,
     options: ProcessPaymentOptions = {}
@@ -147,7 +148,7 @@ export const paymentService = {
       } else {
         paymentRecord.paymentMethod = {
           type: "card",
-          last4: paymentDetails.cardNumber.slice(-4),
+          last4: paymentDetails.cardNumber?.slice(-4),
         };
       }
 
@@ -238,4 +239,4 @@ export const paymentService = {
       return [];
     }
   },
-}; 
+};

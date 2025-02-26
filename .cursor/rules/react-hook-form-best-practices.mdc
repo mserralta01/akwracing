@@ -1,0 +1,12 @@
+---
+description: Best practices for form handling with React Hook Form
+globs: **/*.{ts,tsx,js,jsx}
+---
+- Use the `useForm` hook with proper configuration options
+- Implement form validation using built-in validation or external libraries like Zod
+- Utilize the `Controller` component for controlled inputs
+- Use controlled components for better performance
+- Use the watch function for real-time form state changes
+- Implement custom hooks for reusable form logic
+- Use the setValue function for dynamic form updates
+

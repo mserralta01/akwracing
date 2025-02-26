@@ -1,0 +1,9 @@
+---
+description: Best practices for React applications
+globs:  **/*.{ts,tsx,js,jsx}
+---
+- Use functional components with hooks
+- Implement proper error boundaries
+- Utilize React.memo for performance optimization
+- Use context API for global state management
+- Implement proper prop validation with PropTypes or TypeScript

@@ -1,0 +1,9 @@
+---
+description: Best practices for Next.js applications and routing
+globs: **/*.{ts,tsx}
+---
+- Use the App Router for better performance
+- Implement server-side rendering for improved SEO
+- Use getStaticProps and getStaticPaths for static generation
+- Implement proper error handling with custom error pages
+- Use Next.js API routes for server-side logic

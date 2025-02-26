@@ -1,0 +1,12 @@
+---
+description: Best practices for using Firebase in your application
+globs: **/*.{ts,js}
+---
+- Use Firebase Admin SDK for server-side operations
+- Implement proper security rules for Firestore and Realtime Database
+- Utilize Firebase Authentication for user management
+- Leverage Firebase Functions for serverless backend logic
+- Use Firebase security rules to protect data
+- Use Firestore transactions for atomic operations
+- Optimize queries with proper indexing
+- Use Firebase Authentication for user management

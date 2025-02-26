@@ -1,0 +1,197 @@
+---
+description: 
+globs: 
+---
+# AI Collaboration Guidelines
+
+## Code Generation Rules
+
+### Component Creation
+- Always include necessary imports
+- Follow TypeScript strict mode guidelines
+- Include proper prop types and interfaces
+- Add JSDoc comments for complex logic
+- Follow project's component hierarchy
+
+### State Management
+- Prefer hooks over class components
+- Use appropriate state management patterns:
+  - Local state: useState/useReducer
+  - Global state: React Context/Redux
+  - Server state: React Query
+- Include proper type definitions for all state
+
+### Error Handling
+- Implement try-catch blocks for async operations
+- Use error boundaries where appropriate
+- Include proper error types and interfaces
+- Log errors appropriately
+- Handle edge cases explicitly
+
+### Testing
+- Generate test cases for new components
+- Include unit tests for utilities
+- Add integration tests for complex features
+- Follow Testing Library best practices
+- Include accessibility tests
+
+## Code Analysis Patterns
+
+### Performance Review
+- Check for unnecessary re-renders
+- Verify proper use of useMemo/useCallback
+- Analyze bundle size impact
+- Review API call patterns
+- Check for memory leaks
+
+### Security Review
+- Verify input sanitization
+- Check authentication/authorization
+- Review data validation
+- Analyze API security
+- Verify proper error handling
+
+### Accessibility Review
+- Ensure proper ARIA attributes
+- Check color contrast
+- Verify keyboard navigation
+- Review screen reader compatibility
+- Check focus management
+
+## Documentation Generation
+
+### Component Documentation
+- Include clear component description
+- Document all props and their types
+- Add usage examples
+- Document side effects
+- Include performance considerations
+
+### API Documentation
+- Document all endpoints
+- Include request/response types
+- Document error responses
+- Add authentication requirements
+- Include rate limiting info
+
+### State Management Documentation
+- Document state structure
+- Include state update patterns
+- Document side effects
+- Add performance considerations
+- Include debugging tips
+
+## Code Modification Guidelines
+
+### Refactoring
+- Preserve existing functionality
+- Maintain type safety
+- Update affected tests
+- Document breaking changes
+- Follow semantic versioning
+
+### Feature Addition
+- Follow existing patterns
+- Add necessary documentation
+- Include comprehensive tests
+- Update relevant documentation
+- Consider backwards compatibility
+
+### Bug Fixing
+- Identify root cause
+- Add regression tests
+- Document fix implications
+- Update affected components
+- Add error prevention measures
+
+## Project Structure Guidelines
+
+### File Organization
+- Follow established directory structure
+- Use consistent naming conventions
+- Group related functionality
+- Maintain clear separation of concerns
+- Follow module boundaries
+
+### Code Style
+- Follow project's ESLint rules
+- Use consistent formatting
+- Follow naming conventions
+- Maintain code organization
+- Use appropriate comments
+
+### Import/Export Patterns
+- Use named exports for utilities
+- Default export for components
+- Maintain clear module boundaries
+- Follow barrel pattern where appropriate
+- Use absolute imports
+
+## Performance Guidelines
+
+### Component Optimization
+- Implement proper memoization
+- Use lazy loading where appropriate
+- Optimize re-renders
+- Implement proper cleanup
+- Follow performance best practices
+
+### Data Fetching
+- Use appropriate caching
+- Implement proper error handling
+- Use pagination where needed
+- Optimize query parameters
+- Handle loading states
+
+### Bundle Optimization
+- Use code splitting
+- Implement lazy loading
+- Optimize dependencies
+- Minimize bundle size
+- Use proper tree shaking
+
+## Security Guidelines
+
+### Input Handling
+- Validate all inputs
+- Sanitize user data
+- Implement proper escaping
+- Use proper encoding
+- Follow security best practices
+
+### Authentication
+- Follow OAuth best practices
+- Implement proper session handling
+- Use secure token storage
+- Implement proper logout
+- Handle session expiry
+
+### Data Protection
+- Use proper encryption
+- Implement proper access control
+- Follow data privacy guidelines
+- Handle sensitive data properly
+- Implement proper logging
+
+## Accessibility Guidelines
+
+### Semantic HTML
+- Use proper HTML elements
+- Implement proper heading structure
+- Use appropriate ARIA roles
+- Follow accessibility patterns
+- Maintain proper focus management
+
+### Keyboard Navigation
+- Implement proper focus management
+- Use proper tab order
+- Handle keyboard shortcuts
+- Implement proper focus trapping
+- Follow accessibility patterns
+
+### Screen Readers
+- Add proper aria-labels
+- Use appropriate roles
+- Implement proper live regions
+- Handle dynamic content
+- Follow accessibility guidelines

@@ -1,0 +1,12 @@
+---
+description: Best practices for styling with Tailwind CSS
+globs: **/*.{ts,tsx,js,jsx,css}
+---
+
+- Use utility classes for most styling needs
+- Create custom components for reusable UI elements
+- Implement responsive design using Tailwind's responsive modifiers
+- Utilize the `@apply` directive for component-specific styles
+- Use responsive utility classes for mobile-first design
+- Implement dark mode support
+- Use @apply in custom CSS for consistency

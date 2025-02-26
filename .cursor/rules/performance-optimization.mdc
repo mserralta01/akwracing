@@ -1,0 +1,389 @@
+---
+description: performance optimizastion
+globs: 
+---
+# Performance Optimization Patterns
+
+## Overview
+This guide outlines comprehensive performance optimization strategies for React applications, covering component optimization, bundle optimization, and runtime performance.
+
+## Component Performance
+
+### React.memo Usage
+```typescript
+// Basic memo usage
+const MemoizedComponent = memo(MyComponent);
+
+// With custom comparison
+const MemoizedComponent = memo(
+  MyComponent,
+  (prev, next) => prev.id === next.id
+);
+
+// With type safety
+interface Props {
+  id: string;
+  data: Record<string, unknown>;
+}
+
+const MemoizedComponent = memo<Props>(
+  ({ id, data }) => (
+    <div>{id}: {JSON.stringify(data)}</div>
+  ),
+  (prev, next) => 
+    prev.id === next.id && 
+    isEqual(prev.data, next.data)
+);
+```
+
+### useMemo Implementation
+```typescript
+// Expensive calculations
+const memoizedValue = useMemo(
+  () => computeExpensiveValue(deps),
+  [deps]
+);
+
+// Complex objects
+const memoizedObject = useMemo(
+  () => ({
+    id,
+    name,
+    computed: heavyComputation(id, name),
+  }),
+  [id, name]
+);
+
+// Derived state
+const memoizedState = useMemo(
+  () => ({
+    isValid: validateData(formData),
+    errors: getErrors(formData),
+    warnings: getWarnings(formData),
+  }),
+  [formData]
+);
+```
+
+### useCallback Optimization
+```typescript
+// Event handlers
+const handleClick = useCallback(
+  (event: React.MouseEvent) => {
+    event.preventDefault();
+    processClick(id, data);
+  },
+  [id, data]
+);
+
+// Debounced callbacks
+const debouncedHandler = useCallback(
+  debounce((value: string) => {
+    searchAPI(value);
+  }, 300),
+  []
+);
+
+// Memoized callbacks with cleanup
+const memoizedCallback = useCallback(
+  () => {
+    const subscription = subscribe(id);
+    return () => subscription.unsubscribe();
+  },
+  [id]
+);
+```
+
+## Rendering Optimization
+
+### List Virtualization
+```typescript
+import { VirtualizedList } from 'react-window';
+
+const RowComponent = memo(({ index, style, data }) => (
+  <div style={style}>
+    Item {index}: {data[index].name}
+  </div>
+));
+
+const VirtualList = ({ items }) => (
+  <VirtualizedList
+    height={400}
+    width="100%"
+    itemCount={items.length}
+    itemSize={50}
+    itemData={items}
+  >
+    {RowComponent}
+  </VirtualizedList>
+);
+```
+
+### Lazy Loading
+```typescript
+// Component lazy loading
+const LazyComponent = lazy(() => 
+  import('./HeavyComponent')
+);
+
+// Route-based code splitting
+const routes = [
+  {
+    path: '/dashboard',
+    component: lazy(() => 
+      import('./pages/Dashboard')
+    ),
+  },
+];
+
+// Image lazy loading
+const LazyImage = ({ src, alt }) => (
+  <img
+    loading="lazy"
+    src={src}
+    alt={alt}
+    onLoad={handleImageLoad}
+  />
+);
+```
+
+## Data Management
+
+### Query Optimization
+```typescript
+// Optimized React Query usage
+const useOptimizedQuery = (id: string) => {
+  return useQuery({
+    queryKey: ['data', id],
+    queryFn: () => fetchData(id),
+    staleTime: 5 * 60 * 1000,
+    cacheTime: 30 * 60 * 1000,
+    retry: 2,
+    retryDelay: attemptIndex => 
+      Math.min(1000 * 2 ** attemptIndex, 30000),
+  });
+};
+
+// Parallel queries
+const useParallelQueries = (ids: string[]) => {
+  return useQueries({
+    queries: ids.map(id => ({
+      queryKey: ['item', id],
+      queryFn: () => fetchItem(id),
+      staleTime: 5 * 60 * 1000,
+    })),
+  });
+};
+```
+
+### Cache Management
+```typescript
+// Query client configuration
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,
+      cacheTime: 30 * 60 * 1000,
+      retry: 2,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
+// Cache invalidation
+const invalidateQueries = () => {
+  queryClient.invalidateQueries({
+    predicate: query => 
+      query.queryKey[0] === 'todos',
+  });
+};
+```
+
+## Bundle Optimization
+
+### Code Splitting
+```typescript
+// Dynamic imports
+const importModule = async () => {
+  const module = await import(
+    /* webpackChunkName: "feature" */
+    './features/Feature'
+  );
+  return module.default;
+};
+
+// Route-based splitting
+const routes = {
+  dashboard: {
+    path: '/dashboard',
+    component: lazy(() => 
+      import(
+        /* webpackChunkName: "dashboard" */
+        './pages/Dashboard'
+      )
+    ),
+  },
+};
+```
+
+### Tree Shaking
+```typescript
+// Named exports for better tree shaking
+export const util1 = () => {};
+export const util2 = () => {};
+
+// Avoid default exports
+export { util1, util2 };
+
+// Use specific imports
+import { specific } from 'large-library';
+```
+
+## Resource Loading
+
+### Image Optimization
+```typescript
+// Next.js Image component
+import Image from 'next/image';
+
+const OptimizedImage = () => (
+  <Image
+    src="/large-image.jpg"
+    width={800}
+    height={600}
+    quality={75}
+    priority={false}
+    loading="lazy"
+    placeholder="blur"
+    blurDataURL={blurUrl}
+  />
+);
+
+// Responsive images
+const ResponsiveImage = () => (
+  <picture>
+    <source
+      media="(min-width: 800px)"
+      srcSet="/large.jpg"
+    />
+    <source
+      media="(min-width: 400px)"
+      srcSet="/medium.jpg"
+    />
+    <img src="/small.jpg" alt="Responsive" />
+  </picture>
+);
+```
+
+### Font Loading
+```typescript
+// Font optimization
+const FontOptimization = () => (
+  <Head>
+    <link
+      rel="preload"
+      href="/fonts/font.woff2"
+      as="font"
+      type="font/woff2"
+      crossOrigin="anonymous"
+    />
+    <style>{`
+      @font-face {
+        font-family: 'CustomFont';
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src: url('/fonts/font.woff2') format('woff2');
+      }
+    `}</style>
+  </Head>
+);
+```
+
+## Performance Monitoring
+
+### React Profiler
+```typescript
+// Profiler usage
+const ProfilingComponent = () => (
+  <Profiler
+    id="MyComponent"
+    onRender={(
+      id,
+      phase,
+      actualDuration,
+      baseDuration,
+      startTime,
+      commitTime
+    ) => {
+      if (actualDuration > 16) {
+        console.warn(
+          `Slow render in ${id}: ${actualDuration}ms`
+        );
+      }
+    }}
+  >
+    <MyComponent />
+  </Profiler>
+);
+```
+
+### Performance Metrics
+```typescript
+// Web Vitals monitoring
+export function reportWebVitals(metric: any) {
+  if (metric.label === 'web-vital') {
+    console.log(metric);
+    // Send to analytics
+    analytics.track('Web Vitals', {
+      name: metric.name,
+      value: metric.value,
+      id: metric.id,
+    });
+  }
+}
+
+// Custom performance marks
+const measurePerformance = () => {
+  performance.mark('startOperation');
+  
+  // Operation here
+  
+  performance.mark('endOperation');
+  performance.measure(
+    'operation',
+    'startOperation',
+    'endOperation'
+  );
+};
+```
+
+## Best Practices
+
+### Component Design
+- Keep components focused and small
+- Use proper code splitting
+- Implement proper memoization
+- Optimize re-renders
+- Use appropriate lazy loading
+
+### Data Management
+- Implement proper caching
+- Use optimistic updates
+- Batch state updates
+- Minimize network requests
+- Use appropriate data structures
+
+### Resource Loading
+- Optimize image loading
+- Implement proper code splitting
+- Use appropriate caching
+- Optimize font loading
+- Minimize bundle size
+
+### Monitoring and Testing
+- Use React Profiler
+- Monitor Web Vitals
+- Implement performance tests
+- Set performance budgets
+- Monitor runtime performance 

@@ -1,0 +1,61 @@
+---
+description: UI Guidelines for Monarch using Next.js 15, React 19, and Tailwind 4.0
+globs: ["*.tsx", "*.css", "*.module.css"]
+---
+# UI Guidelines
+
+## Theme System
+- Use OKLCH color space for enhanced vibrancy
+- Implement complete dark/light mode using next-themes
+- Configure CSS variables for theme tokens
+- Support system preference detection
+
+## Component Usage
+### ShadCN UI Components
+✅ Use pre-built components for consistency:
+- Dialog, Sheet, Card for containers
+- Form, Input, Select for data entry
+- Navigation Menu, Tabs for navigation
+- Popover, HoverCard for overlays
+- Command for search interfaces
+
+### Custom Components
+- Keep components small and focused
+- Use TypeScript for type safety
+- Implement proper error boundaries
+- Add comprehensive JSDoc comments
+- Include Storybook documentation
+
+### Collapsible Components
+- Default to collapsed state for large content areas
+- Use ChevronDown icon with rotation transform for toggle
+- Include ARIA labels for accessibility
+- Provide smooth animation transitions between states
+- When appropriate, add alternative button/text to expand content
+
+## Styling Best Practices
+✅ Use Tailwind v4.0 utilities:
+- Use semantic classes (bg-background/text-foreground)
+- Implement responsive design utilities
+- Apply animation configurations
+- Use custom radius and spacing values
+
+❌ Avoid:
+- Direct color values
+- Inline styles
+- Non-semantic class names
+- Unmaintainable animations
+
+## Interactive Canvas
+- Use React-Konva for canvas operations
+- Implement smooth animations
+- Ensure responsive behavior
+- Handle touch and mouse events
+- Optimize rendering performance
+
+## Accessibility
+- Ensure WCAG 2.1 compliance
+- Test with screen readers
+- Support keyboard navigation
+- Maintain proper contrast ratios
+- Use semantic HTML elements 

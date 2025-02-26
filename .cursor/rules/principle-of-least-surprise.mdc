@@ -1,0 +1,38 @@
+---
+description: Principle of Least Surprise for Monarch Project
+globs: ["*.ts", "*.tsx", "*.py", "*.sql"]
+---
+
+# Principle of Least Surprise
+
+## Core Guidelines
+- Follow established patterns in Next.js and Django
+- Use conventional naming across the codebase
+- Maintain consistent file structure
+- Keep code behavior predictable
+
+## Implementation Details
+- Use standard Next.js App Router conventions
+- Follow Django REST Framework patterns
+- Implement familiar ShadCN UI component patterns
+- Maintain consistent API response formats
+- Use standard CrewAI workflow patterns
+
+## File Organization
+- Follow the established project structure
+- Keep related files together
+- Use conventional file naming
+- Maintain consistent import patterns
+
+## Code Style
+- Follow TypeScript conventions
+- Use standard React patterns and hooks
+- Implement familiar error handling patterns
+- Keep component props intuitive
+- Use descriptive variable names
+
+## Documentation
+- Document any necessary deviations
+- Explain complex implementations
+- Maintain clear API documentation
+- Include usage examples

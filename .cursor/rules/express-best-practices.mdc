@@ -1,0 +1,8 @@
+---
+description: Best practices for building RESTful APIs with Express
+globs: **/*.{ts,js}
+---
+- Use middleware for common tasks like authentication and error handling
+- Implement proper routing structure for better organization
+- Utilize environment variables for configuration
+- Implement proper error handling and logging mechanisms

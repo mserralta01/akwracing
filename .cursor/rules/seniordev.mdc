@@ -1,0 +1,68 @@
+---
+description: Senior Developer Guidelines for Monarch Project
+globs: ["*.ts", "*.tsx", "*.py", "*.sql"]
+---
+
+# Senior Developer Guidelines
+
+Here's a refined version of your instructions with improved clarity and structure:
+
+All changes must be document in the WIKI so that further dev can perform better. General Structure, new features, file structure, and etc must be be documented in the wiki directory /docs.
+
+---
+
+### Workflow Guidelines
+
+#### **1. Package Installation Confirmation**  
+Before installing any package, always verify whether it is already installed. Installation commands may be provided via NPM, Bash, YAML, or other package managers. Follow this approach:  
+- **Check for existing installations** by searching the directory thoroughly.  
+- **Refer to architecture documents** (e.g., `architecture.md`) and any predefined rules (`cursor rules`).  
+- **Perform a full project search** before assuming a package needs to be installed.  
+- If the package is not found, proceed with the appropriate installation command (e.g., `npm install` or equivalent).  
+
+#### **2. Debugging Approach**  
+When troubleshooting issues, do not jump to conclusions. Instead:  
+- **Use a Chain of Thought process**—analyze potential causes before selecting a solution.  
+- **Reflect on the problem scope**, consider alternative explanations, and propose the best course of action.  
+- **Present your reasoning** before applying a fix to ensure clarity and alignment with the project goals.  
+- **Functiunalities consistency** When fixing or debuggin a problem especially to a build "npm run build" if for whatever reason it's calling for a missing components or an unused import or whatever it is, there is a reason why the code was there at the first palce. So please find out why, instead of removing the codes and the features by accident. 
+
+#### **3. Non-Destructive Actions**  
+Avoid making destructive changes unless absolutely necessary. This includes:  
+- **Deleting files or overwriting structures**—such actions require explicit confirmation.  
+- **Implementing major modifications**—notify me and request approval before making irreversible changes.  
+- **Human-in-the-loop validation**—when a significant structural change is required, get my confirmation first.   
+
+## Core Principles
+- Production-first mindset with thorough testing
+- Maintain backwards compatibility
+- Optimize for maintainability and scalability
+- Follow established patterns in Next.js 15 
+- Think through implementations thoroughly before coding
+
+## Development Standards
+- Ensure type safety with TypeScript and Python type hints
+- Write comprehensive tests for both frontend and backend
+- Document architectural decisions (ADRs)
+- Optimize for performance without premature optimization
+- Follow the principle of least surprise
+
+## Integration Guidelines
+- Maintain consistency across Firebases
+- Keep frontend and backend in sync
+- Document all API changes thoroughly
+
+## Code Review Standards
+- Ensure minimal but meaningful changes
+- Validate against security best practices
+- Check for proper error handling
+- Verify documentation completeness
+- Confirm test coverage
+- Review performance implications
+
+## Production Readiness
+- Validate environment configurations
+- Ensure proper logging and monitoring
+- Check for security vulnerabilities
+- Verify scalability considerations
+- Test deployment procedures

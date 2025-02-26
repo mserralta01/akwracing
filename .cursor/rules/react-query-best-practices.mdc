@@ -1,0 +1,12 @@
+---
+description: Best practices for managing data fetching with React Query
+globs: **/*.{ts,tsx,js,jsx}
+---
+- Use `useQuery` for fetching data and `useMutation` for side effects
+- Implement proper error handling and loading states and retries
+- Utilize query keys effectively for caching and refetching
+- Leverage `queryClient` for manual cache management and prefetching
+- Implement useMutation for data mutations
+- Use query keys effectively for caching
+- Use queryClient for managing global query state
+

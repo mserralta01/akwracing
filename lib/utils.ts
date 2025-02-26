@@ -25,3 +25,19 @@ export const formatCurrency = (amount: number): string => {
     maximumFractionDigits: 2
   }).format(amount);
 };
+
+/**
+ * Strips HTML tags from a string
+ * @param html - The HTML string to strip tags from
+ * @returns Plain text without HTML tags
+ */
+export const stripHtmlTags = (html: string): string => {
+  if (!html) return '';
+  
+  // Create a temporary element and set its content to the HTML string
+  const tempElement = document.createElement('div');
+  tempElement.innerHTML = html;
+  
+  // Return the text content
+  return tempElement.textContent || tempElement.innerText || '';
+};

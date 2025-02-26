@@ -1,201 +1,123 @@
-#Invoice Management System
+# AKW Racing Academy
 
 ## Overview
-A comprehensive invoice management system built to be sold as a sAAS platform to handle customer billing, payments, and financial operations. The application provides features for managing customers, creating and sending invoices, processing payments, and tracking transactions.
+
+AKW Racing Academy is a premier karting academy located in Wellington, FL that provides professional race training for aspiring racers of all skill levels. The academy partners with Piquet Race Park to offer a comprehensive racing education environment with state-of-the-art facilities and equipment.
+
+## Application Purpose
+
+This Next.js application serves as the official website and management system for AKW Racing Academy, providing:
+
+1. **Public-facing website** - Showcasing academy offerings, facilities, and instructors
+2. **Course management** - Browsing, enrollment, and management of racing courses
+3. **Administrative tools** - For managing courses, instructors, facilities, and student data
+4. **User authentication** - Secure access for students, parents, and administrators
 
 ## Tech Stack
 
-### Frontend
-- **React 18.3.1** - Core UI framework
-- **TypeScript** - Type safety and developer experience
-- **Vite** - Build tool and development server
-- **TailwindCSS** - Utility-first CSS framework
-- **Radix UI** - Accessible component primitives
-- **Lucide React** - Icon library
-- **React Router** - Client-side routing
-- **React Query** - Server state management
-- **React Hook Form** - Form handling
-- **Recharts** - Data visualization
-- **TipTap** - Rich text editor for email templates
+- **Frontend**: Next.js 15, React 19, TailwindCSS 4.0
+- **UI Components**: Shadcn UI, Radix UI, Framer Motion
+- **Authentication**: Firebase Authentication
+- **Database**: Firestore
+- **Storage**: Firebase Storage
+- **Forms**: React Hook Form with Zod validation
+- **Data Fetching**: TanStack Query (React Query)
+- **Content Editing**: Tiptap Rich Text Editor
 
-### Backend & Services
-- **Firebase**
-  - Authentication (Email/Password and Google Sign-In)
-  - Firestore (Database)
-  - Storage (File storage)
-- **SendGrid** - Email service for invoice delivery
-- **NMI (Network Merchants Inc)** - Payment processing
+## Key Features
 
-## Core Features
+### Public Website
+- **Homepage**: Hero section, academy information, benefits, programs, facilities, and contact form
+- **Courses Directory**: Browse available racing courses by level and date
+- **Instructor Profiles**: Information about racing instructors and their expertise
+- **Facility Information**: Details about racing tracks and training centers
+- **Team Information**: Academy staff and leadership
 
-### Authentication
-- Email/Password login
-- Google OAuth integration
-- Protected routes
-- Session management
+### Student Experience
+- **Course Enrollment**: Registration for available racing programs
+- **Equipment Management**: Access to racing equipment and gear
+- **Calendar**: Schedule of classes, events, and racing competitions
+- **Payment Processing**: Secure payment for courses and equipment
 
-### Customer Management
-- Customer profiles with detailed information
-- Customer type categorization (Owner/Renter)
-- Customer payment history
-- Notes and preferences tracking
+### Admin Portal
+- **Course Management**: Create, edit, and delete course offerings
+- **Student Management**: View and manage student information and progress
+- **Instructor Scheduling**: Assign instructors to courses and sessions
+- **Facility Management**: Manage information about training facilities
+- **Content Management**: Update website content and information
 
-### Invoice Management
-- Create, edit, and send invoices
-- Line item management
-- Tax calculation
-- Professional PDF generation using @react-pdf/renderer
-- Email delivery with customizable templates
-- Payment status tracking
+## Application Structure
 
-### Payment Processing
-- Credit card processing
-- ACH/Bank transfer support
-- Virtual terminal for manual payments
-- Platform fee handling
-- Refund processing
+### Frontend Structure
+- `app/`: Next.js app router pages and layouts
+- `components/`: Reusable UI components
+  - `admin/`: Administrative interface components
+  - `auth/`: Authentication components
+  - `courses/`: Course-related components
+  - `enrollment/`: Enrollment process components
+  - `equipment/`: Equipment management components
+  - `facilities/`: Facility information components
+  - `layout/`: Layout components
+  - `navigation/`: Navigation components
+  - `payment/`: Payment processing components
+  - `sections/`: Homepage section components
+  - `team/`: Team profile components
+  - `ui/`: Base UI components from Shadcn UI
+- `contexts/`: React context providers
+- `hooks/`: Custom React hooks
+- `lib/`: Utility functions and services
+  - `config/`: Configuration files
+  - `constants/`: Application constants
+  - `firebase/`: Firebase configuration and helpers
+  - `services/`: API service functions
+  - `utils/`: Utility helper functions
+- `providers/`: React providers
+- `public/`: Static assets
+- `types/`: TypeScript type definitions
 
-### Transaction Management
-- Transaction history
-- Payment status tracking
-- Refund management
-- Detailed transaction records
-
-### Email System
-- Customizable email templates
-- Rich text editor
-- Template variables
-- Preview functionality
-- SendGrid integration
-
-### Settings & Configuration
-- Company profile management
-- Payment settings
-- Email template customization
-- Tax rate configuration
-- Invoice numbering settings
-
-## Project Structure
-
-```
-src/
-├── components/         # Reusable UI components
-│   ├── ui/            # Base UI components
-│   └── ...            # Feature-specific components
-├── lib/               # Utility functions and service integrations
-├── pages/             # Main application pages
-├── types/             # TypeScript type definitions
-└── styles/            # Global styles and Tailwind config
-```
-
-### Key Components
-
-#### UI Components
-- `Button`, `Card`, `Dialog`, `Input`, etc. - Base UI components built on Radix UI
-- `EmailEditor` - Rich text editor for email templates
-- `PaymentPreview` - Payment form preview
-- `Layout` - Main application layout with navigation
-
-#### Pages
-- `Dashboard` - Overview and metrics
-- `Customers` - Customer management
-- `Invoices` - Invoice creation and management
-- `VirtualTerminal` - Manual payment processing
-- `Transactions` - Transaction history and management
-- `Settings` - Application configuration
-
-#### Services
-- `firebase.ts` - Firebase configuration and initialization
-- `api.ts` - API functions for data operations
-- `email.ts` - Email service integration
-- `nmi.ts` - Payment processing integration
-
-## Development Guidelines
-
-### Code Style
-- Use TypeScript for all new code
-- Follow ESLint configuration
-- Use functional components with hooks
-- Implement proper error handling
-- Add appropriate loading states
-- Maintain type safety
-
-### Component Guidelines
-- Keep components focused and single-responsibility
-- Use composition over inheritance
-- Implement proper prop validation
-- Handle loading and error states
-- Use proper semantic HTML
-- Ensure accessibility compliance
-
-### State Management
-- Use React Query for server state
-- Use local state for UI-specific state
-- Implement proper loading indicators
-- Handle errors gracefully
-- Cache data appropriately
-
-### Security Considerations
-- Implement proper authentication checks
-- Use Firebase security rules
-- Validate all user input
-- Secure API endpoints
-- Handle sensitive data properly
-- Use environment variables for secrets
-
-## Environment Setup
-
-Required environment variables:
-```env
-VITE_FIREBASE_API_KEY=
-VITE_FIREBASE_AUTH_DOMAIN=
-VITE_FIREBASE_PROJECT_ID=
-VITE_FIREBASE_STORAGE_BUCKET=
-VITE_FIREBASE_MESSAGING_SENDER_ID=
-VITE_FIREBASE_APP_ID=
-VITE_FIREBASE_MEASUREMENT_ID=
-VITE_SENDGRID_API_KEY=
-```
+### Backend Services
+- Firebase Authentication for user management
+- Firestore for database storage
+- Firebase Storage for file uploads
+- Firebase Functions for serverless backend logic
 
 ## Getting Started
 
+### Prerequisites
+- Node.js 18+ 
+- npm or yarn
+- Firebase project
+
+### Installation
 1. Clone the repository
-2. Install dependencies: `npm install`.
-3. Set up environment variables
-4. Start development server: `npm run dev`
-5. Build for production: `npm run build`
+2. Install dependencies with `npm install` or `yarn`
+3. Set up environment variables in `.env.local`
+4. Run the development server with `npm run dev` or `yarn dev`
+5. Open [http://localhost:3000](http://localhost:3000) to view the application
 
-## Future Improvements
+### Environment Variables
+The application requires several environment variables for Firebase and other service configurations:
 
-### Planned Features
-- Recurring invoices
-- Batch invoice processing
-- Advanced reporting
-- Customer portal
-- Mobile app integration
-- Multi-currency support
-- Inventory management
-- API documentation
-- Webhook integration
-- Automated testing
+```
+NEXT_PUBLIC_FIREBASE_API_KEY=
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
+NEXT_PUBLIC_FIREBASE_APP_ID=
+NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=
+```
 
-### Technical Debt
-- Implement comprehensive testing
-- Add error boundaries
-- Improve performance optimization
-- Enhance accessibility
-- Add documentation
-- Implement CI/CD
-- Add logging system
-- Improve error handling
+## Development Guidelines
 
-## Contributing
+- Follow the TypeScript best practices for type safety
+- Use React Hooks for state management
+- Follow the component structure in the existing codebase
+- Implement responsive designs using TailwindCSS
+- Use Shadcn UI components for consistent UI
+- Ensure Firebase security rules are properly configured
+- Write comprehensive tests for critical functionality
 
-1. Follow the established code style
-2. Write meaningful commit messages
-3. Document changes and new features
-4. Test thoroughly before submitting PRs
-5. Keep PRs focused and single-purpose
+## Deployment
 
-## License
-Proprietary software for Ocean Cruises LLC
+The application is configured for deployment on Vercel or other Next.js-compatible hosting platforms. Firebase hosting can also be used with appropriate build configurations. 

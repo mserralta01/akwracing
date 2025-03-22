@@ -54,7 +54,7 @@ const formSchema = z.object({
   endDate: z.string().min(1, "End date is required"),
   maxStudents: z.number().min(1, "Maximum students must be at least 1"),
   availableSpots: z.number().min(0, "Available spots cannot be negative"),
-  imageUrl: z.string().optional(),
+  imageUrl: z.string().optional().default(""),
   instructorId: z.string().optional(),
   location: z.string().min(1, "Location is required"),
   featured: z.boolean().default(false),

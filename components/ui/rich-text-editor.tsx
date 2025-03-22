@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import TextAlign from '@tiptap/extension-text-align'
@@ -270,7 +270,7 @@ export function RichTextEditor({
         TextStyle,
         Color,
       ],
-      content: htmlContent,
+      content: content,
       editorProps: {
         attributes: {
           class: cn(
@@ -288,10 +288,18 @@ export function RichTextEditor({
       injectCSS: true,
       parseOptions: {
         preserveWhitespace: true,
-      }
+      },
+      immediatelyRender: false
     },
-    [htmlContent]
+    []
   );
+
+  useEffect(() => {
+    if (editor && content !== htmlContent) {
+      setHtmlContent(content);
+      editor.commands.setContent(content);
+    }
+  }, [content, editor, htmlContent]);
 
   const handleHtmlSourceChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const html = e.target.value;

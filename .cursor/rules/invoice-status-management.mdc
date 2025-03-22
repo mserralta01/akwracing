@@ -1,0 +1,95 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Invoice Status Management Best Practices
+
+## Status Lifecycle
+
+The invoice system manages a clear status lifecycle:
+
+1. **Draft** → Initial state when invoice is created
+2. **Sent** → Invoice emailed to customer
+3. **Past Due** → Invoice due date has passed (1+ days)
+4. **Paid** → Payment received and processed
+
+## Terminology and Display Standards
+
+Consistent terminology must be maintained across the application:
+
+- The database field in Firebase uses `overdue` as the status key
+- The UI displays this as "PAST DUE" (not "OVERDUE") in all components
+- Status colors follow these standards:
+  - Draft: `bg-yellow-100 text-yellow-800`
+  - Sent: `bg-blue-100 text-blue-800`
+  - Paid: `bg-green-100 text-green-800`
+  - Past Due: `bg-red-600 text-white` (solid red with white text)
+
+## Past Due Detection Implementation
+
+Past due detection logic follows these rules:
+
+```typescript
+// Convert dates to beginning of day for accurate comparison
+const today = new Date();
+today.setHours(0, 0, 0, 0);
+
+const dueDate = new Date(invoice.dueDate);
+dueDate.setHours(0, 0, 0, 0);
+
+// Add one day to due date to ensure we're only marking as past due
+// the day AFTER the due date
+const dueDatePlusOne = new Date(dueDate);
+dueDatePlusOne.setDate(dueDatePlusOne.getDate() + 1);
+
+// If today is on or after dueDatePlusOne, it's past due
+return today >= dueDatePlusOne;
+```
+
+## Paid Invoice Protection
+
+Paid invoices should never be editable:
+
+1. In the invoice list, replace the edit button with a view-only button
+2. In the `NewInvoice` component, implement a redirect:
+
+```typescript
+// At the beginning of the component
+useEffect(() => {
+  if (invoice && invoice.status === 'paid') {
+    showNotification({
+      title: "Information",
+      message: "Paid invoices cannot be edited",
+      type: "info"
+    });
+    navigate(`/invoices`);
+  }
+}, [invoice]);
+```
+
+## Transaction Records
+
+When an invoice becomes past due:
+
+1. Create a transaction record in the `transactions` collection
+2. Use the format:
+
+```typescript
+const transactionData = {
+  date: new Date().toISOString().split('T')[0],
+  customerId: invoice.customerId,
+  customerName: invoice.customerName,
+  amount: invoice.total,
+  status: 'overdue' as const,
+  cardLast4: '',
+  transactionId: `OVERDUE-${invoice.invoiceNumber}`,
+  description: `Overdue invoice #${invoice.invoiceNumber}`,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  companyId: invoice.companyId,
+  platformFeeEnabled: false,
+  platformFeePercentage: 0,
+  platformFeeAmount: 0
+};
+``` 

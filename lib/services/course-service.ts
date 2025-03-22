@@ -117,7 +117,7 @@ export const courseService = {
     course: Omit<Course, "id" | "slug" | "createdAt" | "updatedAt">,
     imageFile?: File
   ): Promise<Course> {
-    let imageUrl: string | undefined;
+    let imageUrl = "";
 
     if (imageFile) {
       const storageRef = ref(storage, `courses/${Date.now()}_${imageFile.name}`);
@@ -149,7 +149,7 @@ export const courseService = {
     course: Partial<Omit<Course, "id" | "slug" | "createdAt" | "updatedAt">>,
     imageFile?: File
   ): Promise<void> {
-    let imageUrl: string | undefined;
+    let imageUrl: string | null = null;
 
     if (imageFile) {
       const storageRef = ref(storage, `courses/${Date.now()}_${imageFile.name}`);

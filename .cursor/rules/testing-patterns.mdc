@@ -1,0 +1,304 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Testing Patterns Guide
+
+## Overview
+This guide outlines testing patterns and best practices for the project, focusing on React Testing Library, Jest, and Cypress.
+
+## Unit Testing
+
+### Component Testing
+```typescript
+import { render, screen, fireEvent } from '@testing-library/react';
+import { MyComponent } from './MyComponent';
+
+describe('MyComponent', () => {
+  it('renders correctly', () => {
+    render(<MyComponent />);
+    expect(screen.getByRole('button')).toBeInTheDocument();
+  });
+
+  it('handles user interaction', () => {
+    render(<MyComponent />);
+    fireEvent.click(screen.getByRole('button'));
+    expect(screen.getByText('Clicked')).toBeInTheDocument();
+  });
+});
+```
+
+### Hook Testing
+```typescript
+import { renderHook, act } from '@testing-library/react-hooks';
+import { useMyHook } from './useMyHook';
+
+describe('useMyHook', () => {
+  it('updates state correctly', () => {
+    const { result } = renderHook(() => useMyHook());
+    act(() => {
+      result.current.update();
+    });
+    expect(result.current.value).toBe('updated');
+  });
+});
+```
+
+### Context Testing
+```typescript
+import { render, screen } from '@testing-library/react';
+import { MyContext } from './MyContext';
+
+const wrapper = ({ children }) => (
+  <MyContext.Provider value={{ data: 'test' }}>
+    {children}
+  </MyContext.Provider>
+);
+
+describe('MyContext', () => {
+  it('provides context value', () => {
+    render(<MyComponent />, { wrapper });
+    expect(screen.getByText('test')).toBeInTheDocument();
+  });
+});
+```
+
+## Integration Testing
+
+### API Integration
+```typescript
+import { rest } from 'msw';
+import { setupServer } from 'msw/node';
+
+const server = setupServer(
+  rest.get('/api/data', (req, res, ctx) => {
+    return res(ctx.json({ data: 'test' }));
+  })
+);
+
+beforeAll(() => server.listen());
+afterEach(() => server.resetHandlers());
+afterAll(() => server.close());
+
+describe('API Integration', () => {
+  it('fetches data correctly', async () => {
+    render(<DataComponent />);
+    expect(await screen.findByText('test')).toBeInTheDocument();
+  });
+});
+```
+
+### Form Testing
+```typescript
+describe('Form Integration', () => {
+  it('submits form data correctly', async () => {
+    render(<Form />);
+    
+    fireEvent.change(screen.getByLabelText('Email'), {
+      target: { value: 'test@example.com' },
+    });
+    
+    fireEvent.click(screen.getByRole('button', { name: 'Submit' }));
+    
+    expect(await screen.findByText('Success')).toBeInTheDocument();
+  });
+});
+```
+
+## E2E Testing
+
+### Page Navigation
+```typescript
+describe('Navigation', () => {
+  it('navigates between pages', () => {
+    cy.visit('/');
+    cy.get('[data-testid="nav-link"]').click();
+    cy.url().should('include', '/about');
+  });
+});
+```
+
+### User Flows
+```typescript
+describe('User Flow', () => {
+  it('completes checkout process', () => {
+    cy.login();
+    cy.visit('/products');
+    cy.get('[data-testid="add-to-cart"]').click();
+    cy.get('[data-testid="checkout"]').click();
+    cy.get('[data-testid="complete-order"]').click();
+    cy.url().should('include', '/order-confirmation');
+  });
+});
+```
+
+## Test Organization
+
+### File Structure
+```
+src/
+  components/
+    Button/
+      Button.tsx
+      Button.test.tsx
+      Button.stories.tsx
+  hooks/
+    useAuth/
+      useAuth.ts
+      useAuth.test.ts
+  utils/
+    format/
+      format.ts
+      format.test.ts
+```
+
+### Test Naming
+- `ComponentName.test.tsx` for component tests
+- `hookName.test.ts` for hook tests
+- `utilName.test.ts` for utility tests
+
+## Best Practices
+
+### Component Testing
+- Test component behavior, not implementation
+- Use semantic queries (getByRole, getByLabelText)
+- Test accessibility features
+- Test error states
+- Test loading states
+
+### Hook Testing
+- Test all possible states
+- Test side effects
+- Test cleanup functions
+- Test error handling
+- Test async behavior
+
+### Integration Testing
+- Test component interactions
+- Test data flow
+- Test error boundaries
+- Test loading states
+- Test form submissions
+
+### E2E Testing
+- Test critical user paths
+- Test error scenarios
+- Test data persistence
+- Test authentication flows
+- Test responsive behavior
+
+## Testing Utilities
+
+### Custom Renders
+```typescript
+const customRender = (ui: React.ReactElement, options = {}) =>
+  render(ui, {
+    wrapper: ({ children }) => (
+      <Providers>
+        {children}
+      </Providers>
+    ),
+    ...options,
+  });
+```
+
+### Test Helpers
+```typescript
+export const waitForLoadingToFinish = () =>
+  screen.findByRole('status', { hidden: true });
+
+export const fillForm = async (fields: Record<string, string>) => {
+  for (const [label, value] of Object.entries(fields)) {
+    fireEvent.change(screen.getByLabelText(label), {
+      target: { value },
+    });
+  }
+};
+```
+
+## Mocking
+
+### API Mocking
+```typescript
+jest.mock('axios', () => ({
+  get: jest.fn(() => Promise.resolve({ data: {} })),
+  post: jest.fn(() => Promise.resolve({ data: {} })),
+}));
+```
+
+### Component Mocking
+```typescript
+jest.mock('./ComplexComponent', () => ({
+  ComplexComponent: () => <div>Mocked Component</div>,
+}));
+```
+
+## Performance Testing
+
+### Component Performance
+```typescript
+describe('Performance', () => {
+  it('renders without excessive re-renders', () => {
+    const renderCount = jest.fn();
+    render(<Component onRender={renderCount} />);
+    expect(renderCount).toHaveBeenCalledTimes(1);
+  });
+});
+```
+
+### Load Testing
+```typescript
+describe('Load Testing', () => {
+  it('handles large data sets', () => {
+    const largeDataSet = Array.from({ length: 1000 }, (_, i) => ({
+      id: i,
+      name: `Item ${i}`,
+    }));
+    render(<List items={largeDataSet} />);
+    expect(screen.getAllByRole('listitem')).toHaveLength(1000);
+  });
+});
+```
+
+## Accessibility Testing
+
+### A11y Testing
+```typescript
+import { axe, toHaveNoViolations } from 'jest-axe';
+
+expect.extend(toHaveNoViolations);
+
+describe('Accessibility', () => {
+  it('has no accessibility violations', async () => {
+    const { container } = render(<Component />);
+    const results = await axe(container);
+    expect(results).toHaveNoViolations();
+  });
+});
+```
+
+## Test Coverage
+
+### Coverage Requirements
+- Minimum 80% line coverage
+- Minimum 70% branch coverage
+- Critical paths: 100% coverage
+- UI components: 90% coverage
+- Utility functions: 100% coverage
+
+### Coverage Reporting
+```json
+{
+  "jest": {
+    "coverageThreshold": {
+      "global": {
+        "branches": 70,
+        "functions": 80,
+        "lines": 80,
+        "statements": 80
+      }
+    }
+  }
+}
+``` 

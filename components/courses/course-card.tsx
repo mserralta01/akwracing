@@ -6,7 +6,7 @@ import { Calendar, Users, DollarSign } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { generateCourseSlug } from "@/lib/utils/slug";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, stripHtmlTags } from "@/lib/utils";
 
 interface CourseCardProps {
   course: Course;
@@ -75,7 +75,7 @@ export function CourseCard({ course }: CourseCardProps) {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <p className="text-muted-foreground">{course.shortDescription}</p>
+          <p className="text-muted-foreground">{stripHtmlTags(course.shortDescription)}</p>
           <div className="space-y-2">
             <div className="flex items-center text-sm">
               <Calendar className="h-4 w-4 mr-2 text-racing-red" />

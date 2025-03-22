@@ -1,0 +1,400 @@
+---
+description: 
+globs: 
+---
+# Security Best Practices
+
+## Overview
+This guide outlines comprehensive security best practices for React applications, covering authentication, data protection, API security, and common vulnerabilities.
+
+## Authentication
+
+### JWT Implementation
+```typescript
+// JWT token management
+interface TokenPayload {
+  sub: string;
+  exp: number;
+  iat: number;
+  roles: string[];
+}
+
+const useAuth = () => {
+  const [token, setToken] = useState<string | null>(null);
+  
+  const login = async (credentials: Credentials) => {
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(credentials),
+      });
+      
+      if (!response.ok) throw new Error('Login failed');
+      
+      const { token } = await response.json();
+      setToken(token);
+      securelyStoreToken(token);
+    } catch (error) {
+      handleAuthError(error);
+    }
+  };
+  
+  const logout = () => {
+    setToken(null);
+    removeStoredToken();
+  };
+  
+  return { token, login, logout };
+};
+```
+
+### Secure Token Storage
+```typescript
+// Secure token storage with HttpOnly cookies
+const securelyStoreToken = (token: string) => {
+  document.cookie = `auth_token=${token}; path=/; Secure; HttpOnly; SameSite=Strict`;
+};
+
+const removeStoredToken = () => {
+  document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+};
+
+// Token refresh implementation
+const useTokenRefresh = () => {
+  useEffect(() => {
+    const refreshToken = async () => {
+      try {
+        const response = await fetch('/api/auth/refresh');
+        if (!response.ok) throw new Error('Refresh failed');
+        
+        const { token } = await response.json();
+        securelyStoreToken(token);
+      } catch (error) {
+        handleAuthError(error);
+      }
+    };
+    
+    const interval = setInterval(refreshToken, 15 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+};
+```
+
+## Data Protection
+
+### Input Sanitization
+```typescript
+// XSS prevention
+const sanitizeInput = (input: string): string => {
+  return DOMPurify.sanitize(input, {
+    ALLOWED_TAGS: ['b', 'i', 'em', 'strong'],
+    ALLOWED_ATTR: [],
+  });
+};
+
+// Content Security Policy
+const CSPHeaders = {
+  'Content-Security-Policy': [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: https:",
+    "font-src 'self'",
+    "connect-src 'self' https://api.example.com",
+  ].join('; '),
+};
+```
+
+### Sensitive Data Handling
+```typescript
+// Secure form handling
+interface SensitiveData {
+  creditCard: string;
+  cvv: string;
+  expiryDate: string;
+}
+
+const handleSensitiveData = async (data: SensitiveData) => {
+  try {
+    // Tokenize sensitive data
+    const token = await tokenizeData(data);
+    
+    // Clear sensitive data from memory
+    Object.keys(data).forEach(key => {
+      data[key as keyof SensitiveData] = '';
+    });
+    
+    return token;
+  } catch (error) {
+    handleSecurityError(error);
+    return null;
+  }
+};
+```
+
+## API Security
+
+### Request Protection
+```typescript
+// CSRF protection
+const api = axios.create({
+  baseURL: '/api',
+  headers: {
+    'X-CSRF-Token': getCsrfToken(),
+  },
+  withCredentials: true,
+});
+
+// Rate limiting
+const rateLimitedApi = rateLimit(api, {
+  maxRequests: 100,
+  perMilliseconds: 60000,
+  maxRPS: 10,
+});
+
+// Request validation
+const validateRequest = <T>(
+  data: unknown,
+  schema: z.ZodSchema<T>
+): T => {
+  try {
+    return schema.parse(data);
+  } catch (error) {
+    throw new ValidationError(error);
+  }
+};
+```
+
+### Response Validation
+```typescript
+// Response schema validation
+const responseSchema = z.object({
+  data: z.unknown(),
+  status: z.number(),
+  message: z.string().optional(),
+});
+
+const validateResponse = (response: unknown) => {
+  const validated = responseSchema.safeParse(response);
+  if (!validated.success) {
+    throw new Error('Invalid response format');
+  }
+  return validated.data;
+};
+
+// Error handling
+const handleApiError = (error: unknown) => {
+  if (error instanceof ApiError) {
+    if (error.status === 401) {
+      handleUnauthorized();
+    } else if (error.status === 403) {
+      handleForbidden();
+    }
+  }
+  throw error;
+};
+```
+
+## Authorization
+
+### Role-Based Access Control
+```typescript
+// RBAC implementation
+type Role = 'admin' | 'user' | 'guest';
+
+interface Permission {
+  action: string;
+  resource: string;
+}
+
+const useAuthorization = () => {
+  const { user } = useAuth();
+  
+  const hasPermission = (
+    required: Permission
+  ): boolean => {
+    return checkPermission(user.roles, required);
+  };
+  
+  return { hasPermission };
+};
+
+// Protected route component
+const ProtectedRoute: React.FC<{
+  permission: Permission;
+  children: React.ReactNode;
+}> = ({ permission, children }) => {
+  const { hasPermission } = useAuthorization();
+  
+  if (!hasPermission(permission)) {
+    return <AccessDenied />;
+  }
+  
+  return <>{children}</>;
+};
+```
+
+## Secure Communication
+
+### HTTPS Enforcement
+```typescript
+// HTTPS redirect middleware
+export function withHttps(
+  handler: NextApiHandler
+): NextApiHandler {
+  return (req, res) => {
+    if (!req.secure && process.env.NODE_ENV === 'production') {
+      res.redirect(
+        `https://${req.headers.host}${req.url}`
+      );
+      return;
+    }
+    return handler(req, res);
+  };
+}
+```
+
+### WebSocket Security
+```typescript
+// Secure WebSocket connection
+const useSecureWebSocket = (url: string) => {
+  const socket = useRef<WebSocket | null>(null);
+  const { token } = useAuth();
+  
+  useEffect(() => {
+    socket.current = new WebSocket(url);
+    
+    socket.current.onopen = () => {
+      socket.current?.send(
+        JSON.stringify({ token })
+      );
+    };
+    
+    return () => {
+      socket.current?.close();
+    };
+  }, [url, token]);
+  
+  return socket;
+};
+```
+
+## Security Headers
+
+### Header Configuration
+```typescript
+// Security headers middleware
+export const securityHeaders = {
+  'X-XSS-Protection': '1; mode=block',
+  'X-Frame-Options': 'SAMEORIGIN',
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+};
+
+// Apply security headers
+const withSecurityHeaders = (
+  handler: NextApiHandler
+): NextApiHandler => {
+  return (req, res) => {
+    Object.entries(securityHeaders).forEach(
+      ([header, value]) => {
+        res.setHeader(header, value);
+      }
+    );
+    return handler(req, res);
+  };
+};
+```
+
+## Error Handling
+
+### Secure Error Handling
+```typescript
+// Production error handler
+const handleError = (error: unknown) => {
+  // Log full error details securely
+  logger.error('Error:', {
+    name: error.name,
+    message: error.message,
+    stack: error.stack,
+  });
+  
+  // Return safe error to client
+  return {
+    message: 'An error occurred',
+    code: 'INTERNAL_ERROR',
+  };
+};
+
+// Validation error handler
+const handleValidationError = (error: ValidationError) => {
+  return {
+    message: 'Validation failed',
+    errors: error.errors,
+    code: 'VALIDATION_ERROR',
+  };
+};
+```
+
+## Security Testing
+
+### Security Tests
+```typescript
+describe('Security', () => {
+  it('sanitizes user input', () => {
+    const input = '<script>alert("xss")</script>';
+    const sanitized = sanitizeInput(input);
+    expect(sanitized).not.toContain('script');
+  });
+  
+  it('validates JWT tokens', () => {
+    const token = generateToken();
+    expect(validateToken(token)).toBeTruthy();
+  });
+  
+  it('enforces rate limiting', async () => {
+    const requests = Array(11).fill(null).map(() =>
+      api.get('/endpoint')
+    );
+    
+    await expect(
+      Promise.all(requests)
+    ).rejects.toThrow('Rate limit exceeded');
+  });
+});
+```
+
+## Best Practices
+
+### General Security
+- Use HTTPS everywhere
+- Implement proper authentication
+- Validate all inputs
+- Sanitize all outputs
+- Use security headers
+
+### Data Protection
+- Encrypt sensitive data
+- Use secure storage methods
+- Implement proper access control
+- Handle errors securely
+- Log security events
+
+### API Security
+- Validate all requests
+- Implement rate limiting
+- Use CSRF protection
+- Validate responses
+- Handle errors properly
+
+### Testing
+- Implement security tests
+- Test error handling
+- Validate input handling
+- Test access control
+- Monitor security metrics 

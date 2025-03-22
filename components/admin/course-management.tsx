@@ -195,114 +195,114 @@ export default function CourseManagement() {
             ) : (
               <div className="space-y-4">
                 {filteredCourses.map((course) => (
-                  <Card key={course.id} className="hover:bg-muted/50 transition-colors">
+                  <Card key={course.id} className="hover:bg-muted/50 transition-colors border shadow-sm">
                     <CardContent className="p-6">
                       <div className="flex items-start gap-6">
-                        <div className="relative w-[180px] h-[100px] rounded-lg overflow-hidden flex-shrink-0">
+                        <div className="relative w-[180px] h-[120px] rounded-lg overflow-hidden flex-shrink-0">
                           <OptimizedImage
                             src={course.imageUrl || "/placeholder-course.jpg"}
                             alt={course.title}
                             width={180}
-                            height={100}
-                            className="object-cover"
+                            height={120}
+                            className="object-cover w-full h-full"
                             fallbackSrc="/placeholder-course.jpg"
                           />
                         </div>
-                        <div className="flex flex-1 items-start justify-between">
-                          <div className="space-y-3">
-                            <div className="space-y-1">
-                              <h3 className="text-xl font-semibold">{course.title}</h3>
-                              <p 
-                                className="text-sm text-muted-foreground line-clamp-2"
-                                dangerouslySetInnerHTML={{ __html: course.shortDescription }}
-                              />
+                        <div className="flex flex-1 flex-col">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h3 className="text-2xl font-bold mb-2">{course.title}</h3>
+                              <div className="mb-4">
+                                <Badge className={getLevelBadgeVariant(course.level)}>
+                                  {course.level}
+                                </Badge>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                              <div className="flex items-center gap-1">
-                                <Calendar className="h-4 w-4" />
-                                {new Date(course.startDate).toLocaleDateString()}
+                            <div className="flex items-center gap-4">
+                              <div className="flex flex-col items-center">
+                                <span className="text-sm text-muted-foreground mb-1">
+                                  Featured
+                                </span>
+                                <Switch
+                                  checked={course.featured}
+                                  onCheckedChange={(checked) => handleFeatureToggle(course, checked)}
+                                  className="data-[state=checked]:bg-racing-red"
+                                  disabled={isLoading}
+                                />
                               </div>
                               <div className="flex items-center gap-1">
-                                <MapPin className="h-4 w-4" />
-                                {course.location}
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Users className="h-4 w-4" />
-                                {course.availableSpots} spots
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <DollarSign className="h-4 w-4" />
-                                ${course.price.toLocaleString("en-US", {
-                                  minimumFractionDigits: 2,
-                                  maximumFractionDigits: 2
-                                })}
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => window.open(`/courses/${course.slug}`, "_blank")}
+                                  className="h-8 px-3"
+                                  title="View course"
+                                >
+                                  <ExternalLink className="h-4 w-4 mr-2" />
+                                  View
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleEdit(course.slug)}
+                                  className="h-8 px-3"
+                                  title="Edit course"
+                                >
+                                  <Pencil className="h-4 w-4 mr-2" />
+                                  Edit
+                                </Button>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-8 px-3 hover:bg-destructive/10 hover:text-destructive hover:border-destructive"
+                                      title="Delete course"
+                                    >
+                                      <Trash2 className="h-4 w-4 mr-2" />
+                                      Delete
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Delete Course</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Are you sure you want to delete this course? This action cannot be
+                                        undone.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => handleDelete(course)}
+                                        className="bg-destructive hover:bg-destructive/90"
+                                      >
+                                        Delete
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
                               </div>
                             </div>
                           </div>
-                          <div className="flex items-center gap-4">
-                            <Badge className={getLevelBadgeVariant(course.level)}>
-                              {course.level}
-                            </Badge>
-                            <div className="flex flex-col items-center gap-1">
-                              <span className="text-sm text-muted-foreground">
-                                Featured
-                              </span>
-                              <Switch
-                                checked={course.featured}
-                                onCheckedChange={(checked) => handleFeatureToggle(course, checked)}
-                                className="data-[state=checked]:bg-racing-red"
-                                disabled={isLoading}
-                              />
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => window.open(`/courses/${course.slug}`, "_blank")}
-                                className="h-8 w-8"
-                                title="View course"
-                              >
-                                <ExternalLink className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleEdit(course.slug)}
-                                className="h-8 w-8"
-                                title="Edit course"
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
-                                    title="Delete course"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Delete Course</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Are you sure you want to delete this course? This action cannot be
-                                      undone.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => handleDelete(course)}
-                                      className="bg-destructive hover:bg-destructive/90"
-                                    >
-                                      Delete
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
+                          <div className="mt-auto">
+                            <div className="flex flex-wrap items-center gap-6 text-sm text-muted-foreground">
+                              <div className="flex items-center gap-1">
+                                <Calendar className="h-4 w-4 text-muted-foreground" />
+                                {new Date(course.startDate).toLocaleDateString()}
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <MapPin className="h-4 w-4 text-muted-foreground" />
+                                {course.location}
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Users className="h-4 w-4 text-muted-foreground" />
+                                <span className="font-medium">{course.availableSpots}</span> spots
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <DollarSign className="h-4 w-4 text-muted-foreground" />
+                                <span className="font-bold text-foreground">${course.price.toLocaleString()}</span>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -323,3 +323,4 @@ export default function CourseManagement() {
     </ErrorBoundary>
   );
 }
+

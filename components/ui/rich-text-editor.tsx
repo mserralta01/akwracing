@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import TextAlign from '@tiptap/extension-text-align'
@@ -19,6 +20,7 @@ import {
   AlignCenter,
   AlignRight,
   AlignJustify,
+  Code,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -28,6 +30,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 
 const fontSizes = [
   "12px", "14px", "16px", "18px", "20px", "24px", "30px", "36px"
@@ -53,7 +57,7 @@ const colors = [
   "#ED64A6", // Pink
 ];
 
-const MenuBar = ({ editor }: any) => {
+const MenuBar = ({ editor, showHtmlSource, setShowHtmlSource }: { editor: any, showHtmlSource: boolean, setShowHtmlSource: (value: boolean) => void }) => {
   if (!editor) {
     return null;
   }
@@ -211,6 +215,13 @@ const MenuBar = ({ editor }: any) => {
         >
           <Redo className="h-4 w-4" />
         </Toggle>
+        <Toggle
+          size="sm"
+          pressed={showHtmlSource}
+          onPressedChange={setShowHtmlSource}
+        >
+          <Code className="h-4 w-4" />
+        </Toggle>
       </div>
     </div>
   );
@@ -229,17 +240,37 @@ export function RichTextEditor({
   placeholder,
   className,
 }: RichTextEditorProps) {
+  const [showHtmlSource, setShowHtmlSource] = useState(false);
+  const [htmlContent, setHtmlContent] = useState(content);
+
   const editor = useEditor(
     {
       extensions: [
-        StarterKit,
+        StarterKit.configure({
+          bulletList: {
+            keepMarks: true,
+            keepAttributes: true,
+            HTMLAttributes: {
+              class: 'list-disc pl-4'
+            }
+          },
+          orderedList: {
+            keepMarks: true,
+            keepAttributes: true,
+            HTMLAttributes: {
+              class: 'list-decimal pl-4'
+            }
+          },
+        }),
         TextAlign.configure({
-          types: ['heading', 'paragraph'],
+          types: ['heading', 'paragraph', 'bulletList', 'orderedList'],
+          alignments: ['left', 'center', 'right', 'justify'],
+          defaultAlignment: 'left',
         }),
         TextStyle,
         Color,
       ],
-      content,
+      content: content,
       editorProps: {
         attributes: {
           class: cn(
@@ -249,21 +280,49 @@ export function RichTextEditor({
         },
       },
       onUpdate: ({ editor }) => {
-        onChange(editor.getHTML());
+        const html = editor.getHTML();
+        setHtmlContent(html);
+        onChange(html);
       },
       editable: true,
       injectCSS: true,
       parseOptions: {
         preserveWhitespace: true,
-      }
+      },
+      immediatelyRender: false
     },
     []
   );
 
+  useEffect(() => {
+    if (editor && content !== htmlContent) {
+      setHtmlContent(content);
+      editor.commands.setContent(content);
+    }
+  }, [content, editor, htmlContent]);
+
+  const handleHtmlSourceChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const html = e.target.value;
+    setHtmlContent(html);
+    onChange(html);
+    if (editor) {
+      editor.commands.setContent(html);
+    }
+  };
+
   return (
     <div className="border rounded-md">
-      <MenuBar editor={editor} />
-      <EditorContent editor={editor} />
+      <MenuBar editor={editor} showHtmlSource={showHtmlSource} setShowHtmlSource={setShowHtmlSource} />
+      {showHtmlSource ? (
+        <Textarea
+          value={htmlContent}
+          onChange={handleHtmlSourceChange}
+          className="min-h-[150px] font-mono text-sm p-4 focus:outline-none rounded-none rounded-b-md"
+          placeholder="HTML Source"
+        />
+      ) : (
+        <EditorContent editor={editor} />
+      )}
     </div>
   );
 } 

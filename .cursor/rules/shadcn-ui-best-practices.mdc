@@ -1,0 +1,8 @@
+---
+description: Best practices for using Shadcn UI components
+globs: **/*.{ts,tsx,js,jsx}
+---
+- Follow component naming conventions
+- Use props for customization
+- Implement proper accessibility attributes
+- Utilize dark mode support

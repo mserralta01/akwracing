@@ -1,13 +1,43 @@
 "use client";
 
+import { useEffect, useState } from 'react';
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from 'lucide-react';
 import { useRouter } from "next/navigation";
+import { WebsiteContent, settingsService } from '@/lib/services/settings-service';
 
 export function AboutSection() {
   const router = useRouter();
+  const [content, setContent] = useState<WebsiteContent['about'] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadContent = async () => {
+      try {
+        const websiteContent = await settingsService.getWebsiteContent();
+        console.log('About section loaded:', websiteContent.about);
+        setContent(websiteContent.about);
+      } catch (error) {
+        console.error('Error loading about section content:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadContent();
+  }, []);
+
+  // Fallback content if data is loading or not available
+  const title = content?.title || "Excellence in Racing Education";
+  const description = content?.description || "Located in the heart of Wellington, FL, AKW Racing Academy partners with Piquet Race Park to provide world-class karting education. Our state-of-the-art facility and experienced instructors ensure that every student receives the highest quality training.";
+  const features = content?.features || [
+    "Professional race instructors",
+    "State-of-the-art racing equipment",
+    "Comprehensive training programs"
+  ];
+  const imageUrl = content?.imageUrl || "/images/akwracingtrailor.jpg";
 
   return (
     <section className="relative py-16 lg:py-24 bg-gradient-to-b from-navy-900 to-navy-800">
@@ -33,27 +63,16 @@ export function AboutSection() {
             viewport={{ once: true }}
           >
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-              Excellence in Racing Education
+              {title}
             </h2>
-            <p className="text-gray-300 mb-6">
-              Located in the heart of Wellington, FL, AKW Racing Academy partners with
-              Piquet Race Park to provide world-class karting education. Our state-of-the-art
-              facility and experienced instructors ensure that every student receives
-              the highest quality training.
-            </p>
+            <div className="text-gray-300 mb-6" dangerouslySetInnerHTML={{ __html: description }}></div>
             <div className="space-y-4 text-gray-300">
-              <div className="flex items-center">
-                <ArrowRight className="h-5 w-5 text-racing-red mr-2" />
-                <span>Professional race instructors</span>
-              </div>
-              <div className="flex items-center">
-                <ArrowRight className="h-5 w-5 text-racing-red mr-2" />
-                <span>State-of-the-art racing equipment</span>
-              </div>
-              <div className="flex items-center">
-                <ArrowRight className="h-5 w-5 text-racing-red mr-2" />
-                <span>Comprehensive training programs</span>
-              </div>
+              {features.map((feature, index) => (
+                <div key={index} className="flex items-center">
+                  <ArrowRight className="h-5 w-5 text-racing-red mr-2" />
+                  <span>{feature}</span>
+                </div>
+              ))}
             </div>
             <Button 
               className="mt-8 bg-racing-red hover:bg-red-700"
@@ -71,7 +90,7 @@ export function AboutSection() {
             className="relative h-[400px] rounded-lg overflow-hidden"
           >
             <Image
-              src="/images/akwracingtrailor.jpg"
+              src={imageUrl}
               alt="AKW Racing Academy Facility"
               fill
               className="object-cover"

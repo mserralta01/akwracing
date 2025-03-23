@@ -1,8 +1,69 @@
 ---
 description: Best practices for building RESTful APIs with Express
-globs: **/*.{ts,js}
+globs: **/{api,server,functions}/**/*.{ts,js}
 ---
-- Use middleware for common tasks like authentication and error handling
-- Implement proper routing structure for better organization
-- Utilize environment variables for configuration
-- Implement proper error handling and logging mechanisms
+# Express Best Practices
+
+## API Structure
+- Use a modular structure with separate route files
+- Implement proper middleware for cross-cutting concerns
+- Create consistent controller functions for route handlers
+- Use proper HTTP methods for RESTful operations (GET, POST, PUT, DELETE)
+- Implement proper route naming conventions (/resources/:id)
+
+## Error Handling
+- Create centralized error handling middleware
+- Implement proper error classes for different error types
+- Return consistent error responses with appropriate status codes
+- Log errors properly with contextual information
+- Handle async errors with try/catch or express-async-handler
+
+## Authentication & Authorization
+- Implement proper JWT token validation
+- Use middleware for role-based access control
+- Create proper session management when needed
+- Implement rate limiting for public endpoints
+- Use proper CSRF protection for session-based auth
+
+## Request Validation
+- Validate request parameters, body, and query using middleware
+- Implement Zod or Joi for schema validation
+- Return clear validation error messages
+- Sanitize user inputs to prevent injection attacks
+- Use proper type conversions for incoming data
+
+## Response Formatting
+- Create consistent response structures
+- Use proper HTTP status codes
+- Implement proper content negotiation
+- Use compression for large responses
+- Implement proper pagination for list endpoints
+
+## Performance Optimization
+- Use proper caching strategies
+- Implement database query optimization
+- Create efficient middleware execution chains
+- Use async/await for asynchronous operations
+- Implement proper connection pooling
+
+## Security
+- Implement proper CORS configuration
+- Use Helmet for security headers
+- Validate and sanitize all user inputs
+- Implement proper rate limiting
+- Use HTTPS in production
+- Hide sensitive error details in production
+
+## Firebase Integration
+- Use Firebase Admin SDK for server operations
+- Implement proper authentication middleware
+- Create efficient Firestore queries
+- Use batched writes for related operations
+- Implement proper error handling for Firebase operations
+
+## Testing
+- Create unit tests for controllers and middleware
+- Implement integration tests for API endpoints
+- Use proper mocking for external dependencies
+- Create proper test fixtures for repeated scenarios
+- Test error handling and edge cases

@@ -1,9 +1,63 @@
 ---
 description: Best practices for data visualization with Recharts
-globs: **/*.{ts,tsx}
+globs: **/*.{ts,tsx,js,jsx}
 ---
-- Use responsive containers for adaptive charts
-- Implement custom tooltips for better user experience
-- Use memoization for performance optimization
-- Implement proper data formatting for readability
-- Use animations for smoother transitions
+# Recharts Best Practices
+
+## Chart Configuration
+- Create responsive charts with ResponsiveContainer
+- Use proper margin props to ensure labels and axes are visible
+- Implement consistent chart dimensions across similar visualizations
+- Define proper domains for axes based on data characteristics
+- Use semantic colors from the theme configuration
+
+## Data Formatting
+- Implement proper data transformation before rendering
+- Use appropriate data structures for different chart types
+- Create proper tooltips with formatted values
+- Format dates and numbers consistently across charts
+- Use proper data aggregation techniques for large datasets
+
+## Styling and Theming
+- Use consistent colors for data categories across all charts
+- Implement proper stroke and fill attributes for visual consistency
+- Create custom tooltips for better information display
+- Use proper font sizes and families from the theme
+- Implement consistent grid and axis styling
+
+## Performance Optimization
+- Implement proper memoization for chart components
+- Use isAnimationActive={false} for large datasets
+- Implement data sampling for very large datasets
+- Create proper loading states for data fetching
+- Use windowing techniques for large data tables
+
+## Interactive Features
+- Implement proper click handlers for chart elements
+- Create consistent hover effects across chart types
+- Use ReferenceLine and ReferenceArea for contextual information
+- Implement proper legends with custom formatting
+- Create coordinated visualizations with shared data
+
+## Accessibility
+- Provide proper alt text for charts
+- Implement keyboard navigation for interactive elements
+- Use proper color contrast for data visualization
+- Create text alternatives for chart data
+- Implement proper ARIA attributes for interactive elements
+
+## Chart Types and Selection
+- Use appropriate chart types for different data relationships:
+  - BarChart for categorical comparisons
+  - LineChart for time series and trends
+  - AreaChart for cumulative values
+  - PieChart for part-to-whole relationships
+  - ScatterChart for correlation analysis
+- Select chart types based on data characteristics and user needs
+
+## Racing-Specific Visualizations
+- Create lap time comparison charts with proper formatting
+- Implement race position tracking with appropriate visualizations
+- Use radar charts for driver performance comparison
+- Create proper track maps with position indicators
+- Implement real-time data updates for live racing events

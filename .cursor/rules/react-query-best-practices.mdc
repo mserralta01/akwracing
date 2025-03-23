@@ -2,11 +2,54 @@
 description: Best practices for managing data fetching with React Query
 globs: **/*.{ts,tsx,js,jsx}
 ---
-- Use `useQuery` for fetching data and `useMutation` for side effects
-- Implement proper error handling and loading states and retries
-- Utilize query keys effectively for caching and refetching
-- Leverage `queryClient` for manual cache management and prefetching
-- Implement useMutation for data mutations
-- Use query keys effectively for caching
-- Use queryClient for managing global query state
+# React Query Best Practices
+
+## Query Structure
+- Use semantic query keys with proper namespacing (e.g., ['users', userId])
+- Implement proper error handling in query functions
+- Create custom hooks for reusable queries
+- Extract query logic from components for better separation of concerns
+- Use proper TypeScript types for query results and error handling
+
+## Caching and Invalidation
+- Configure appropriate staleTime and cacheTime for different data types
+- Use proper query invalidation strategies with queryClient.invalidateQueries()
+- Implement optimistic updates for better user experience
+- Use query cancellation for abandoned requests
+- Implement proper refetching strategies (on window focus, on mount, etc.)
+
+## Firebase Integration
+- Create abstraction layer between Firebase and React Query
+- Implement proper error handling for Firebase operations
+- Use QueryClient's setQueryData for optimistic updates
+- Create proper cache expiration strategies for Firebase data
+- Implement proper data transformation before caching
+
+## Performance Optimization
+- Implement proper selection of data with select option
+- Use enabled option to control when queries execute
+- Implement proper dependent queries with enabled condition
+- Use suspense mode appropriately with Suspense boundaries
+- Implement proper pagination and infinite queries for large datasets
+
+## Mutations
+- Create proper mutation hooks with useMutation
+- Implement optimistic updates with onMutate callback
+- Use proper error handling and rollback with onError
+- Update related queries on successful mutations
+- Create reusable mutation hooks for common operations
+
+## Server State vs. Client State
+- Separate server state (React Query) from client state (React state)
+- Implement proper loading UI with isLoading and isFetching
+- Use isError and error properties for error states
+- Create proper initial data from cache or defaults
+- Implement proper refetch on window focus behavior
+
+## Advanced Patterns
+- Use query prefetching for anticipated data needs
+- Implement proper deduplication of queries
+- Create custom query client for testing
+- Use query cancellation for abandoned requests 
+- Implement proper placeholderData for loading states
 

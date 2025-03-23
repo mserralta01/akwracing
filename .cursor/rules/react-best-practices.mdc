@@ -2,8 +2,53 @@
 description: Best practices for React applications
 globs:  **/*.{ts,tsx,js,jsx}
 ---
-- Use functional components with hooks
-- Implement proper error boundaries
-- Utilize React.memo for performance optimization
-- Use context API for global state management
-- Implement proper prop validation with PropTypes or TypeScript
+# React Best Practices
+
+## Component Structure
+- Use functional components with hooks instead of class components
+- Keep components small and focused on a single responsibility
+- Create proper component composition with children props
+- Implement proper prop drilling prevention with Context or state management
+- Use proper naming conventions for components (PascalCase)
+
+## Hooks Usage
+- Follow the Rules of Hooks (only call at the top level)
+- Create custom hooks for reusable logic
+- Use useCallback for functions passed to child components
+- Implement useMemo for expensive calculations
+- Use proper dependency arrays in useEffect, useMemo, and useCallback
+
+## Performance Optimization
+- Implement React.memo for pure functional components
+- Use proper key props in lists with stable identifiers
+- Avoid anonymous functions in render methods
+- Implement proper code splitting with dynamic imports
+- Use the useTransition hook for non-blocking updates
+
+## State Management
+- Use useState for local component state
+- Implement useReducer for complex state logic
+- Use Context API for shared state across components
+- Implement proper state normalization for complex data
+- Consider React Query for server state management
+
+## Error Handling
+- Implement proper error boundaries for component trees
+- Use try/catch in async operations
+- Create fallback UI for error states
+- Implement proper logging for errors
+- Use React Error Boundary components
+
+## React Server Components (RSC)
+- Use Server Components for data fetching and server-side operations
+- Implement proper boundary between Server and Client Components
+- Use "use client" directive appropriately
+- Leverage streaming with Suspense boundaries
+- Implement proper loading states with Suspense
+
+## Accessibility
+- Implement proper semantic HTML elements
+- Use ARIA attributes when necessary
+- Ensure keyboard navigation works properly
+- Implement proper focus management
+- Test with screen readers and accessibility tools

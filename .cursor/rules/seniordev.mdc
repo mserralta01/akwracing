@@ -1,6 +1,7 @@
 ---
 description: Senior Developer Guidelines for Monarch Project
 globs: ["*.ts", "*.tsx", "*.py", "*.sql"]
+alwaysApply: false
 ---
 
 # Senior Developer Guidelines

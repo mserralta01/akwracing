@@ -1,9 +1,48 @@
 ---
-description: Best practices for Next.js applications and routing
-globs: **/*.{ts,tsx}
+description: Best practices for Next.js 15 applications and routing
+globs: **/*.{ts,tsx,js,jsx}
 ---
-- Use the App Router for better performance
-- Implement server-side rendering for improved SEO
-- Use getStaticProps and getStaticPaths for static generation
-- Implement proper error handling with custom error pages
-- Use Next.js API routes for server-side logic
+# Next.js 15 Best Practices
+
+## Routing and Page Structure
+- Use the App Router for improved performance and built-in features
+- Implement proper route grouping with folders
+- Create reusable layout components for consistent UI
+- Implement proper error handling with error.tsx files
+- Use loading.tsx for optimistic UI updates
+- Implement not-found.tsx for improved 404 experiences
+
+## Data Fetching
+- Use React Server Components for direct data fetching
+- Implement proper data fetching patterns with `fetch` and caching
+- Utilize React Suspense boundaries for streaming
+- Implement proper revalidation strategies (ISR, on-demand revalidation)
+- Use React Query for client-side state management with proper caching
+
+## Performance Optimization
+- Implement proper code splitting with dynamic imports
+- Use Edge Runtime for performance-critical routes
+- Optimize images with the Next.js Image component and appropriate sizes
+- Implement proper font loading with `next/font`
+- Minimize client-side JavaScript with Server Components
+
+## State Management
+- Use React Server Components for server-specific logic
+- Implement client-side state with React Context or React Query
+- Create proper separation between server and client components
+- Avoid unnecessary client-side JavaScript
+- Use proper data caching strategies
+
+## Security
+- Implement proper authentication with NextAuth.js or Firebase Auth
+- Use middleware for authentication and authorization checks
+- Implement proper CSRF protection
+- Sanitize user inputs to prevent XSS attacks
+- Keep sensitive information in environment variables
+
+## Deployment
+- Use proper environment variables for different environments
+- Implement proper build optimization settings
+- Use Vercel Analytics or similar tools for performance monitoring
+- Implement proper CI/CD pipelines for testing and deployment
+- Use Edge Runtime for globally distributed applications

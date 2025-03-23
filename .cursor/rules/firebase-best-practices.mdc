@@ -1,12 +1,50 @@
 ---
 description: Best practices for using Firebase in your application
-globs: **/*.{ts,js}
+globs: **/*.{ts,tsx,js,jsx}
 ---
+# Firebase Best Practices
+
+## Authentication
+- Use Firebase Authentication for user management and role-based access
+- Implement proper session management and token refresh
+- Use custom claims for role-based authorization
+- Implement multi-factor authentication for sensitive operations
+- Follow the principle of least privilege for user permissions
+
+## Firestore
+- Design schema for query efficiency and avoid nested collections when possible
+- Implement proper security rules with thorough testing
+- Use batched writes and transactions for related operations
+- Create proper indexes for complex queries
+- Implement efficient pagination with cursor-based approaches
+- Minimize document size by referencing related documents instead of embedding
+
+## Firebase Functions
 - Use Firebase Admin SDK for server-side operations
-- Implement proper security rules for Firestore and Realtime Database
-- Utilize Firebase Authentication for user management
-- Leverage Firebase Functions for serverless backend logic
-- Use Firebase security rules to protect data
-- Use Firestore transactions for atomic operations
-- Optimize queries with proper indexing
-- Use Firebase Authentication for user management
+- Implement proper error handling and logging
+- Use environment variables for configuration
+- Create proper unit tests for cloud functions
+- Implement proper rate limiting and quota management
+- Use TypeScript for type safety in function development
+
+## Realtime Features
+- Use onSnapshot listeners efficiently with proper query parameters
+- Unsubscribe from listeners when components unmount
+- Implement optimistic UI updates for better user experience
+- Use Firebase Analytics for tracking user behavior
+- Implement proper error handling for realtime data changes
+
+## Security
+- Implement thorough Firestore security rules with unit tests
+- Use Firebase App Check to prevent abuse
+- Validate all user inputs on both client and server
+- Implement proper CORS configuration for Functions
+- Use Firebase Security Rules Simulator for testing
+- Keep sensitive operations in secure backend environments
+
+## Performance
+- Implement proper data caching with React Query
+- Use Firebase Performance Monitoring 
+- Optimize image uploads and downloads with Firebase Storage
+- Implement proper indexing for frequently queried fields
+- Monitor usage to stay within Firebase free tier limits when possible

@@ -161,7 +161,7 @@ export function ProgramsSection() {
                       </Badge>
                       <h3 className="text-xl font-bold mb-2">{course.title}</h3>
                       <div 
-                        className="text-muted-foreground mb-6"
+                        className="text-muted-foreground mb-6 text-justify"
                         dangerouslySetInnerHTML={{ __html: course.shortDescription }}
                       />
                       <div className="space-y-2 w-full mb-6">

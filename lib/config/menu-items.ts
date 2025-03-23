@@ -103,6 +103,11 @@ export function getMenuItems(features: { ecommerce: boolean }) {
           title: "General",
           href: "/admin/settings/general",
           icon: Settings,
+        },
+        {
+          title: "Website",
+          href: "/admin/settings/website",
+          icon: Settings,
         }
       ],
     },

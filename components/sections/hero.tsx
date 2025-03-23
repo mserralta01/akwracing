@@ -1,11 +1,37 @@
 "use client";
 
+import { useEffect, useState } from 'react';
 import { motion } from "framer-motion";
 import TypewriterComponent from "typewriter-effect";
 import { Button } from "@/components/ui/button";
 import { Trophy, ArrowRight } from "lucide-react";
+import { WebsiteContent, settingsService } from '@/lib/services/settings-service';
 
 export function HeroSection() {
+  const [content, setContent] = useState<WebsiteContent['hero'] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadContent = async () => {
+      try {
+        const websiteContent = await settingsService.getWebsiteContent();
+        console.log('Hero section loaded:', websiteContent.hero);
+        setContent(websiteContent.hero);
+      } catch (error) {
+        console.error('Error loading hero content:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadContent();
+  }, []);
+
+  // Fallback content if data is loading or not available
+  const title = content?.title || "Welcome to AKW Racing Academy";
+  const description = content?.description || "Premier karting academy in Wellington, FL, offering professional race training for all skill levels.";
+  const videoUrl = content?.videoUrl || "https://www.sodikart.com/content/files/home/sodikart-home-v2.mp4";
+
   return (
     <section className="relative h-[calc(100vh-64px)] flex items-center justify-center overflow-hidden bg-navy-900">
       {/* Video Background with Overlay */}
@@ -19,7 +45,7 @@ export function HeroSection() {
           className="absolute inset-0 w-full h-full object-cover"
         >
           <source 
-            src="https://www.sodikart.com/content/files/home/sodikart-home-v2.mp4" 
+            src={videoUrl} 
             type="video/mp4" 
           />
         </video>
@@ -59,7 +85,7 @@ export function HeroSection() {
             <TypewriterComponent
               options={{
                 strings: [
-                  "Welcome to <span style='color: #FF0000'>AKW Racing Academy</span>",
+                  title,
                   "Where <span style='color: #FF0000'>Champions</span> Are Made",
                   "Start Your Racing Journey",
                 ],
@@ -72,9 +98,8 @@ export function HeroSection() {
             />
           </h1>
 
-          <p className="text-xl md:text-2xl text-gray-300 max-w-2xl mx-auto">
-            Premier karting academy in Wellington, FL, offering professional race training
-            for all skill levels.
+          <p className="text-xl md:text-2xl text-gray-300 max-w-2xl mx-auto" 
+             dangerouslySetInnerHTML={{ __html: description }}>
           </p>
 
           <div className="flex justify-center gap-4 mt-8">

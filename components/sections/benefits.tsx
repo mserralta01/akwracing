@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from 'react';
 import { motion } from "framer-motion";
 import { 
   Trophy, 
@@ -22,7 +23,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
+import { WebsiteContent, settingsService } from '@/lib/services/settings-service';
 
+// This is the original benefits array that must be preserved
 const benefits = [
   {
     icon: Trophy,
@@ -73,6 +76,27 @@ const benefits = [
 
 export function BenefitsSection() {
   const router = useRouter();
+  const [settingsContent, setSettingsContent] = useState<WebsiteContent['benefits'] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadContent = async () => {
+      try {
+        const websiteContent = await settingsService.getWebsiteContent();
+        console.log('Benefits section data:', websiteContent.benefits);
+        setSettingsContent(websiteContent.benefits);
+      } catch (error) {
+        console.error('Error loading benefits content:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadContent();
+  }, []);
+
+  // Get the section title from settings if available
+  const sectionTitle = settingsContent?.title || "Why Karting for Your Child?";
 
   return (
     <section className="relative py-20 bg-gradient-to-b from-navy-800 to-navy-900">
@@ -98,7 +122,7 @@ export function BenefitsSection() {
           className="text-center mb-12"
         >
           <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">
-            Why Karting for Your Child?
+            {sectionTitle}
           </h2>
           <p className="text-gray-300 max-w-2xl mx-auto">
             Discover how karting can shape your child's future through essential life skills and exciting opportunities.
@@ -107,6 +131,14 @@ export function BenefitsSection() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
           {benefits.map((benefit, index) => {
+            // Try to find a matching benefit in the settings content
+            const settingBenefit = settingsContent?.items?.find(item => 
+              item.title === benefit.title
+            );
+            
+            // Use the description from settings if available, otherwise use the default
+            const description = settingBenefit?.description || benefit.description;
+            
             const Icon = benefit.icon;
             return (
               <motion.div
@@ -123,7 +155,7 @@ export function BenefitsSection() {
                   </CardHeader>
                   <CardContent>
                     <CardDescription className="text-base">
-                      {benefit.description}
+                      {description}
                     </CardDescription>
                   </CardContent>
                 </Card>

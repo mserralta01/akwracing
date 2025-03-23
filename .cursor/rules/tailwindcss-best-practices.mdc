@@ -1,12 +1,61 @@
 ---
 description: Best practices for styling with Tailwind CSS
-globs: **/*.{ts,tsx,js,jsx,css}
+globs: **/*.{ts,tsx,js,jsx,css,scss}
 ---
+# Tailwind CSS Best Practices
 
-- Use utility classes for most styling needs
-- Create custom components for reusable UI elements
-- Implement responsive design using Tailwind's responsive modifiers
-- Utilize the `@apply` directive for component-specific styles
-- Use responsive utility classes for mobile-first design
-- Implement dark mode support
-- Use @apply in custom CSS for consistency
+## Core Principles
+- Use utility classes for styling instead of custom CSS where possible
+- Follow a mobile-first responsive approach
+- Maintain consistent spacing using the spacing scale
+- Use semantic color names from the theme configuration
+- Implement design tokens through Tailwind configuration
+
+## Organization
+- Group related utilities logically (layout, typography, colors, etc.)
+- Order utilities consistently within components
+- Use utility-first approach before reaching for custom CSS
+- Extract components for reusable patterns with consistent classnames
+- Create reusable patterns with composition, not inheritance
+
+## Custom Theming
+- Use CSS variables for theme values in `tailwind.config.ts`
+- Leverage Tailwind's theming system for colors and other design tokens
+- Create semantic color names that reflect purpose (primary, secondary, etc.)
+- Configure proper dark mode variants with the `dark:` prefix
+- Use opacity modifiers for color variations
+
+## Responsive Design
+- Start with mobile designs and use breakpoint utilities for larger screens
+- Use standard breakpoints consistently (sm, md, lg, xl, 2xl)
+- Avoid fixed heights and widths that could break responsiveness
+- Implement proper stacking/grid layouts that adapt to screen sizes
+- Test thoroughly on various device sizes
+
+## Component Styling
+- Create consistent spacing between and within components
+- Use consistent border radius values from the theme
+- Apply shadows consistently for elevation using theme values
+- Use flex and grid utilities for layout rather than absolute positioning
+- Keep modifier classes grouped by purpose
+
+## Performance Considerations
+- Enable JIT mode for faster build times and smaller CSS output
+- Purge unused styles in production builds
+- Use arbitrary values sparingly and consider adding to the theme
+- Avoid excessive class lists that become hard to maintain
+- Consider extracting very common patterns to components
+
+## Accessibility
+- Use proper color contrast ratios that meet WCAG guidelines
+- Implement focus styles for interactive elements
+- Use semantic HTML elements with appropriate Tailwind classes
+- Ensure text sizes are readable across devices
+- Test with screen readers and keyboard navigation
+
+## Integration
+- Use clsx or tailwind-merge for conditional class application
+- Combine with CSS modules for component-specific needs
+- Use `@apply` sparingly and only for truly reusable patterns
+- Implement plugins for additional functionality as needed
+- Maintain consistent animation timings using the theme

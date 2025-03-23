@@ -1,61 +1,76 @@
 ---
-description: UI Guidelines for Monarch using Next.js 15, React 19, and Tailwind 4.0
-globs: ["*.tsx", "*.css", "*.module.css"]
+description: UI Guidelines for AKW Racing Academy using Next.js 15, React 18, and Tailwind CSS
+globs: **/*.{tsx,jsx,css,scss}
 ---
-# UI Guidelines
+# UI Guidelines for AKW Racing Academy
+
+## Brand Identity
+- Use racing-inspired design elements that reflect professional motorsport aesthetics
+- Maintain consistent color scheme across all pages (primary: blue, secondary: red, accent: gold)
+- Implement branded typography with sans-serif fonts for readability
+- Use dynamic motion effects that suggest speed and precision
+- Apply consistent spacing and alignment for professional appearance
 
 ## Theme System
-- Use OKLCH color space for enhanced vibrancy
 - Implement complete dark/light mode using next-themes
-- Configure CSS variables for theme tokens
-- Support system preference detection
+- Use CSS variables for theme tokens with semantic naming
+- Support system preference detection with user override option
+- Implement proper color contrast in both themes
+- Use OKLCH color space for enhanced vibrancy where supported
 
-## Component Usage
-### ShadCN UI Components
-✅ Use pre-built components for consistency:
-- Dialog, Sheet, Card for containers
-- Form, Input, Select for data entry
-- Navigation Menu, Tabs for navigation
-- Popover, HoverCard for overlays
-- Command for search interfaces
+## Component Architecture
+### ShadCN UI Component Usage
+- Use Dialog and Sheet for modal interfaces and side panels
+- Implement Form, Input, and Select components for all data entry
+- Use NavigationMenu and Tabs for primary navigation patterns
+- Apply Button variants consistently based on action importance
+- Implement proper loading states with Skeletons
 
 ### Custom Components
-- Keep components small and focused
-- Use TypeScript for type safety
-- Implement proper error boundaries
-- Add comprehensive JSDoc comments
-- Include Storybook documentation
+- Create racing-specific custom components when necessary
+- Implement proper mobile responsiveness for all custom components
+- Use TypeScript for strict type safety in component props
+- Add comprehensive JSDoc comments for better development experience
+- Structure components with clear separation of concerns
 
-### Collapsible Components
-- Default to collapsed state for large content areas
-- Use ChevronDown icon with rotation transform for toggle
-- Include ARIA labels for accessibility
-- Provide smooth animation transitions between states
-- When appropriate, add alternative button/text to expand content
+## Layout Patterns
+- Use consistent page layouts with proper header and footer components
+- Implement responsive designs that work on mobile, tablet, and desktop
+- Create proper grid systems for course listings and racing statistics
+- Use Card components for content organization with consistent spacing
+- Implement proper navigation hierarchy with breadcrumbs
 
-## Styling Best Practices
-✅ Use Tailwind v4.0 utilities:
-- Use semantic classes (bg-background/text-foreground)
-- Implement responsive design utilities
-- Apply animation configurations
-- Use custom radius and spacing values
+## Interactive Elements
+- Create smooth animations for state transitions (300-500ms duration)
+- Implement proper hover and focus states for all interactive elements
+- Use consistent button styles based on action importance
+- Implement proper loading indicators for asynchronous operations
+- Create engaging microinteractions that enhance the racing theme
 
-❌ Avoid:
-- Direct color values
-- Inline styles
-- Non-semantic class names
-- Unmaintainable animations
-
-## Interactive Canvas
-- Use React-Konva for canvas operations
-- Implement smooth animations
-- Ensure responsive behavior
-- Handle touch and mouse events
-- Optimize rendering performance
+## Data Visualization
+- Use Recharts for performance statistics and race data
+- Implement consistent chart styling with brand colors
+- Create proper loading and empty states for data displays
+- Use appropriate chart types for different data (bar, line, radar)
+- Implement responsive charts that work across device sizes
 
 ## Accessibility
-- Ensure WCAG 2.1 compliance
-- Test with screen readers
-- Support keyboard navigation
-- Maintain proper contrast ratios
-- Use semantic HTML elements 
+- Ensure WCAG 2.1 AA compliance for all components
+- Implement proper keyboard navigation for all interactive elements
+- Use semantic HTML elements with appropriate ARIA attributes
+- Maintain proper color contrast ratios (minimum 4.5:1 for normal text)
+- Test with screen readers and keyboard-only navigation
+
+## Motion and Animation
+- Use Framer Motion for complex animations
+- Implement reduced motion support for accessibility
+- Create smooth page transitions with Next.js App Router
+- Use consistent timing functions for animations (ease-in-out)
+- Apply subtle racing-inspired animations where appropriate
+
+## Responsive Design
+- Design mobile-first layouts that scale up to larger screens
+- Implement proper breakpoints for mobile, tablet, and desktop
+- Use flexible grid systems with proper column layouts
+- Create appropriate touch targets for mobile devices (minimum 44×44px)
+- Test thoroughly on various device sizes and orientations 

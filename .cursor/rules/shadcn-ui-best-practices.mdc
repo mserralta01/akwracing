@@ -2,7 +2,60 @@
 description: Best practices for using Shadcn UI components
 globs: **/*.{ts,tsx,js,jsx}
 ---
-- Follow component naming conventions
-- Use props for customization
-- Implement proper accessibility attributes
-- Utilize dark mode support
+# ShadCN UI Best Practices
+
+## Component Implementation
+- Install components using the Shadcn CLI with `npx shadcn-ui add [component]`
+- Override component styling using the Tailwind CSS theme system
+- Create consistent component variants using cva from class-variance-authority
+- Use Radix UI for accessibility-focused interactive components
+- Maintain Shadcn's design language across custom components
+
+## Styling and Theming
+- Customize the global theme in `globals.css` using CSS variables
+- Create consistent component variants through the Tailwind config
+- Override component styles through component composition
+- Use the cn utility for conditional class application
+- Maintain consistent spacing and sizing according to the design system
+
+## Form Components
+- Use React Hook Form with zod validation for form handling
+- Implement FormField components for consistent form interfaces
+- Create reusable form layouts with proper label placement
+- Implement proper error handling and validation messages
+- Use controlled inputs when integration with external libraries
+
+## Dialog and Modal Usage
+- Use Shadcn Dialog for modal interfaces with proper focus management
+- Implement Sheet component for mobile side panels
+- Create proper loading and error states within modals
+- Use AlertDialog for destructive actions requiring confirmation
+- Implement proper keyboard navigation and accessibility
+
+## Data Display
+- Use Shadcn Table with @tanstack/react-table for data tables
+- Implement proper filtering and sorting functionality
+- Create consistent card layouts for data display
+- Use Accordion for expandable content sections
+- Implement proper empty and loading states for data components
+
+## Navigation Components
+- Use NavigationMenu for primary navigation
+- Implement Tabs for content organization
+- Create consistent dropdown menus with proper styling
+- Use Breadcrumb for hierarchical navigation
+- Implement proper active states for navigation items
+
+## Accessibility
+- Leverage Radix UI's built-in accessibility features
+- Test keyboard navigation across all interactive components
+- Use proper ARIA attributes and semantic HTML
+- Maintain proper focus management in dialogs and modals
+- Implement proper color contrast for all states
+
+## Custom Components
+- Follow the Shadcn component structure for custom components
+- Use the cn utility for conditional class merging
+- Implement Radix UI primitives for accessibility
+- Create proper type definitions for component props
+- Document component usage with clear examples

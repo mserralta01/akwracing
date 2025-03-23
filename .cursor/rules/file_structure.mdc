@@ -1,8 +1,88 @@
 ---
-description: File Structure Guidelines for Monarch Project
+description: File Structure Guidelines for AKW Racing Academy
 globs: ["*"]
-alwaysApply: false
 ---
+# File Structure Guidelines for AKW Racing Academy
+
+## Project Structure Overview
+```
+└── 📁AKWacademy                # Project root
+    ├── 📁app                    # Next.js App Router
+    │   ├── 📁(auth)             # Authentication routes (grouped)
+    │   ├── 📁(dashboard)        # Dashboard routes (grouped)
+    │   ├── 📁(marketing)        # Public/marketing pages (grouped)
+    │   ├── 📁api                # API routes
+    │   ├── globals.css          # Global styles
+    │   └── layout.tsx           # Root layout
+    ├── 📁components             # Reusable components
+    │   ├── 📁auth               # Authentication components
+    │   ├── 📁dashboard          # Dashboard components
+    │   ├── 📁forms              # Form components
+    │   ├── 📁layout             # Layout components
+    │   ├── 📁ui                 # UI components (shadcn)
+    │   └── 📁shared             # Shared components
+    ├── 📁contexts               # React contexts
+    ├── 📁hooks                  # Custom React hooks
+    ├── 📁lib                    # Utility functions
+    │   ├── 📁firebase           # Firebase utilities
+    │   ├── 📁validation         # Zod validation schemas
+    │   └── 📁utils              # General utilities
+    ├── 📁providers              # Provider components
+    ├── 📁public                 # Static assets
+    ├── 📁types                  # TypeScript type definitions
+    ├── 📁docs                   # Documentation
+    ├── 📁.cursor                # Cursor AI rules
+    │   └── 📁rules              # Individual cursor rules
+    ├── firebase.json            # Firebase configuration
+    ├── firestore.rules          # Firestore security rules
+    ├── storage.rules            # Firebase Storage rules
+    ├── next.config.js           # Next.js configuration
+    ├── tailwind.config.ts       # Tailwind CSS configuration
+    └── package.json             # Project dependencies
+```
+
+## Naming Conventions
+
+### Directories
+- Use kebab-case for directory names (`auth-providers/`)
+- Group related components in descriptive directories
+- Use semantic grouping based on feature or purpose
+
+### Files
+- Use PascalCase for React components (`UserProfile.tsx`)
+- Use kebab-case for utilities and non-component files (`date-utils.ts`)
+- Use camelCase for hooks (`useCurrentUser.ts`)
+- Use index.ts files for cleaner imports
+
+## Component Structure
+- Co-locate test files with components (`Component.tsx`, `Component.test.tsx`)
+- Keep components focused on a single responsibility
+- Extract complex logic to custom hooks or utilities
+- Organize component directories by feature or domain
+
+## App Router Organization
+- Use route groups (in parentheses) for logical organization
+- Create proper layouts for each section of the application
+- Use loading.tsx and error.tsx for proper loading and error states
+- Implement proper metadata configuration in each route
+
+## API Structure
+- Group API routes by domain or resource type
+- Implement proper middleware for authentication
+- Create consistent error handling across API routes
+- Follow RESTful API design principles where appropriate
+
+## Types Organization
+- Create global type definitions in the types directory
+- Co-locate component-specific types with their components
+- Use proper namespacing for domain-specific types
+- Create shared interfaces for reusable data structures
+
+## Documentation
+- Document architectural decisions in the docs directory
+- Create proper README files for complex features
+- Update documentation when making significant changes
+- Include code examples in documentation where helpful
 ```
 └── 📁AKWacademy
     └── 📁.bolt

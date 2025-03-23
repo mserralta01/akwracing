@@ -2,11 +2,61 @@
 description: Best practices for form handling with React Hook Form
 globs: **/*.{ts,tsx,js,jsx}
 ---
-- Use the `useForm` hook with proper configuration options
-- Implement form validation using built-in validation or external libraries like Zod
-- Utilize the `Controller` component for controlled inputs
-- Use controlled components for better performance
-- Use the watch function for real-time form state changes
-- Implement custom hooks for reusable form logic
-- Use the setValue function for dynamic form updates
+# React Hook Form Best Practices
+
+## Form Setup
+- Use the `useForm` hook with proper TypeScript types for form values
+- Implement Zod validation schemas with `@hookform/resolvers/zod`
+- Create proper default values to prevent uncontrolled to controlled warnings
+- Use form context for complex nested forms
+- Implement proper form submission handling with onSubmit callback
+
+## Validation
+- Create comprehensive Zod schemas for form validation
+- Implement custom validation rules when needed
+- Use async validation for server-side validation needs
+- Display clear validation error messages to users
+- Use proper validation modes (onChange, onBlur, onSubmit)
+
+## Field Management
+- Use the `register` function for simple input fields
+- Implement `Controller` for complex or third-party components
+- Use `FormField` from ShadCN UI for consistent form interfaces
+- Create reusable form field components for common patterns
+- Handle field arrays properly with `useFieldArray`
+
+## Performance Optimization
+- Use `shouldUnregister` option appropriately
+- Implement proper field-level validation to avoid unnecessary re-renders
+- Use controlled components only when necessary
+- Implement smart form re-rendering with proper dependency tracking
+- Use memoization for expensive form calculations
+
+## State Management
+- Use `watch` for dependent field calculations
+- Implement `setValue` for programmatic form updates
+- Use `reset` for form resets and initializing with new data
+- Implement form state management with `formState`
+- Create custom form state hooks for complex scenarios
+
+## Error Handling
+- Display field-level error messages next to inputs
+- Implement form-level error messages for general issues
+- Use proper error styling with conditional classes
+- Create consistent error message components
+- Handle server-side errors and map them to form fields
+
+## Form Submission
+- Implement proper loading states during form submission
+- Use try/catch blocks for error handling during submission
+- Create proper success and error notifications
+- Implement form redirection after successful submission
+- Use optimistic updates for better user experience
+
+## Integration with UI Libraries
+- Use ShadCN UI Form components for consistent styling
+- Implement proper focus management with form fields
+- Create accessible form interfaces with proper ARIA attributes
+- Use proper keyboard navigation across form elements
+- Implement consistent form layouts across the application
 

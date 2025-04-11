@@ -186,12 +186,14 @@ export function ProgramsSection() {
                         </Badge>
                         <h3 className="text-xl font-bold mb-2">{course.title}</h3>
                         <p className="text-xl font-bold mb-4">Starting At ${course.price}</p>
-                        <div className="text-muted-foreground mb-6 text-justify min-h-[6em]">
+                        <div className="text-muted-foreground text-justify min-h-[6em]">
                           {truncated}
-                          {needsMore && (
-                            <span className="text-gray-400"> more ...</span>
-                          )}
                         </div>
+                        {needsMore && (
+                          <div className="text-left text-gray-400 mb-6">
+                            more ...
+                          </div>
+                        )}
                         <div className="space-y-2 w-full mb-6">
                           <div className="flex items-center justify-center text-sm">
                             <Calendar className="h-4 w-4 mr-2 text-racing-red" />

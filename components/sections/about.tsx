@@ -37,7 +37,7 @@ export function AboutSection() {
     "State-of-the-art racing equipment",
     "Comprehensive training programs"
   ];
-  const imageUrl = content?.imageUrl || "/images/akwracingtrailor.jpg";
+  const imageUrl = content?.imageUrl || "/images/AKWTeamPic1.heic";
 
   return (
     <section className="relative py-16 lg:py-24 bg-gradient-to-b from-navy-900 to-navy-800">

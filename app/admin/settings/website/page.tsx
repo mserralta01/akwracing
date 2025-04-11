@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Trash2, PlusCircle, Info, HelpCircle, FileText, ExternalLink, AlertCircle, Brain, Car, Clock, Heart, Activity, Trophy, Target, Users, Handshake, Star } from "lucide-react";
-import { ImageUpload } from "@/components/image-upload";
+import { ImageUpload } from "@/components/ui/image-upload";
 import { Separator } from "@/components/ui/separator";
 import { cn } from '@/lib/utils';
 import { Textarea } from "@/components/ui/textarea";
@@ -18,12 +18,14 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Switch } from "@/components/ui/switch";
 
 export default function WebsiteSettingsPage() {
   const [content, setContent] = useState<WebsiteContent | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("hero");
   const [isHelpOpen, setIsHelpOpen] = useState(true);
+  const [justSavedSection, setJustSavedSection] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -49,10 +51,9 @@ export default function WebsiteSettingsPage() {
   }, [toast]);
 
   const handleSave = async (sectionName: string) => {
-    if (!content) return;
+    if (!content || justSavedSection) return;
 
     try {
-      // Only update the specific section
       const sectionToUpdate = { 
         [sectionName]: content[sectionName as keyof WebsiteContent] 
       };
@@ -65,6 +66,8 @@ export default function WebsiteSettingsPage() {
         title: "Success",
         description: "Website content updated successfully",
       });
+      setJustSavedSection(sectionName);
+      setTimeout(() => setJustSavedSection(null), 1500);
     } catch (error) {
       console.error('Error updating website content:', error);
       toast({
@@ -137,19 +140,14 @@ export default function WebsiteSettingsPage() {
     });
   };
 
-  // Handle file upload and set a URL
   const handleImageUpload = (section: keyof WebsiteContent, field: string, file: File | null) => {
     if (!content) return;
 
     if (file) {
-      // In a real app, you would upload the file to a storage service
-      // and get a URL back. For now, we'll create a temporary URL.
       const newUrl = URL.createObjectURL(file);
       
-      // Update the content state with the new URL
       handleStringChange(section, field, newUrl);
     } else {
-      // If no file is selected, clear the image
       handleStringChange(section, field, '');
     }
   };
@@ -157,11 +155,8 @@ export default function WebsiteSettingsPage() {
   const initializeAllContent = async () => {
     try {
       console.log("Initializing all website content with defaults");
-      // Get the default content from the service
       const defaultContent = settingsService.getDefaultWebsiteContent();
-      // Update the local state
       setContent(defaultContent);
-      // Save to the database
       await settingsService.updateWebsiteContent(defaultContent);
       
       toast({
@@ -185,7 +180,6 @@ export default function WebsiteSettingsPage() {
     </div>;
   }
 
-  // Create local variables with default values to prevent null/undefined errors
   const heroContent = content?.hero || { title: '', description: '', videoUrl: '' };
   const aboutContent = content?.about || { title: '', description: '', features: [], imageUrl: '' };
   const benefitsContent = content?.benefits || { title: '', items: [] };
@@ -283,7 +277,6 @@ export default function WebsiteSettingsPage() {
             <TabsTrigger value="contact" className="flex items-center gap-1">Contact</TabsTrigger>
           </TabsList>
 
-          {/* Hero Section */}
           <TabsContent value="hero" className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="md:col-span-2">
@@ -375,10 +368,13 @@ export default function WebsiteSettingsPage() {
                     <div className="text-xs text-muted-foreground">Last edited: Today</div>
                     <Button 
                       onClick={() => handleSave('hero')}
-                      className="relative group overflow-hidden"
+                      disabled={justSavedSection === 'hero'}
+                      className={cn(
+                        "bg-green-600 hover:bg-green-700 text-white",
+                        justSavedSection === 'hero' && "bg-green-100 text-green-800"
+                      )}
                     >
-                      <span className="relative z-10">Save Hero Section</span>
-                      <div className="absolute inset-0 bg-primary opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+                      {justSavedSection === 'hero' ? 'Saved!' : 'Save Hero Section'}
                     </Button>
                   </CardFooter>
                 </Card>
@@ -424,7 +420,6 @@ export default function WebsiteSettingsPage() {
             </div>
           </TabsContent>
 
-          {/* About Section */}
           <TabsContent value="about" className="space-y-4">
             <div className="grid grid-cols-1 gap-6">
               <Card>
@@ -581,7 +576,12 @@ export default function WebsiteSettingsPage() {
                           </Tooltip>
                         </div>
                         <ImageUpload
-                          value={aboutContent.imageUrl}
+                          preloadedImage={aboutContent.imageUrl ? { 
+                            preview: aboutContent.imageUrl, 
+                            name: aboutContent.imageUrl.split('/').pop() || 'current-image', 
+                            size: 0,
+                            type: 'image/*'
+                          } : null}
                           onChange={(file) => handleImageUpload('about', 'imageUrl', file)}
                         />
                       </div>
@@ -592,17 +592,24 @@ export default function WebsiteSettingsPage() {
                   <div className="text-xs text-muted-foreground">Last edited: Today</div>
                   <Button 
                     onClick={() => handleSave('about')}
-                    className="relative group overflow-hidden"
+                    className={cn(
+                      "relative group overflow-hidden transition-colors duration-200",
+                      justSavedSection === 'about' && "bg-green-600 hover:bg-green-700"
+                    )}
+                    disabled={justSavedSection === 'about'}
                   >
-                    <span className="relative z-10">Save About Section</span>
-                    <div className="absolute inset-0 bg-primary opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+                    <span className="relative z-10">
+                      {justSavedSection === 'about' ? "Saved!" : "Save About Section"}
+                    </span>
+                    {justSavedSection !== 'about' && (
+                      <div className="absolute inset-0 bg-primary opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+                    )}
                   </Button>
                 </CardFooter>
               </Card>
             </div>
           </TabsContent>
 
-          {/* Benefits Section */}
           <TabsContent value="benefits" className="space-y-4">
             <Card>
               <CardHeader className="bg-slate-50 border-b">
@@ -631,7 +638,6 @@ export default function WebsiteSettingsPage() {
                         className="bg-amber-100 hover:bg-amber-200 border-amber-300"
                         onClick={async () => {
                           try {
-                            // Create a benefits object with all 9 benefits from the website
                             const websiteBenefits = {
                               title: "Why Karting for Your Child?",
                               items: [
@@ -683,13 +689,11 @@ export default function WebsiteSettingsPage() {
                               ]
                             };
                             
-                            // Update the local state for benefits
                             setContent({
                               ...content,
                               benefits: websiteBenefits
                             });
                             
-                            // Save to the database
                             await settingsService.updateWebsiteContent({ 
                               benefits: websiteBenefits 
                             });
@@ -775,7 +779,6 @@ export default function WebsiteSettingsPage() {
                             </Badge>
                             <div className="flex items-center gap-1">
                               <div className="p-1 rounded-md bg-primary/10 text-primary">
-                                {/* This would ideally render the actual icon, but for now we'll just show the name */}
                                 <span className="font-mono text-xs">{item.iconName}</span>
                               </div>
                             </div>
@@ -945,7 +948,6 @@ export default function WebsiteSettingsPage() {
                             }
                           ];
 
-                          // Create a new content object with the website benefits
                           if (content?.benefits) {
                             setContent({
                               ...content,
@@ -967,15 +969,20 @@ export default function WebsiteSettingsPage() {
                 <div className="text-xs text-muted-foreground">Last edited: Today</div>
                 <Button 
                   onClick={() => handleSave('benefits')}
-                  className="bg-green-600 hover:bg-green-700 text-white"
+                  className={cn(
+                    "text-white transition-colors duration-200",
+                    justSavedSection === 'benefits' 
+                      ? "bg-green-600 hover:bg-green-700" 
+                      : "bg-primary hover:bg-primary/90"
+                  )}
+                  disabled={justSavedSection === 'benefits'}
                 >
-                  Save Benefits Section
+                  {justSavedSection === 'benefits' ? "Saved!" : "Save Benefits Section"}
                 </Button>
               </CardFooter>
             </Card>
           </TabsContent>
 
-          {/* Partners Section */}
           <TabsContent value="partners" className="space-y-4">
             <Card>
               <CardHeader>
@@ -1144,12 +1151,23 @@ export default function WebsiteSettingsPage() {
                   </Button>
                 </div>
                 
-                <Button onClick={() => handleSave('partners')}>Save Partners Section</Button>
+                <CardFooter className="bg-slate-50 border-t flex justify-between mt-6 pt-6">
+                  <div className="text-xs text-muted-foreground">Last edited: Today</div>
+                  <Button 
+                    onClick={() => handleSave('partners')}
+                    className={cn(
+                      "transition-colors duration-200",
+                      justSavedSection === 'partners' && "bg-green-600 hover:bg-green-700 text-white"
+                    )}
+                    disabled={justSavedSection === 'partners'}
+                  >
+                    {justSavedSection === 'partners' ? "Saved!" : "Save Partners Section"}
+                  </Button>
+                </CardFooter>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Facilities Section */}
           <TabsContent value="facilities" className="space-y-4">
             <Card>
               <CardHeader>
@@ -1293,12 +1311,23 @@ export default function WebsiteSettingsPage() {
                   </Button>
                 </div>
                 
-                <Button onClick={() => handleSave('facilities')}>Save Facilities Section</Button>
+                <CardFooter className="bg-slate-50 border-t flex justify-between mt-6 pt-6">
+                  <div className="text-xs text-muted-foreground">Last edited: Today</div>
+                  <Button 
+                    onClick={() => handleSave('facilities')}
+                    className={cn(
+                      "transition-colors duration-200",
+                      justSavedSection === 'facilities' && "bg-green-600 hover:bg-green-700 text-white"
+                    )}
+                    disabled={justSavedSection === 'facilities'}
+                  >
+                    {justSavedSection === 'facilities' ? "Saved!" : "Save Facilities Section"}
+                  </Button>
+                </CardFooter>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Team Section */}
           <TabsContent value="team" className="space-y-4">
             <Card>
               <CardHeader>
@@ -1328,12 +1357,23 @@ export default function WebsiteSettingsPage() {
                   </p>
                 </div>
                 
-                <Button onClick={() => handleSave('team')}>Save Team Section</Button>
+                <CardFooter className="bg-slate-50 border-t flex justify-between mt-6 pt-6">
+                  <div className="text-xs text-muted-foreground">Last edited: Today</div>
+                  <Button 
+                    onClick={() => handleSave('team')}
+                    className={cn(
+                      "transition-colors duration-200",
+                      justSavedSection === 'team' && "bg-green-600 hover:bg-green-700 text-white"
+                    )}
+                    disabled={justSavedSection === 'team'}
+                  >
+                    {justSavedSection === 'team' ? "Saved!" : "Save Team Section"}
+                  </Button>
+                </CardFooter>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Contact Section */}
           <TabsContent value="contact" className="space-y-4">
             <Card>
               <CardHeader className="bg-slate-50 border-b">
@@ -1480,10 +1520,18 @@ export default function WebsiteSettingsPage() {
                 <div className="text-xs text-muted-foreground">Last edited: Today</div>
                 <Button 
                   onClick={() => handleSave('contact')}
-                  className="relative group overflow-hidden"
+                  className={cn(
+                    "relative group overflow-hidden transition-colors duration-200",
+                    justSavedSection === 'contact' && "bg-green-600 hover:bg-green-700"
+                  )}
+                  disabled={justSavedSection === 'contact'}
                 >
-                  <span className="relative z-10">Save Contact Section</span>
-                  <div className="absolute inset-0 bg-primary opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+                  <span className="relative z-10">
+                    {justSavedSection === 'contact' ? "Saved!" : "Save Contact Section"}
+                  </span>
+                  {justSavedSection !== 'contact' && (
+                    <div className="absolute inset-0 bg-primary opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+                  )}
                 </Button>
               </CardFooter>
             </Card>

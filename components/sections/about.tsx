@@ -65,7 +65,7 @@ export function AboutSection() {
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
               {title}
             </h2>
-            <div className="text-gray-300 mb-6" dangerouslySetInnerHTML={{ __html: description }}></div>
+            <div className="text-gray-300 mb-6 text-justify" dangerouslySetInnerHTML={{ __html: description }}></div>
             <div className="space-y-4 text-gray-300">
               {features.map((feature, index) => (
                 <div key={index} className="flex items-center">

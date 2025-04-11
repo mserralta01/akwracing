@@ -6,8 +6,38 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Mail, Phone, MapPin } from "lucide-react";
+import { useState, useEffect } from 'react';
+import { settingsService, WebsiteContent } from '@/lib/services/settings-service';
 
 export function ContactSection() {
+  const [contactContent, setContactContent] = useState<WebsiteContent['contact'] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadContent = async () => {
+      try {
+        setIsLoading(true);
+        const content = await settingsService.getWebsiteContent();
+        setContactContent(content.contact);
+      } catch (error) {
+        console.error('Error loading contact content:', error);
+        // Use default content on error
+        setContactContent(settingsService.getDefaultWebsiteContent().contact);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadContent();
+  }, []);
+
+  const displayAddress = contactContent?.address?.replace(/\n/g, '<br />');
+
+  // Use loaded content or fall back to defaults
+  const title = contactContent?.title || 'Contact Us';
+  const description = contactContent?.description || 'Get in touch with us to start your racing journey or learn more about our programs.';
+  const phone = contactContent?.phone || '(555) 123-4567';
+  const email = contactContent?.email || 'info@akwracing.com';
+
   return (
     <section className="relative py-20 bg-gradient-to-b from-navy-800 to-navy-900">
       {/* Racing-inspired background pattern - Lowered z-index */}
@@ -32,9 +62,11 @@ export function ContactSection() {
           viewport={{ once: true }}
           className="text-center mb-12"
         >
-          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Contact Us</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">
+            {isLoading ? "Loading..." : title}
+          </h2>
           <p className="text-gray-300 max-w-2xl mx-auto">
-            Get in touch with us to start your racing journey or learn more about our programs.
+            {isLoading ? "Loading description..." : description}
           </p>
         </motion.div>
 
@@ -72,10 +104,16 @@ export function ContactSection() {
                   <MapPin className="h-6 w-6 text-racing-red shrink-0" />
                   <div>
                     <h3 className="font-bold mb-1">Location</h3>
-                    <p className="text-gray-500">
-                      Piquet Race Park<br />
-                      Wellington, FL 33414
-                    </p>
+                    {isLoading ? (
+                      <p className="text-gray-500">Loading address...</p>
+                    ) : displayAddress ? (
+                      <p className="text-gray-500" dangerouslySetInnerHTML={{ __html: displayAddress }} />
+                    ) : (
+                      <p className="text-gray-500">
+                        Piquet Race Park<br />
+                        Wellington, FL 33414
+                      </p>
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -87,7 +125,7 @@ export function ContactSection() {
                   <Phone className="h-6 w-6 text-racing-red shrink-0" />
                   <div>
                     <h3 className="font-bold mb-1">Phone</h3>
-                    <p className="text-gray-500">(555) 123-4567</p>
+                    <p className="text-gray-500">{isLoading ? "Loading..." : phone}</p>
                   </div>
                 </div>
               </CardContent>
@@ -99,7 +137,7 @@ export function ContactSection() {
                   <Mail className="h-6 w-6 text-racing-red shrink-0" />
                   <div>
                     <h3 className="font-bold mb-1">Email</h3>
-                    <p className="text-gray-500">info@akwracing.com</p>
+                    <p className="text-gray-500">{isLoading ? "Loading..." : email}</p>
                   </div>
                 </div>
               </CardContent>

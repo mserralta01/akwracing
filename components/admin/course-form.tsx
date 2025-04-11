@@ -191,8 +191,8 @@ export default function CourseForm({ initialData }: CourseFormProps) {
       const courseData: CourseUpdateData = {
         ...data,
         equipmentRequirements,
-        startDate: new Date(data.startDate).toISOString(),
-        endDate: new Date(data.endDate).toISOString(),
+        startDate: new Date(`${data.startDate}T12:00:00`).toISOString(),
+        endDate: new Date(`${data.endDate}T12:00:00`).toISOString(),
       };
 
       if (initialData) {

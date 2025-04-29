@@ -15,13 +15,31 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { settingsService, WebsiteContent } from '@/lib/services/settings-service';
 
 export function Footer() {
   const [currentYear, setCurrentYear] = useState(2024);
+  const [contactInfo, setContactInfo] = useState<WebsiteContent['contact'] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     setCurrentYear(new Date().getFullYear());
+    
+    const loadContent = async () => {
+      try {
+        setIsLoading(true);
+        const content = await settingsService.getWebsiteContent();
+        setContactInfo(content.contact);
+      } catch (error) {
+        console.error('Error loading contact info:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadContent();
   }, []);
+
+  const displayAddress = contactInfo?.address?.replace(/\n/g, '<br />');
 
   return (
     <footer className="bg-racing-black text-white pt-16 pb-8">
@@ -57,7 +75,6 @@ export function Footer() {
             <h3 className="font-bold text-lg mb-4">Quick Links</h3>
             <ul className="space-y-2">
               {[
-                { text: "Programs", href: "/programs" },
                 { text: "Facilities", href: "/facilities" },
                 { text: "Instructors", href: "/instructors" },
                 { text: "Schedule", href: "/schedule" },
@@ -82,15 +99,34 @@ export function Footer() {
             <ul className="space-y-4">
               <li className="flex items-center space-x-3">
                 <MapPin className="h-5 w-5 text-racing-red" />
-                <span className="text-gray-400">Piquet Race Park, Wellington, FL</span>
+                {isLoading ? (
+                  <span className="text-gray-400">Loading address...</span>
+                ) : displayAddress ? (
+                  <span className="text-gray-400" dangerouslySetInnerHTML={{ __html: displayAddress }} />
+                ) : (
+                  <span className="text-gray-400">
+                    American Kart Works, LLC<br />
+                    Training & Service Center<br />
+                    3101 Fairlane Farms Road<br />
+                    Wellington, FL 33414
+                  </span>
+                )}
               </li>
               <li className="flex items-center space-x-3">
                 <Phone className="h-5 w-5 text-racing-red" />
-                <span className="text-gray-400">(555) 123-4567</span>
+                {isLoading ? (
+                  <span className="text-gray-400">Loading phone...</span>
+                ) : (
+                  <span className="text-gray-400">{contactInfo?.phone || '(555) 123-4567'}</span>
+                )}
               </li>
               <li className="flex items-center space-x-3">
                 <Mail className="h-5 w-5 text-racing-red" />
-                <span className="text-gray-400">info@akwracing.com</span>
+                {isLoading ? (
+                  <span className="text-gray-400">Loading email...</span>
+                ) : (
+                  <span className="text-gray-400">{contactInfo?.email || 'info@akwracing.com'}</span>
+                )}
               </li>
             </ul>
           </div>
@@ -122,11 +158,11 @@ export function Footer() {
             © {currentYear} AKW Racing Academy. All rights reserved.
           </div>
           <div className="flex space-x-6">
-            <Link href="/privacy" className="hover:text-racing-red transition-colors">
+            <Link href="/legal/privacy" className="hover:text-racing-red transition-colors">
               Privacy Policy
             </Link>
-            <Link href="/terms" className="hover:text-racing-red transition-colors">
-              Terms of Service
+            <Link href="/legal/terms" className="hover:text-racing-red transition-colors">
+              Terms and Conditions
             </Link>
             <Link href="/sitemap" className="hover:text-racing-red transition-colors">
               Sitemap

@@ -156,35 +156,35 @@ export function ProgramsSection() {
             {featuredCourses.map((course) => {
               const { truncated, needsMore } = truncateDescription(course.shortDescription, 180);
               return (
-                <motion.div
-                  key={course.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                  viewport={{ once: true }}
-                >
-                  <Card className="overflow-hidden h-full relative">
-                    <div className="relative h-64">
-                      {course.imageUrl ? (
-                        <Image
-                          src={course.imageUrl}
-                          alt={course.title}
-                          fill
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gray-200" />
-                      )}
-                    </div>
-                    <CardContent className="pt-6">
-                      <div className="flex flex-col items-center text-center">
-                        <Badge 
-                          variant={getLevelBadgeVariant(course.level as CourseLevel)}
-                          className="mb-4"
-                        >
-                          {course.level}
-                        </Badge>
-                        <h3 className="text-xl font-bold mb-2">{course.title}</h3>
+              <motion.div
+                key={course.id}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                viewport={{ once: true }}
+              >
+                <Card className="overflow-hidden h-full relative">
+                  <div className="relative h-64">
+                    {course.imageUrl ? (
+                      <Image
+                        src={course.imageUrl}
+                        alt={course.title}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gray-200" />
+                    )}
+                  </div>
+                  <CardContent className="pt-6">
+                    <div className="flex flex-col items-center text-center">
+                      <Badge 
+                        variant={getLevelBadgeVariant(course.level as CourseLevel)}
+                        className="mb-4"
+                      >
+                        {course.level}
+                      </Badge>
+                      <h3 className="text-xl font-bold mb-2">{course.title}</h3>
                         <p className="text-xl font-bold mb-4">Starting At ${course.price}</p>
                         <div className="text-muted-foreground text-justify min-h-[6em]">
                           {truncated}
@@ -194,33 +194,33 @@ export function ProgramsSection() {
                             more ...
                           </div>
                         )}
-                        <div className="space-y-2 w-full mb-6">
-                          <div className="flex items-center justify-center text-sm">
-                            <Calendar className="h-4 w-4 mr-2 text-racing-red" />
-                            <span>{formatDate(course.startDate)}</span>
-                          </div>
-                          <div className="flex items-center justify-center text-sm">
-                            <Users className="h-4 w-4 mr-2 text-racing-red" />
-                            <span>{course.availableSpots} spots remaining</span>
-                          </div>
+                      <div className="space-y-2 w-full mb-6">
+                        <div className="flex items-center justify-center text-sm">
+                          <Calendar className="h-4 w-4 mr-2 text-racing-red" />
+                          <span>{formatDate(course.startDate)}</span>
                         </div>
-                        <Button
-                          variant="default"
-                          className="w-full bg-racing-red hover:bg-red-700 cursor-pointer relative z-20"
-                          onClick={() => {
-                            if (!course.slug) {
-                              console.error('Course slug is missing:', course);
-                              return;
-                            }
-                            router.push(`/courses/${course.slug}`);
-                          }}
-                        >
-                          Learn More
-                        </Button>
+                        <div className="flex items-center justify-center text-sm">
+                          <Users className="h-4 w-4 mr-2 text-racing-red" />
+                          <span>{course.availableSpots} spots remaining</span>
+                        </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
+                      <Button
+                        variant="default"
+                        className="w-full bg-racing-red hover:bg-red-700 cursor-pointer relative z-20"
+                        onClick={() => {
+                          if (!course.slug) {
+                            console.error('Course slug is missing:', course);
+                            return;
+                          }
+                          router.push(`/courses/${course.slug}`);
+                        }}
+                      >
+                        Learn More
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
               );
             })}
           </div>

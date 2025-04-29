@@ -86,27 +86,41 @@ export default function CalendarPage() {
   };
 
   // Extract unique locations and instructors from courses
-  const locations = Array.from(new Set(courses.map(c => c.location)));
+  const locations = Array.from(
+    new Set(courses.map(c => c.location))
+  ).filter(location => location && typeof location === 'string' && location.trim() !== '');
+  
   const instructors: InstructorInfo[] = Array.from(
-    new Set(courses.map(c => c.instructorId).filter((id): id is string => id !== undefined))
+    new Set(courses.map(c => c.instructorId).filter((id): id is string => 
+      id !== undefined && id !== null && id.trim() !== ''
+    ))
   ).map(id => ({
     id,
     name: instructorNames.get(id) || 'Unknown Instructor'
   }));
 
   const filteredCourses = courses.filter(course => {
-    const courseDate = new Date(course.startDate);
-    const monthStart = startOfMonth(date);
-    const monthEnd = endOfMonth(date);
-    
-    // First filter by date range
-    if (courseDate < monthStart || courseDate > monthEnd) return false;
-    
-    // Then apply user filters
-    if (filters.location !== "all" && course.location !== filters.location) return false;
-    if (filters.instructorId !== "all" && course.instructorId !== filters.instructorId) return false;
-    
-    return true;
+    try {
+      if (!course.startDate) return false;
+      
+      const courseDate = new Date(course.startDate);
+      if (isNaN(courseDate.getTime())) return false;
+      
+      const monthStart = startOfMonth(date);
+      const monthEnd = endOfMonth(date);
+      
+      // First filter by date range
+      if (courseDate < monthStart || courseDate > monthEnd) return false;
+      
+      // Then apply user filters
+      if (filters.location !== "all" && course.location !== filters.location) return false;
+      if (filters.instructorId !== "all" && course.instructorId !== filters.instructorId) return false;
+      
+      return true;
+    } catch (error) {
+      console.error("Error filtering course:", error, course);
+      return false;
+    }
   });
 
   return (
@@ -156,8 +170,8 @@ export default function CalendarPage() {
                     <SelectContent>
                       <SelectItem value="all">All Locations</SelectItem>
                       {locations.map(location => (
-                        <SelectItem key={location} value={location}>
-                          {location}
+                        <SelectItem key={location} value={location || 'unknown'}>
+                          {location || 'Unknown Location'}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -174,8 +188,8 @@ export default function CalendarPage() {
                     <SelectContent>
                       <SelectItem value="all">All Instructors</SelectItem>
                       {instructors.map(instructor => (
-                        <SelectItem key={instructor.id} value={instructor.id}>
-                          {instructor.name}
+                        <SelectItem key={instructor.id} value={instructor.id || 'unknown'}>
+                          {instructor.name || 'Unknown Instructor'}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -260,7 +274,16 @@ export default function CalendarPage() {
                                   <p className="text-sm text-gray-600">{course.description}</p>
                                   <div className="flex items-center text-xs text-gray-500">
                                     <Clock className="mr-1 h-3 w-3" />
-                                    {format(new Date(course.startDate), "h:mm a")}
+                                    {course.startDate ? (() => {
+                                      try {
+                                        const date = new Date(course.startDate);
+                                        return !isNaN(date.getTime()) 
+                                          ? format(date, "h:mm a") 
+                                          : "Time not available";
+                                      } catch (e) {
+                                        return "Time not available";
+                                      }
+                                    })() : "Time not available"}
                                   </div>
                                   <div className="flex items-center text-xs text-gray-500">
                                     <MapPin className="mr-1 h-3 w-3" />

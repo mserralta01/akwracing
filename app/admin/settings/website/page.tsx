@@ -602,7 +602,7 @@ export default function WebsiteSettingsPage() {
                       {justSavedSection === 'about' ? "Saved!" : "Save About Section"}
                     </span>
                     {justSavedSection !== 'about' && (
-                      <div className="absolute inset-0 bg-primary opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+                    <div className="absolute inset-0 bg-primary opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
                     )}
                   </Button>
                 </CardFooter>
@@ -1530,7 +1530,7 @@ export default function WebsiteSettingsPage() {
                     {justSavedSection === 'contact' ? "Saved!" : "Save Contact Section"}
                   </span>
                   {justSavedSection !== 'contact' && (
-                    <div className="absolute inset-0 bg-primary opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+                  <div className="absolute inset-0 bg-primary opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
                   )}
                 </Button>
               </CardFooter>

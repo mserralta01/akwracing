@@ -35,7 +35,7 @@ export function ContactInfo() {
           ) : displayAddress ? (
             <span className="text-gray-400" dangerouslySetInnerHTML={{ __html: displayAddress }} />
           ) : (
-            <span className="text-gray-400">Piquet Race Park, Wellington, FL</span>
+          <span className="text-gray-400">Piquet Race Park, Wellington, FL</span>
           )}
         </li>
         <li className="flex items-center space-x-3">

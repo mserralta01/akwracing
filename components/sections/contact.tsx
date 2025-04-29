@@ -109,10 +109,10 @@ export function ContactSection() {
                     ) : displayAddress ? (
                       <p className="text-gray-500" dangerouslySetInnerHTML={{ __html: displayAddress }} />
                     ) : (
-                      <p className="text-gray-500">
-                        Piquet Race Park<br />
-                        Wellington, FL 33414
-                      </p>
+                    <p className="text-gray-500">
+                      Piquet Race Park<br />
+                      Wellington, FL 33414
+                    </p>
                     )}
                   </div>
                 </div>

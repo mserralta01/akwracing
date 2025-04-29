@@ -29,7 +29,7 @@ export function AboutSection() {
     loadContent();
   }, []);
 
-  // Fallback content if data is loading or not available
+  // Only use fallback content for text elements
   const title = content?.title || "Excellence in Racing Education";
   const description = content?.description || "Located in the heart of Wellington, FL, AKW Racing Academy partners with Piquet Race Park to provide world-class karting education. Our state-of-the-art facility and experienced instructors ensure that every student receives the highest quality training.";
   const features = content?.features || [
@@ -37,7 +37,8 @@ export function AboutSection() {
     "State-of-the-art racing equipment",
     "Comprehensive training programs"
   ];
-  const imageUrl = content?.imageUrl || "/images/AKWTeamPic1.jpg";
+  // No longer using fallback for image
+  const imageUrl = content?.imageUrl;
 
   return (
     <section className="relative py-16 lg:py-24 bg-gradient-to-b from-navy-900 to-navy-800">
@@ -82,21 +83,23 @@ export function AboutSection() {
             </Button>
           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8 }}
-            viewport={{ once: true }}
-            className="relative h-[400px] rounded-lg overflow-hidden"
-          >
-            <Image
-              src={imageUrl}
-              alt="AKW Racing Academy Facility"
-              fill
-              className="object-cover"
-              unoptimized={imageUrl.startsWith('https://firebasestorage.googleapis.com')}
-            />
-          </motion.div>
+          {!isLoading && imageUrl && (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8 }}
+              viewport={{ once: true }}
+              className="relative h-[400px] rounded-lg overflow-hidden"
+            >
+              <Image
+                src={imageUrl}
+                alt="AKW Racing Academy Facility"
+                fill
+                className="object-cover"
+                unoptimized={imageUrl.startsWith('https://firebasestorage.googleapis.com')}
+              />
+            </motion.div>
+          )}
         </div>
       </div>
 

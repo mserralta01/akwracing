@@ -29,6 +29,7 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
+  /* Temporarily hidden
   {
     title: "Programs",
     href: "/programs",
@@ -51,6 +52,7 @@ const navItems: NavItem[] = [
       },
     ],
   },
+  */
   {
     title: "Calendar",
     href: "/calendar",
@@ -87,8 +89,8 @@ export function Navigation() {
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center">
-        <Link href="/" className="mr-8">
+      <div className="container flex h-16 items-center justify-between">
+        <Link href="/" className="flex-shrink-0">
           <div className="relative w-[160px] h-[60px]">
             <Image
               src="/AKWacademylogo.png"
@@ -101,8 +103,8 @@ export function Navigation() {
         </Link>
 
         {/* Desktop Navigation */}
-        <div className="hidden md:flex md:flex-1">
-          <NavigationMenu>
+        <div className="hidden md:flex md:flex-1 md:justify-center">
+          <NavigationMenu className="mx-auto">
             <NavigationMenuList>
               {navItems.map((item) => (
                 <NavigationMenuItem key={item.href}>
@@ -142,7 +144,7 @@ export function Navigation() {
         </div>
 
         {/* User Menu & Notifications */}
-        <div className="ml-auto flex items-center gap-4">
+        <div className="flex items-center gap-4">
           <UserMenu />
 
           {/* Mobile Menu */}

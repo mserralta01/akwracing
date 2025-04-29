@@ -14,6 +14,9 @@ export default function Layout({ children }: { children: ReactNode }) {
         <Link href="/admin/settings/website">
           <span className="text-blue-500 hover:underline">Website</span>
         </Link>
+        <Link href="/admin/settings/legal">
+          <span className="text-blue-500 hover:underline">Legal</span>
+        </Link>
         {/* Add more settings links here */}
       </div>
       {children}

@@ -6,7 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Mail, Phone, MapPin } from "lucide-react";
+import { settingsService, WebsiteContent } from '@/lib/services/settings-service';
 
 export default function ContactPage() {
   const { toast } = useToast();
@@ -15,6 +17,27 @@ export default function ContactPage() {
     email: "",
     message: "",
   });
+  const [contactInfo, setContactInfo] = useState<WebsiteContent['contact'] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadContent = async () => {
+      try {
+        setIsLoading(true);
+        const content = await settingsService.getWebsiteContent();
+        setContactInfo(content.contact);
+      } catch (error) {
+        console.error('Error loading contact info:', error);
+        // Use default content on error
+        setContactInfo(settingsService.getDefaultWebsiteContent().contact);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadContent();
+  }, []);
+
+  const displayAddress = contactInfo?.address?.replace(/\n/g, '<br />');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,7 +52,7 @@ export default function ContactPage() {
     <div className="container mx-auto py-8">
       <Card className="max-w-2xl mx-auto">
         <CardHeader>
-          <CardTitle>Contact Us</CardTitle>
+          <CardTitle>{contactInfo?.title || 'Contact Us'}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
@@ -71,10 +94,33 @@ export default function ContactPage() {
           <CardHeader>
             <CardTitle>Our Information</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <p className="text-sm">123 Racing Lane, Speedway City, SP 12345</p>
-            <p className="text-sm">+1 (555) 123-4567</p>
-            <p className="text-sm">info@youracademy.com</p>
+          <CardContent className="space-y-4">
+            <div className="flex items-center gap-3">
+              <MapPin className="h-5 w-5 text-primary" />
+              {isLoading ? (
+                <span className="text-sm">Loading address...</span>
+              ) : displayAddress ? (
+                <span className="text-sm" dangerouslySetInnerHTML={{ __html: displayAddress }} />
+              ) : (
+                <span className="text-sm">Piquet Race Park, Wellington, FL 33414</span>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              <Phone className="h-5 w-5 text-primary" />
+              {isLoading ? (
+                <span className="text-sm">Loading phone...</span>
+              ) : (
+                <span className="text-sm">{contactInfo?.phone || '(555) 123-4567'}</span>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              <Mail className="h-5 w-5 text-primary" />
+              {isLoading ? (
+                <span className="text-sm">Loading email...</span>
+              ) : (
+                <span className="text-sm">{contactInfo?.email || 'info@akwracing.com'}</span>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>

@@ -96,6 +96,7 @@ export function ImageUpload({ onChange, preloadedImage, className }: ImageUpload
               fill
               className="object-contain"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              unoptimized={preview.startsWith('https://')}
             />
           </div>
           <Button
@@ -108,7 +109,11 @@ export function ImageUpload({ onChange, preloadedImage, className }: ImageUpload
             <X className="h-4 w-4" />
           </Button>
           <p className="mt-2 text-sm text-muted-foreground">
-            {files[0]?.name || preloadedImage?.name || 'Current image'}
+            {files[0]?.name || (preloadedImage?.name && !preloadedImage.name.includes('://') 
+              ? preloadedImage.name 
+              : preview.startsWith('https://firebasestorage.googleapis.com') 
+                ? 'Stored image' 
+                : 'Current image')}
           </p>
           <p className="text-sm text-muted-foreground">
             Drop a new image to replace

@@ -94,6 +94,7 @@ export function AboutSection() {
               alt="AKW Racing Academy Facility"
               fill
               className="object-cover"
+              unoptimized={imageUrl.startsWith('https://firebasestorage.googleapis.com')}
             />
           </motion.div>
         </div>

@@ -155,7 +155,7 @@ const defaultWebsiteContent: WebsiteContent = {
       'State-of-the-art racing equipment',
       'Comprehensive training programs'
     ],
-    imageUrl: '/images/akwracingtrailor.jpg'
+    imageUrl: '/images/AKWTeamPic1.jpg'
   },
   benefits: {
     title: 'Why Karting for Your Child?',

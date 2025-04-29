@@ -19,6 +19,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Switch } from "@/components/ui/switch";
+import { storageService } from '@/lib/services/storage-service';
 
 export default function WebsiteSettingsPage() {
   const [content, setContent] = useState<WebsiteContent | null>(null);
@@ -140,13 +141,35 @@ export default function WebsiteSettingsPage() {
     });
   };
 
-  const handleImageUpload = (section: keyof WebsiteContent, field: string, file: File | null) => {
+  const handleImageUpload = async (section: keyof WebsiteContent, field: string, file: File | null) => {
     if (!content) return;
 
     if (file) {
-      const newUrl = URL.createObjectURL(file);
-      
-      handleStringChange(section, field, newUrl);
+      try {
+        // Show loading state
+        toast({
+          title: "Uploading...",
+          description: "Please wait while we upload your image",
+        });
+        
+        // Upload the image to Firebase Storage
+        const imageUrl = await storageService.uploadWebsiteImage(file, `${section}-${field}`);
+        
+        // Update the content with the permanent URL
+        handleStringChange(section, field, imageUrl);
+        
+        toast({
+          title: "Success",
+          description: "Image uploaded successfully",
+        });
+      } catch (error) {
+        console.error('Error uploading image:', error);
+        toast({
+          title: "Error",
+          description: "Failed to upload image. Please try again.",
+          variant: "destructive",
+        });
+      }
     } else {
       handleStringChange(section, field, '');
     }
